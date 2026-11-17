@@ -8,6 +8,10 @@
 
 - [游戏设计文档](./game-design.md)：玩法目标、核心循环、开放世界设计和首个垂直切片范围。
 - [技术设计文档](./technical-design.md)：Godot 架构、AI → Blender 内容管线、数据格式、性能与测试方案。
+- [开放世界设计规范](./open-world-design.md)：区域结构、探索密度、地标、动态事件和流式加载规则。
+- [战斗与成长系统](./combat-and-progression.md)：第一人称战斗、敌人架构、资源、制作与成长边界。
+- [内容生产管线](./content-pipeline.md)：AI、Blender、Godot 的资产分层、导出规范和自动检查。
+- [开发计划](./development-plan.md)：里程碑、优先级、完成定义、风险与近期执行顺序。
 
 ## 引擎分工
 
