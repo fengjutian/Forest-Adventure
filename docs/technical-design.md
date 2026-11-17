@@ -195,6 +195,19 @@ extends Resource
 @export var max_stamina := 100.0
 ~~~
 
+#### 第一人称反馈
+
+镜头与手持物分两层，互不影响：
+
+| 层 | 负责 | 参数 |
+|---|---|---|
+| `Camera3D` 局部变换 | 走路上下起伏、左右侧倾、落地下沉 | `PlayerTuning.head_bob_amplitude / head_bob_roll_degrees / head_bob_landing_dip` |
+| `Bow` 的 `BowViewModel` | 持弓摆动、呼吸起伏、转视角惯性、拉弦与手臂 | `bow.gd` 的 `BOB_*`、`SWAY_*`、`MAX_DRAW` |
+
+- 镜头只动局部位置和 roll，不碰 `Head` 的高度——蹲伏改的是 `Head`，两者叠加才是「人蹲下了，头还在动」。
+- 第一人称模型全部挂在相机下，不参与物理；手和弓按 `view_scale` 单独缩放，避免真人尺寸的手配缩小后的弓。
+- 弓弦是两段运行时摆位的细柱，拉弦时折成 V 形，箭和右手跟着后移；落地与射箭各有一记短促下沉。
+
 ### 4.3 交互系统
 
 所有可交互对象实现统一约定：

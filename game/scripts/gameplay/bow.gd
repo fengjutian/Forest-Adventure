@@ -32,14 +32,17 @@ signal fire_failed(reason: String)
 ## 瞄准时的鼠标灵敏度倍率。
 @export var aim_sensitivity_scale: float = 0.45
 ## 垂下持弓时相对镜头的偏移与朝向。
-@export var view_offset: Vector3 = Vector3(0.26, -0.31, -0.47)
-@export var view_rotation_degrees: Vector3 = Vector3(8.0, 22.0, 10.0)
-## 举弓瞄准时相对镜头的偏移与朝向。弓弦落在屏幕中心。
-@export var aim_view_offset: Vector3 = Vector3(0.0, -0.02, -0.45)
-@export var aim_view_rotation_degrees: Vector3 = Vector3(0.0, 8.0, 0.0)
+@export var view_offset: Vector3 = Vector3(0.08, -0.3, -0.55)
+@export var view_rotation_degrees: Vector3 = Vector3(0.0, 10.0, 14.0)
+## 举弓瞄准时相对镜头的偏移与朝向。
+##
+## 主要靠滚转（绕 Z）把弓身侧过来，偏航只留一点点：
+## 偏航越大越容易看见箭杆，但箭也会越明显地偏向准星左侧。
+@export var aim_view_offset: Vector3 = Vector3(0.0, -0.03, -0.56)
+@export var aim_view_rotation_degrees: Vector3 = Vector3(0.0, 6.0, 18.0)
 ## 第一人称模型整体缩放。
-## 弓本身是 1.32 m 的猎弓，缩到 0.30 后与相机距离配合，正好占满画面高度。
-@export var view_scale: float = 0.30
+## 弓本身是 1.32 m 的猎弓，缩到 0.32 后与相机距离配合，正好占满画面高度。
+@export var view_scale: float = 0.32
 
 ## 弓本地坐标里的关键点。
 const GRIP_POINT := Vector3(-0.2, 0.0, 0.0)
@@ -48,14 +51,9 @@ const STRING_BOTTOM := Vector3(0.0, -0.66, 0.0)
 ## 弓弦静止位置（也是箭尾位置）。
 const NOCK_REST := Vector3(0.0, 0.02, 0.06)
 ## 满蓄力时弦被拉后的距离（弓本地单位）。乘上 view_scale 约 0.25 m。
-const MAX_DRAW := 0.92
+const MAX_DRAW := 0.72
 ## 手部缩放。弓是缩小的视图模型，手不能按真人尺寸摆，否则像个巨人。
-const HAND_SCALE := 0.62
-## 手臂两段长度与肩点（相机空间，米）。
-const LEFT_SHOULDER := Vector3(-0.2, -0.26, 0.03)
-const RIGHT_SHOULDER := Vector3(0.22, -0.26, 0.03)
-const UPPER_ARM := 0.33
-const FOREARM := 0.32
+const HAND_SCALE := 0.42
 ## 持弓摆动幅度（米 / 度）。
 const BOB_SIDE := 0.009
 const BOB_UP := 0.006
@@ -151,13 +149,13 @@ func _build_view_model() -> void:
 	_string_top = _add_mesh(_bow_pivot, "StringTop", string_mesh)
 	_string_bottom = _add_mesh(_bow_pivot, "StringBottom", string_mesh)
 
-	var hand_mesh := PropKit.make_player_hand(Color(0.66, 0.49, 0.36), Color(0.27, 0.21, 0.16))
+	var hand_mesh := PropKit.make_player_hand(Color(0.6, 0.45, 0.33))
 	_left_hand = _add_mesh(_view_root, "LeftHand", hand_mesh)
 	_right_hand = _add_mesh(_view_root, "RightHand", hand_mesh)
 
-	var sleeve := Color(0.21, 0.24, 0.19)
-	var upper_mesh := PropKit.make_limb_mesh(sleeve)
-	var fore_mesh := PropKit.make_limb_mesh(sleeve.lightened(0.07))
+	var sleeve := Color(0.16, 0.18, 0.14)
+	var upper_mesh := PropKit.make_arm_mesh(sleeve)
+	var fore_mesh := PropKit.make_arm_mesh(sleeve.lightened(0.05))
 	_upper_left = _add_mesh(_view_root, "UpperArmLeft", upper_mesh)
 	_fore_left = _add_mesh(_view_root, "ForearmLeft", fore_mesh)
 	_upper_right = _add_mesh(_view_root, "UpperArmRight", upper_mesh)
@@ -316,20 +314,22 @@ func _update_pose(has_bow: bool, delta: float) -> void:
 	var grip := bow * GRIP_POINT
 	var nock := bow * nock_local
 
-	# 双手：左手扣住握把，右手捏着弦并跟着拉开
+	# 双手：左手扣住握把，右手捏着弦并跟着拉开。
+	# 右手往右偏一点，免得把准星和箭挡住。
 	var left_hand_pos := grip + bow_rotation * Vector3(0.0, 0.0, 0.03)
-	var right_hand_pos := nock + bow_rotation * Vector3(0.0, 0.0, 0.018)
+	var right_hand_pos := nock + bow_rotation * Vector3(0.012, -0.055, 0.02)
 	var hand_basis := bow_rotation.scaled(Vector3.ONE * HAND_SCALE)
 	_left_hand.transform = Transform3D(hand_basis, left_hand_pos)
 	_right_hand.transform = Transform3D(hand_basis, right_hand_pos)
 
-	# 手臂：肩 → 肘 → 手。手到肩的距离超过臂长时自动伸直。
-	var left_elbow := _solve_elbow(LEFT_SHOULDER, left_hand_pos, UPPER_ARM, FOREARM, Vector3(-0.65, -1.0, 0.1))
-	var right_elbow := _solve_elbow(RIGHT_SHOULDER, right_hand_pos, UPPER_ARM, FOREARM, Vector3(0.7, -1.0, 0.1))
-	_upper_left.transform = _segment_transform(LEFT_SHOULDER, left_elbow, 0.066)
-	_fore_left.transform = _segment_transform(left_elbow, left_hand_pos, 0.058)
-	_upper_right.transform = _segment_transform(RIGHT_SHOULDER, right_elbow, 0.066)
-	_fore_right.transform = _segment_transform(right_elbow, right_hand_pos, 0.058)
+	# 前臂从画面下方竖直伸上来接住手。上臂再往下、往身后去，
+	# 整段都在画面外——第一人称里看到的只有一小截小臂，和真实持弓视角一致。
+	var left_elbow := left_hand_pos + Vector3(-0.02, -0.3, 0.05)
+	var right_elbow := right_hand_pos + Vector3(0.03, -0.28, 0.05)
+	_fore_left.transform = _segment_transform(left_elbow, left_hand_pos, 0.032)
+	_fore_right.transform = _segment_transform(right_elbow, right_hand_pos, 0.03)
+	_upper_left.transform = _segment_transform(left_elbow + Vector3(-0.1, -0.26, 0.08), left_elbow, 0.04)
+	_upper_right.transform = _segment_transform(right_elbow + Vector3(0.1, -0.26, 0.08), right_elbow, 0.04)
 
 	# 弓弦：两段折线，从上下弓臂尖端连到弦心；拉弦时折成 V 形
 	_string_top.transform = _segment_transform(STRING_TOP, nock_local, 0.012)
@@ -377,24 +377,6 @@ func _update_bob(delta: float) -> void:
 
 	_view_root.position = Vector3(side, up, 0.0)
 	_view_root.rotation_degrees = Vector3(_sway.y, _sway.x, roll)
-
-
-## 两段手臂的肘部求解：已知肩、手和两段长度，求肘的位置。
-##
-## 肘落在「肩→手」连线的垂直平面上，方向由 bend 指定，避免反关节。
-static func _solve_elbow(shoulder: Vector3, hand: Vector3, upper: float, forearm: float, bend: Vector3) -> Vector3:
-	var to_hand := hand - shoulder
-	var distance := to_hand.length()
-	if distance < 0.0001:
-		return shoulder + Vector3(0.0, -upper, 0.0)
-	distance = clampf(distance, absf(upper - forearm) + 0.005, upper + forearm - 0.005)
-	var direction := to_hand.normalized()
-	var along := (upper * upper - forearm * forearm + distance * distance) / (2.0 * distance)
-	var height := sqrt(maxf(0.0, upper * upper - along * along))
-	var bend_direction := bend - direction * bend.dot(direction)
-	if bend_direction.length() < 0.001:
-		bend_direction = Vector3.DOWN
-	return shoulder + direction * along + bend_direction.normalized() * height
 
 
 ## 把一段沿 +Y 的方柱摆到 from → to，粗细为 thickness（与起点同一坐标空间）。

@@ -9,6 +9,7 @@ const REQUIRED_ACTIONS := [
 	"move_forward", "move_back", "move_left", "move_right",
 	"sprint", "crouch", "jump", "interact", "flashlight",
 	"inventory", "map", "compass", "pause", "quick_save", "quick_load",
+	"aim", "fire", "toggle_help",
 ]
 
 const REQUIRED_SAVE_KEYS := [
@@ -42,6 +43,7 @@ func _ready() -> void:
 	_test_mouse_capture()
 	await _test_player_grounding()
 	await _test_first_person_motion()
+	_test_hud_key_hints()
 	_test_quest_definition()
 	_test_quest_chain()
 	_test_inventory()
@@ -113,7 +115,11 @@ func _test_first_person_motion() -> void:
 	if bow == null:
 		return
 
-	var view := bow.get_node_or_null("BowViewModel") as Node3D
+	var camera := _player.camera
+	_assert(camera != null, "玩家有第一人称相机")
+	if camera == null:
+		return
+	var view := camera.get_node_or_null("BowViewModel") as Node3D
 	_assert(view != null, "第一人称持弓挂在相机下")
 	if view == null:
 		return
@@ -128,8 +134,7 @@ func _test_first_person_motion() -> void:
 		and view.get_node_or_null("BowPivot/StringBottom") != null, "弓弦是两段可拉开的折线")
 
 	var right_hand := view.get_node_or_null("RightHand") as Node3D
-	var camera := _player.camera
-	if right_hand == null or camera == null:
+	if right_hand == null:
 		return
 
 	# 蓄力时右手必须把弦往后拉（而不是一只静态的手）
@@ -157,6 +162,40 @@ func _test_first_person_motion() -> void:
 		max_offset = maxf(max_offset, camera.position.length())
 	Input.action_release("move_forward")
 	_assert(max_offset > 0.002, "走路时镜头有起伏（峰值 %.3f m）" % max_offset)
+
+
+## HUD 按键提示：面板、H 开关、交互提示带按键。
+func _test_hud_key_hints() -> void:
+	var hud := _main.get_node_or_null("UI") as HUD
+	_assert(hud != null, "HUD 已实例化")
+	if hud == null:
+		return
+	var hint := hud.get_node_or_null("ControlsHint")
+	_assert(hint != null, "HUD 有按键提示层")
+	if hint == null:
+		return
+	var panel := hint.get_node_or_null("ControlsPanel") as Control
+	_assert(panel != null, "按键提示面板已创建")
+	if panel == null:
+		return
+	_assert(panel.visible, "进游戏先自动显示按键提示")
+
+	var toggle := hint.get_node_or_null("ToggleHint") as Control
+	hud.toggle_controls_hint()
+	_assert(not panel.visible, "H 可以收起按键提示")
+	_assert(toggle != null and toggle.visible, "收起后角落保留 H 角标")
+	hud.toggle_controls_hint()
+	_assert(panel.visible, "再按 H 能重新打开按键提示")
+
+	# 交互提示要带当前按键：拾取时显示「[E] 拾取」
+	var crate := _find_interactable(&"supply_crate")
+	_assert(crate != null, "找到可交互的物资箱（按键提示测试）")
+	if crate == null:
+		return
+	EventBus.interaction_target_changed.emit(crate)
+	var prompt := (hud.get_node("InteractionPrompt") as Label).text
+	_assert(prompt.begins_with("[") and prompt.contains("]"), "交互提示带按键前缀（%s）" % prompt)
+	EventBus.interaction_target_changed.emit(null)
 
 
 func _test_quest_definition() -> void:

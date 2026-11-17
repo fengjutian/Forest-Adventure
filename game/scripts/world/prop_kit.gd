@@ -423,21 +423,38 @@ static func make_limb_mesh(color: Color) -> ArrayMesh:
 	return merge([_box(Vector3(1, 1, 1), _xform(Vector3(0, 0.5, 0)), color)])
 
 
-## 第一人称手部：握拳，四指在 -Z 一侧（包住握把），拇指在 +X 一侧。
+## 手臂：沿 +Y 从 0 长到 1 的八棱柱，肩端粗、腕端细。
 ##
-## 以掌心为原点，方便直接摆到握把或弓弦上。
-static func make_player_hand(skin: Color, glove: Color) -> ArrayMesh:
+## 用逐渐收细的八棱柱而不是方柱，第一人称里才像一条手臂，
+## 而不是一块斜着插进画面的木板。
+static func make_arm_mesh(color: Color) -> ArrayMesh:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.36
+	mesh.bottom_radius = 0.5
+	mesh.height = 1.0
+	mesh.radial_segments = 8
+	mesh.rings = 1
+	return merge([[mesh, _xform(Vector3(0, 0.5, 0)), color]])
+
+
+## 第一人称手部：握拳，手背朝向镜头，四指在 -Z 一侧包住握把。
+##
+## 拇指压在握把靠近镜头的一侧——第一人称里能看见它，手才像在“握”，
+## 而不是一只悬空的方块。手腕朝下接前臂。
+static func make_player_hand(skin: Color) -> ArrayMesh:
 	var parts: Array = []
-	# 手背与手掌
-	parts.append(_box(Vector3(0.085, 0.1, 0.075), _xform(Vector3.ZERO), glove))
-	# 四指：竖直叠起来，正好扣住竖直的弓把
+	# 手背
+	parts.append(_box(Vector3(0.082, 0.1, 0.062), _xform(Vector3.ZERO), skin))
+	# 四指：在 -Z 侧竖直叠起来，正好扣住竖直的弓把
 	for i in 4:
-		var y := 0.033 - float(i) * 0.023
-		parts.append(_box(Vector3(0.08, 0.02, 0.055), _xform(Vector3(0, y, -0.048)), glove.darkened(0.08)))
-	# 拇指：从侧面压住握把
-	parts.append(_box(Vector3(0.03, 0.055, 0.07), _xform(Vector3(0.052, 0.02, -0.02), Vector3(0, 0, -20)), glove.lightened(0.06)))
-	# 手腕
-	parts.append(_box(Vector3(0.072, 0.09, 0.06), _xform(Vector3(0, 0, 0.052)), skin.darkened(0.1)))
+		var y := 0.03 - float(i) * 0.022
+		parts.append(_box(Vector3(0.074, 0.018, 0.05), _xform(Vector3(0.0, y, -0.052)), skin.darkened(0.12)))
+	# 指节：手背外沿
+	parts.append(_box(Vector3(0.072, 0.018, 0.024), _xform(Vector3(0.0, 0.044, -0.022)), skin.lightened(0.04)))
+	# 拇指：压在握把靠镜头一侧，从第一人称能直接看见
+	parts.append(_box(Vector3(0.032, 0.075, 0.042), _xform(Vector3(-0.026, 0.035, 0.028), Vector3(18, 0, -12)), skin))
+	# 手腕：朝下接前臂
+	parts.append(_box(Vector3(0.06, 0.05, 0.05), _xform(Vector3(0.0, -0.068, 0.0)), skin.darkened(0.18)))
 	return merge(parts)
 
 

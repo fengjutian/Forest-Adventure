@@ -97,6 +97,10 @@ aim={
 "deadzone": 0.5,
 "events": [Object(InputEventMouseButton,"button_index":2)]
 }
+toggle_help={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":72)]
+}
 
 [layer_names]
 
