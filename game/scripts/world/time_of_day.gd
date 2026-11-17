@@ -19,7 +19,7 @@ signal time_updated(minutes: float)
 @export var environment_path: NodePath = ^"../../WorldEnvironment"
 ## 指向主场景中的太阳节点。
 @export var sun_path: NodePath = ^"../../Sun"
-@export var ambient_energy: float = 0.35
+@export var ambient_energy: float = 0.3
 
 var _minutes: float = 8.0 * 60.0
 var _environment: Environment
@@ -68,21 +68,35 @@ func _setup_environment() -> void:
 	_environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	_environment.ambient_light_energy = ambient_energy
 
+	# 空气透视：远景被雾压暗并偏蓝，层次才拉得开
+	_environment.fog_enabled = true
+	_environment.fog_light_color = Color(0.62, 0.7, 0.74)
+	_environment.fog_light_energy = 0.9
+	_environment.fog_density = 0.0055
+	_environment.fog_sky_affect = 0.3
+	_environment.fog_aerial_perspective = 0.45
+
+	# 影调：Filmic 压高光，轻微提饱和
+	_environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	_environment.adjustment_enabled = true
+	_environment.adjustment_saturation = 1.06
+	_environment.adjustment_contrast = 1.04
+
 
 ## 依据一天中的时间计算太阳高度、颜色与环境光。
 func _apply() -> void:
 	var day_fraction := _minutes / 1440.0
 	# 06:00 东边升起，12:00 头顶，18:00 西边落下
 	var sun_angle := (day_fraction * 360.0) - 90.0
+	var height_factor := clampf(sin(deg_to_rad(day_fraction * 360.0 - 90.0)), 0.0, 1.0)
+	var day_factor := clampf(sin(deg_to_rad(day_fraction * 360.0 - 90.0)) * 1.4 + 0.25, 0.0, 1.0)
 
 	if sun != null:
 		sun.rotation_degrees = Vector3(-sun_angle * 0.6, sun_angle, 0.0)
-		var height_factor := clampf(sin(deg_to_rad(day_fraction * 360.0 - 90.0)), 0.0, 1.0)
 		sun.light_energy = lerpf(0.05, 1.2, height_factor)
 		sun.light_color = Color(1.0, lerpf(0.72, 0.95, height_factor), lerpf(0.5, 0.88, height_factor))
 
 	if _sky_material != null:
-		var day_factor := clampf(sin(deg_to_rad(day_fraction * 360.0 - 90.0)) * 1.4 + 0.25, 0.0, 1.0)
 		var night := Color(0.05, 0.07, 0.12)
 		var day := Color(0.52, 0.66, 0.82)
 		_sky_material.sky_top_color = night.lerp(day, day_factor)
@@ -91,7 +105,12 @@ func _apply() -> void:
 		_sky_material.ground_horizon_color = Color(0.12, 0.15, 0.12)
 
 	if _environment != null:
-		_environment.ambient_light_energy = lerpf(0.12, ambient_energy + 0.25, clampf(sin(deg_to_rad(day_fraction * 360.0 - 90.0)) * 1.4 + 0.25, 0.0, 1.0))
+		_environment.ambient_light_energy = lerpf(0.12, ambient_energy + 0.18, day_factor)
+		# 雾色跟着昼夜走：白天偏冷白，夜里压暗
+		var fog_day := Color(0.62, 0.7, 0.74)
+		var fog_night := Color(0.09, 0.11, 0.15)
+		_environment.fog_light_color = fog_night.lerp(fog_day, day_factor)
+		_environment.fog_light_energy = lerpf(0.35, 0.9, day_factor)
 
 
 func get_minutes() -> float:

@@ -28,10 +28,22 @@ func _ready() -> void:
 	_register_save_handlers()
 	_load_items()
 	_load_quests()
+	_place_player_at_spawn()
 	GameLog.info("Main 就绪", {
 		"scene": get_tree().current_scene.scene_file_path if get_tree().current_scene else "",
 		"player": player.global_position if player else Vector3.ZERO,
 	})
+
+
+## 把玩家放到世界出生点并贴到地面，避免出生时悬空坠落。
+## 读档会覆盖该位置（Player.from_dict），因此两者不冲突。
+func _place_player_at_spawn() -> void:
+	if player == null or spawn_manager == null:
+		return
+	if spawn_manager.get_spawn() == null:
+		GameLog.warn("当前世界没有出生点，玩家保留场景中的初始位置")
+		return
+	spawn_manager.respawn_player(player)
 
 
 func _unhandled_input(event: InputEvent) -> void:

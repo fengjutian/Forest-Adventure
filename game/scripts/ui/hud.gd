@@ -47,13 +47,25 @@ func _sync_from_player() -> void:
 func _process(_delta: float) -> void:
 	_update_quest_line()
 	_update_debug_overlay()
+	_update_focus_hint()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
-		resume_hint.visible = true
-	elif event is InputEventMouseButton and event.is_pressed():
-		resume_hint.visible = false
+		release_mouse_hint()
+
+
+## 鼠标未被捕获时提示玩家点击画面，Esc 归还鼠标。
+func _update_focus_hint() -> void:
+	var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	resume_hint.visible = not captured
+	if not captured:
+		resume_hint.text = "点击画面控制视角　·　Esc 释放鼠标"
+
+
+func release_mouse_hint() -> void:
+	resume_hint.visible = true
+	resume_hint.text = "点击画面控制视角　·　Esc 释放鼠标"
 
 
 func _on_target_changed(target: Node) -> void:

@@ -8,15 +8,21 @@ signal player_respawned(spawn_id: StringName)
 
 ## 节点加入该分组即可成为出生点。
 const SPAWN_GROUP := &"spawn_point"
+## 地形节点加入该分组后可提供地面高度（ProcTerrain）。
+const TERRAIN_GROUP := &"terrain"
 
 var _spawns: Dictionary = {}   # StringName -> Node3D
 var _default_spawn_id: StringName = &""
 
 
 func _ready() -> void:
+	_scan_spawns()
+	GameLog.info("SpawnManager 就绪", {"spawns": _spawns.size()})
+
+
+func _scan_spawns() -> void:
 	for node in get_tree().get_nodes_in_group(SPAWN_GROUP):
 		_register(node)
-	GameLog.info("SpawnManager 就绪", {"spawns": _spawns.size()})
 
 
 func _register(node: Node) -> void:
@@ -35,6 +41,9 @@ func register_spawn(node: Node3D, spawn_id: StringName) -> void:
 
 
 func get_spawn(spawn_id: StringName = &"") -> Node3D:
+	# 区域场景可能晚于本节点加载，这里做一次兜底扫描
+	if _spawns.is_empty():
+		_scan_spawns()
 	if spawn_id != &"" and _spawns.has(spawn_id):
 		return _spawns[spawn_id]
 	if _default_spawn_id != &"" and _spawns.has(_default_spawn_id):
@@ -42,16 +51,27 @@ func get_spawn(spawn_id: StringName = &"") -> Node3D:
 	return null
 
 
-## 把玩家移动到指定出生点。
+## 查找当前世界的地形，用于把玩家贴到地面。
+func _find_terrain() -> ProcTerrain:
+	return get_tree().get_first_node_in_group(TERRAIN_GROUP) as ProcTerrain
+
+
+## 把玩家移动到指定出生点，并贴到地面高度。
 func respawn_player(player: Player, spawn_id: StringName = &"") -> bool:
 	var spawn := get_spawn(spawn_id)
 	if spawn == null or player == null:
 		GameLog.error("找不到出生点", {"spawn": spawn_id})
 		return false
 
-	player.global_position = spawn.global_position + Vector3(0.0, 0.2, 0.0)
+	var target := spawn.global_position
+	var terrain := _find_terrain()
+	if terrain != null:
+		# 出生点标记通常放在地形上，贴地后再留一点余量避免初始穿插
+		target.y = terrain.height_at(target.x, target.z) + 0.05
+
+	player.global_position = target
 	player.velocity = Vector3.ZERO
 	player.set_control_enabled(true)
 	player_respawned.emit(spawn_id)
-	GameLog.info("玩家已重生", {"spawn": spawn_id})
+	GameLog.info("玩家已重生", {"spawn": spawn_id, "position": target})
 	return true

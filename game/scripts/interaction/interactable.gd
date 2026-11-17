@@ -16,6 +16,12 @@ extends Node3D
 
 func _ready() -> void:
 	add_to_group(&"interactable")
+	_build_visual()
+
+
+## 构建可交互物的可视外观。子类覆盖此方法。
+func _build_visual() -> void:
+	pass
 
 
 ## 需要持久化的状态。写入存档的 changed_objects。

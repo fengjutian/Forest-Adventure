@@ -5,8 +5,20 @@ extends Interactable
 @export var item_id: StringName = &""
 @export var amount: int = 1
 @export var prompt_text: String = "拾取"
+## 可视外观，对应 PropKit.make_prop 的名称。
+@export var prop_visual: StringName = &"crate"
 
 var _collected: bool = false
+
+
+func _build_visual() -> void:
+	var mesh := PropKit.make_prop(prop_visual)
+	if mesh == null:
+		return
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.mesh = mesh
+	mesh_instance.material_override = PropKit.painted_material()
+	add_child(mesh_instance)
 
 
 func can_interact(_actor: Node) -> bool:

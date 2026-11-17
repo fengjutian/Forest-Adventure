@@ -6,13 +6,28 @@
 
 ## 当前状态
 
-**M0 工程基础已完成，M1 灰盒任务链可玩。**
+**M0 工程基础已完成，M1 灰盒任务链可玩，场景已程序化生成。**
 
 - 7 篇设计文档（见 `docs/`）
 - Godot 4 工程：输入映射、第一人称控制器、统一交互接口、背包、任务系统、版本化存档
 - 灰盒营地场景 + 三阶段任务链（拾取保险丝 → 修复无线电 → 返回营火）
-- 无头冒烟测试 79 项，全部通过
+- 程序化营地：噪声地形、溪谷、松林、灌木、地被草丛，人工地标（木屋 / 物资棚 / 发电机 / 靶场 / 帐篷 / 灯柱 / 柴堆 / 路牌 / 营火）
+- 无头冒烟测试 88 项，全部通过
 - M2 及之后的战斗、天气、流式加载、AI→Blender 管线尚未开始
+
+### 场景生成分工
+
+| 模块 | 职责 |
+|---|---|
+| `scripts/world/proc_terrain.gd` | FastNoiseLite 高度场 + 营地平整区 + 溪谷下切；顶点色按高度/坡度/区域着色；凹多边形碰撞 |
+| `scripts/world/vegetation_scatter.gd` | MultiMesh 散布松林、岩石、灌木、地被草丛；噪声调密度，营地/溪流/主路径排除，陡坡不生长 |
+| `scripts/world/camp_builder.gd` | 人工地标：木屋、物资棚、发电机、训练靶场、倒木、路牌、帐篷、灯柱、柴堆、木桶、溪流水面、远景山体 |
+| `scripts/world/prop_kit.gd` | 程序化网格与材质库（顶点色即反照率），正式美术资产到位后只替换这里 |
+| `scripts/world/camp_scene.gd` | 装配编排：地形 → 地标 → 贴地 → 植被 |
+
+> **同一个 seed 必得同一个场景**（`proc_terrain.terrain_seed` / `vegetation_scatter.scatter_seed` / `camp_builder.camp_seed`）。
+> 地形碰撞与渲染网格的三角形绕向必须一致（`(v00, v10, v01)` 朝上），
+> 写反了地形会被背面剔除、角色也会直接穿过地面。
 
 ## 仓库结构
 
@@ -41,6 +56,7 @@ Forest-Adventure/
 │   ├── project.godot
 │   └── export_presets.cfg
 ├── tools/
+│   ├── run.ps1              一键启动
 │   ├── build_windows.ps1    导入 → 测试 → 导出
 │   └── forest_generator/    AI → Blender 管线（M3 启动，当前为空壳）
 ├── build/                   构建产物（不入库）
@@ -61,13 +77,19 @@ Forest-Adventure/
 ## 常用命令
 
 ```powershell
-# 运行游戏
+# 一条命令启动（自动定位 Godot，必要时先导入资源）
+.\tools\run.ps1
+
+# 用 Godot 编辑器打开工程
+.\tools\run.ps1 -Editor
+
+# 运行游戏（等价于 tools\run.ps1，但需要自己处理首次导入）
 & $env:GODOT_EXE --path game
 
 # 导入资源（新克隆后必须先跑一次，生成全局类缓存）
 & $env:GODOT_EXE --headless --path game --import
 
-# 无头冒烟测试（79 项检查）
+# 无头冒烟测试（88 项检查）
 & $env:GODOT_EXE --headless --path game res://tests/test_smoke.tscn
 
 # 抓取渲染帧（需要图形后端，不能 --headless）
@@ -78,16 +100,24 @@ Forest-Adventure/
 .\tools\build_windows.ps1 -SkipExport
 ```
 
+> **首次运行必须先导入。** Godot 依赖 `.godot/global_script_class_cache.cfg` 解析
+> `class_name` 声明的脚本。新克隆的仓库没有这个缓存，直接 `--path game` 会报
+> `Identifier "GameLog" not declared in the current scope`。
+> `tools\run.ps1` 会自动判断并补做导入；用编辑器打开时 Godot 也会自动导入。
+
 ## 操作
 
 | 动作 | 键位 | 动作 | 键位 |
 |---|---|---|---|
 | 移动 | WASD | 交互 | E |
-| 视角 | 鼠标 | 手电筒 | F |
+| 视角 | 鼠标（**先点击画面**激活） | 手电筒 | F |
 | 冲刺 | Shift | 背包 | Tab |
 | 下蹲 | Ctrl | 地图 | M |
 | 跳跃 | Space | 指南针 | C |
-| 暂停（释放鼠标） | Esc | 快速保存 / 读取 | F5 / F9 |
+| 释放鼠标 | Esc | 快速保存 / 读取 | F5 / F9 |
+
+> **鼠标不会被自动锁定。** 启动后光标仍在系统里，屏幕中央提示「点击画面控制视角 · Esc 释放鼠标」。
+> 点击画面才进入视角控制，Esc 随时归还鼠标，切到别的程序时也会自动释放。
 
 ## 里程碑
 

@@ -1,16 +1,10 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://scripts/interaction/campfire_interactable.gd" id="1_campfire"]
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_fire"]
-top_radius = 0.45
-bottom_radius = 0.55
-height = 0.35
-radial_segments = 12
-
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_fire"]
 height = 0.35
-radius = 0.55
+radius = 0.95
 
 [node name="Campfire" type="Node3D"]
 script = ExtResource("1_campfire")
@@ -23,8 +17,5 @@ collision_layer = 4
 collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Body"]
+position = Vector3(0, 0.18, 0)
 shape = SubResource("CylinderShape3D_fire")
-
-[node name="Mesh" type="MeshInstance3D" parent="Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.175, 0)
-mesh = SubResource("CylinderMesh_fire")

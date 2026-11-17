@@ -31,6 +31,7 @@ var flashlight_battery: float = 100.0
 var _capsule: CapsuleShape3D
 var _crouching: bool = false
 var _control_enabled: bool = true
+var _mouse_captured: bool = false
 var _fall_apex_y: float = 0.0
 var _airborne: bool = false
 var _last_stamina_broadcast: float = -1.0
@@ -57,7 +58,37 @@ func _ready() -> void:
 
 	_broadcast_health(true)
 	_broadcast_stamina(true)
+
+	# 启动时不捕获鼠标：玩家主动点击画面后才进入视角控制，
+	# 否则一启动就夺走鼠标（尤其多屏时非常难受）。
+	release_mouse()
+
+
+## 捕获鼠标，进入第一人称视角控制。
+func capture_mouse() -> void:
+	_mouse_captured = true
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+## 释放鼠标，把光标还给玩家。
+func release_mouse() -> void:
+	_mouse_captured = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
+func is_mouse_captured() -> bool:
+	return _mouse_captured
+
+
+## Esc 处理：只归还鼠标，不冻结操作。
+func handle_escape() -> void:
+	release_mouse()
+
+
+func _notification(what: int) -> void:
+	# 窗口失焦时释放鼠标，避免切换到其他程序后光标仍被锁住
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		release_mouse()
 
 
 func _physics_process(delta: float) -> void:
@@ -79,14 +110,14 @@ func _physics_process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
-		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and _control_enabled:
+		if _mouse_captured and _control_enabled:
 			_handle_look(event as InputEventMouseMotion)
 		return
 
 	if event is InputEventMouseButton and event.is_pressed():
-		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
-			set_control_enabled(true)
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		# 点击画面才捕获鼠标；已捕获时不重复触发
+		if not is_mouse_captured():
+			capture_mouse()
 		return
 
 	if event.is_action_pressed("jump") and _control_enabled and is_on_floor():
@@ -96,8 +127,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		toggle_flashlight()
 
 	if event.is_action_pressed("pause"):
-		set_control_enabled(false)
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		handle_escape()
 
 
 # ------------------------------------------------------------------ 移动

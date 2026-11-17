@@ -39,6 +39,8 @@ func _ready() -> void:
 
 	_test_autoloads()
 	_test_input_map()
+	_test_mouse_capture()
+	await _test_player_grounding()
 	_test_quest_definition()
 	_test_quest_chain()
 	_test_inventory()
@@ -64,6 +66,41 @@ func _test_input_map() -> void:
 		_assert(InputMap.has_action(action), "输入动作存在：%s" % action)
 		if InputMap.has_action(action):
 			_assert(InputMap.action_get_events(action).size() > 0, "输入动作已绑定事件：%s" % action)
+
+
+## 鼠标不应该在启动时被夺走；Esc 必须能归还鼠标。
+func _test_mouse_capture() -> void:
+	_assert(not _player.is_mouse_captured(), "启动时鼠标未被捕获")
+
+	_player.capture_mouse()
+	_assert(_player.is_mouse_captured(), "调用 capture_mouse 后鼠标已捕获")
+
+	_player.handle_escape()
+	_assert(not _player.is_mouse_captured(), "Esc 后鼠标已释放")
+
+	_player.capture_mouse()
+	_player.release_mouse()
+	_assert(not _player.is_mouse_captured(), "调用 release_mouse 后鼠标已释放")
+
+
+## 玩家必须站在程序化地形上。
+## 这条断言是「地形碰撞面绕向写反 → 角色直接穿地下落」的回归防护。
+func _test_player_grounding() -> void:
+	for i in 30:
+		await get_tree().physics_frame
+
+	_assert(_player.is_on_floor(), "玩家站在地面上（is_on_floor）")
+	_assert(_player.state_machine.current_state == PlayerStateMachine.State.GROUNDED,
+		"玩家状态为 Grounded（实际 %s）" % _player.state_machine.state_name(_player.state_machine.current_state))
+	_assert(is_equal_approx(_player.health, _player.tuning.max_health),
+		"出生没有跌落伤害（当前生命 %f）" % _player.health)
+
+	var terrain := get_tree().get_first_node_in_group(&"terrain") as ProcTerrain
+	_assert(terrain != null, "地形已注册到 terrain 分组")
+	if terrain != null:
+		var ground := terrain.height_at(_player.global_position.x, _player.global_position.z)
+		_assert(absf(_player.global_position.y - ground) < 1.0,
+			"玩家高度贴近地面（y=%.2f 地面=%.2f）" % [_player.global_position.y, ground])
 
 
 func _test_quest_definition() -> void:
