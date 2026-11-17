@@ -16,6 +16,9 @@ const ITEM_DEFINITIONS := [
 	"res://resources/items/arrow.tres",
 	"res://resources/items/first_aid.tres",
 	"res://resources/items/ration.tres",
+	"res://resources/items/anomaly_core.tres",
+	"res://resources/items/ranger_note.tres",
+	"res://resources/items/charm_ward.tres",
 ]
 
 ## 出发时携带的装备：一张弓和若干箭矢。

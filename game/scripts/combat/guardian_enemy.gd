@@ -23,7 +23,13 @@ var _home_point: Vector3 = Vector3.ZERO
 func _ready() -> void:
 	super()
 	add_to_group(&"guardian")
-	_home_point = global_position
+	# 基类已经把岗位对齐到地面高度了（_home），这里直接沿用。
+	_home_point = _home
+	# 场景里写死的 y 是 0，真实地面在别处。
+	# 基类每帧会把敌人贴到地面，但那要几帧；这里直接就位。
+	if _terrain != null and _terrain.has_method("height_at"):
+		var g := global_position
+		global_position = Vector3(g.x, float(_terrain.call("height_at", g.x, g.z)), g.z)
 
 
 ## 躯干与背部结晶。结晶用自发光材质，弱点就在它上面。

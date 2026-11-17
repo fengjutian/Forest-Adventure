@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"ranger_note"
+display_name = "猎人笔记"
+description = "守林员留下的观察记录。最后一页只写了半句：「它只转过身时背脊才会亮。从侧面等，别正对着它。」"
+max_stack = 1
+tags = Array[StringName]([&"quest_item"])

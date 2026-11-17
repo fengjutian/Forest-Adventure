@@ -22,6 +22,8 @@ signal location_entered(location_id: StringName)
 signal location_exited(location_id: StringName)
 signal device_repaired(device_id: StringName)
 signal camp_returned(camp_id: StringName)
+## 天气切换。世界事件的条件依赖它，所以走全局总线而不是只在控制器上发。
+signal weather_changed(new_weather: StringName)
 
 # ---------------------------------------------------------------- 任务
 signal quest_started(quest_id: StringName)

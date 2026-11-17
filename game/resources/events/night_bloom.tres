@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="WorldEventDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_event_definition.gd" id="1_event"]
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"night_bloom"
+display_name = "夜间发光"
+conditions = Array[Dictionary]([{"type": "time_window", "from": 1260.0, "to": 240.0}, {"type": "weather", "allow": ["clear", "cloudy", "fog"]}, {"type": "player_in_region", "region": "creek_upper"}])
+linger_minutes = 1.0
+cooldown_minutes = 480.0
+one_shot = false

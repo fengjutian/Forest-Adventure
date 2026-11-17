@@ -113,8 +113,12 @@ func _ready() -> void:
 	_health = max_health
 	_rng.randomize()
 	_base_scale = scale
-	_home = global_position
 	_terrain = get_tree().get_first_node_in_group(&"terrain") as Node3D
+	_home = global_position
+	# 岗位设在地面上，而不是出生点的 y：出生点可能悬空，
+	# 而 leash 判定按位置算，悬空的岗位会让「离岗位多远」永远差一截。
+	if _terrain != null and _terrain.has_method("height_at"):
+		_home.y = float(_terrain.call("height_at", _home.x, _home.z))
 	_build_visual()
 
 

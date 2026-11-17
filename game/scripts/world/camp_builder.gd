@@ -23,6 +23,8 @@ func build(height_provider: Variant) -> void:
 	_place_signpost()
 	_place_camp_details()
 	_place_creek()
+	_place_stepping_stones()
+	_place_east_cache()
 	_place_camp_glow()
 
 	props_built.emit()
@@ -197,8 +199,10 @@ func _place_barrels() -> void:
 
 
 ## 溪流水面：地形已挖出固定河床，这里铺一层半透明水面。
+##
+## 水位由 CreekWater 自己管：涨水事件把它抬起来，踩石没顶。
 func _place_creek() -> void:
-	var water := MeshInstance3D.new()
+	var water := CreekWater.new()
 	water.name = "CreekWater"
 
 	var mesh := BoxMesh.new()
@@ -216,6 +220,53 @@ func _place_creek() -> void:
 		var position := Vector2(11.0 + side * rng.randf_range(2.6, 4.4), rng.randf_range(-28.0, 28.0))
 		_add_prop("CreekRock%02d" % i, PropKit.make_rock(camp_seed + 100 + i),
 			position, rng.randf_range(0.0, 360.0), Vector3(0.6, 0.5, 0.6))
+
+
+## 溪流里的踩石。一排扁石横过溪水，是猎人铺的过河捷径。
+##
+## 平常水面在 -0.94，石顶在 -0.42：露出水面，踩着能过。
+## 涨水后水面到 +0.15，石顶没入水下 0.57 m，这条路就断了。
+func _place_stepping_stones() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = camp_seed + 77
+	var count := 8
+	for i in count:
+		var t := float(i) / float(count - 1)
+		var x := lerpf(5.6, 17.4, t)
+		var z := 22.0 + rng.randf_range(-0.45, 0.45)
+		var stone := MeshInstance3D.new()
+		stone.name = "SteppingStone%02d" % (i + 1)
+		stone.mesh = PropKit.make_stepping_stone(camp_seed + 200 + i)
+		stone.material_override = PropKit.painted_material()
+		stone.rotation.y = rng.randf_range(0.0, 360.0)
+		# 石头坐在河床上：底面贴着 -1.15，顶面露出水面
+		stone.position = Vector3(x, -0.775, z)
+		add_child(stone)
+
+
+## 东岸的猎人补给堆。踩石过河就能到，是涨水事件关掉的那条捷径的终点。
+func _place_east_cache() -> void:
+	var pickup := PickupInteractable.new()
+	pickup.name = "EastBankCache"
+	pickup.stable_id = &"east_bank_cache"
+	pickup.item_id = &"ration"
+	pickup.amount = 2
+	pickup.prompt_text = "拾取补给"
+	pickup.prop_visual = &"crate"
+
+	# 拾取物需要碰撞体，交互射线才能命中
+	var shape := SphereShape3D.new()
+	shape.radius = 0.32
+	var body := StaticBody3D.new()
+	body.collision_layer = 4   # interactable 层
+	body.collision_mask = 0
+	var body_collision := CollisionShape3D.new()
+	body_collision.shape = shape
+	body.add_child(body_collision)
+	pickup.add_child(body)
+
+	pickup.position = Vector3(19.6, _ground(19.6, 22.0) + 0.16, 22.0)
+	add_child(pickup)
 
 
 func _place_camp_glow() -> void:

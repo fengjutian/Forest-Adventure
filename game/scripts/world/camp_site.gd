@@ -14,9 +14,6 @@ extends Node3D
 
 @onready var props: CampBuilder = $AuthoredProps
 
-var _water: MeshInstance3D
-var _water_time: float = 0.0
-
 
 func _ready() -> void:
 	var world := get_parent() as ChunkedWorld
@@ -26,7 +23,6 @@ func _ready() -> void:
 
 	props.build(world.field)
 	_snap_to_ground(world.field)
-	_water = props.get_node_or_null("CreekWater") as MeshInstance3D
 	GameLog.info("营地点位就绪", {"region": "region_00_camp"})
 
 
@@ -37,14 +33,3 @@ func _snap_to_ground(terrain: TerrainField) -> void:
 			continue
 		var position := node.position
 		node.position = Vector3(position.x, terrain.height_at(position.x, position.z), position.z)
-
-
-func _process(delta: float) -> void:
-	# 水面缓慢流动
-	if _water == null:
-		return
-	_water_time += delta
-	var material := _water.material_override as StandardMaterial3D
-	if material == null:
-		return
-	material.uv1_offset = Vector3(0.0, -_water_time * 0.06, 0.0)

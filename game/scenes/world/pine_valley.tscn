@@ -1,7 +1,14 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/chunked_world.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://scenes/world/camp_site.tscn" id="2_camp"]
+[ext_resource type="PackedScene" path="res://scenes/world/ranger_camp.tscn" id="3_ranger"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/guardian.tscn" id="4_guardian"]
+[ext_resource type="Script" path="res://scripts/world/night_bloom.gd" id="5_bloom"]
+[ext_resource type="Script" path="res://scripts/world/location_trigger.gd" id="6_trigger"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_creek_upper"]
+size = Vector3(80, 40, 120)
 
 [node name="PineValley" type="Node3D"]
 
@@ -9,3 +16,22 @@
 script = ExtResource("1_world")
 
 [node name="CampSite" parent="ChunkedWorld" instance=ExtResource("2_camp")]
+
+[node name="RangerCamp" parent="ChunkedWorld" instance=ExtResource("3_ranger")]
+
+[node name="Guardian01" parent="ChunkedWorld" instance=ExtResource("4_guardian")]
+position = Vector3(18, 0, -130)
+stable_id = &"guardian_01"
+
+[node name="NightBloom" type="Node3D" parent="ChunkedWorld"]
+script = ExtResource("5_bloom")
+
+[node name="CreekUpperRegion" type="Area3D" parent="ChunkedWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -150)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("6_trigger")
+location_id = &"creek_upper"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CreekUpperRegion"]
+shape = SubResource("BoxShape3D_creek_upper")

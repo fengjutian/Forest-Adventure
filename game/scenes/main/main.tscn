@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/world/world_manager.gd" id="2_world"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/gameplay/quest_manager.gd" id="8_quest"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="9_player"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="10_hud"]
+[ext_resource type="Script" path="res://scripts/world/world_event_manager.gd" id="11_events"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
@@ -34,6 +35,9 @@ script = ExtResource("5_weather")
 
 [node name="WorldAudio" type="Node" parent="WorldManager"]
 script = ExtResource("6_audio")
+
+[node name="WorldEventManager" type="Node" parent="WorldManager"]
+script = ExtResource("11_events")
 
 [node name="Player" parent="." instance=ExtResource("9_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)

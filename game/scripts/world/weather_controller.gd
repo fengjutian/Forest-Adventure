@@ -39,6 +39,7 @@ func set_weather(weather_id: StringName) -> void:
 	GameState.weather_id = weather_id
 	_apply()
 	weather_changed.emit(current_weather)
+	EventBus.weather_changed.emit(current_weather)
 	GameLog.info("天气切换", {"weather": current_weather})
 
 

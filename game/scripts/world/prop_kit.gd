@@ -1038,3 +1038,121 @@ static func make_guardian_crystal() -> ArrayMesh:
 	# 根部一圈暗色结晶座，把棱柱和躯干连起来
 	parts.append(_sphere(0.19, _xform(Vector3(0.0, 1.62, 0.26)), c_dark, 6))
 	return merge(parts)
+
+
+# ------------------------------------------------------------------ 猎人营地遗址
+
+## 倒塌的帐篷骨架。只剩下两根撑杆和一块塌在地上的布。
+static func make_collapsed_tent() -> ArrayMesh:
+	var parts: Array = []
+	var pole := Color(0.32, 0.26, 0.18)
+	var canvas := Color(0.26, 0.24, 0.19)
+
+	# 两根斜撑的主杆
+	parts.append(_cylinder(0.045, 1.9, _xform(Vector3(-0.5, 0.42, 0.0), Vector3(0, 0, 62)), pole, 5))
+	parts.append(_cylinder(0.045, 1.9, _xform(Vector3(0.5, 0.42, 0.0), Vector3(0, 0, -58)), pole, 5))
+	# 掉在地上的断杆
+	parts.append(_cylinder(0.04, 1.5, _xform(Vector3(0.15, 0.05, 0.35), Vector3(90, 20, 0)), pole, 5))
+	# 塌下来的布幔
+	parts.append(_box(Vector3(1.25, 0.05, 0.95),
+		_xform(Vector3(0.1, 0.12, 0.1), Vector3(-18, 12, 0)), canvas))
+	return merge(parts)
+
+
+## 翻倒的捕兽夹。爪子还张着，弹簧已经锈了。
+static func make_trap() -> ArrayMesh:
+	var parts: Array = []
+	var iron := Color(0.26, 0.25, 0.23)
+	var rust := Color(0.34, 0.22, 0.14)
+
+	parts.append(_box(Vector3(0.42, 0.04, 0.42), _xform(Vector3(0.0, 0.02, 0.0)), rust))
+	parts.append(_prism(Vector3(0.06, 0.34, 0.30),
+		_xform(Vector3(-0.13, 0.16, 0.0), Vector3(0, 0, 26)), iron))
+	parts.append(_prism(Vector3(0.06, 0.34, 0.30),
+		_xform(Vector3(0.13, 0.16, 0.0), Vector3(0, 0, -26)), iron))
+	parts.append(_cylinder(0.035, 0.22,
+		_xform(Vector3(0.0, 0.10, -0.12), Vector3(90, 0, 0)), iron, 6))
+	return merge(parts)
+
+
+## 熄灭已久的火塘。石圈还在，中间只剩一层灰。
+static func make_dead_campfire() -> ArrayMesh:
+	var parts: Array = []
+	var stone := Color(0.34, 0.32, 0.29)
+	var ash := Color(0.24, 0.22, 0.21)
+	var charred := Color(0.16, 0.13, 0.12)
+
+	for i in 7:
+		var angle := TAU * float(i) / 7.0
+		parts.append(_sphere(0.14,
+			_xform(Vector3(cos(angle) * 0.42, 0.06, sin(angle) * 0.42), Vector3.ZERO,
+				Vector3(1.0, 0.75, 1.0)), stone, 6))
+	parts.append(_sphere(0.30,
+		_xform(Vector3(0.0, 0.03, 0.0), Vector3.ZERO, Vector3(1.0, 0.22, 1.0)), ash, 7))
+	parts.append(_cylinder(0.045, 0.5,
+		_xform(Vector3(0.05, 0.06, 0.02), Vector3(0, 24, 86)), charred, 5))
+	parts.append(_cylinder(0.04, 0.42,
+		_xform(Vector3(-0.06, 0.05, -0.04), Vector3(0, -40, 78)), charred, 5))
+	return merge(parts)
+
+
+## 丢下的背包。盖子没扣严。
+static func make_backpack() -> ArrayMesh:
+	var parts: Array = []
+	var leather := Color(0.30, 0.21, 0.14)
+	var strap := Color(0.20, 0.15, 0.10)
+
+	parts.append(_box(Vector3(0.34, 0.42, 0.24), _xform(Vector3(0.0, 0.21, 0.0)), leather))
+	parts.append(_box(Vector3(0.35, 0.10, 0.26),
+		_xform(Vector3(0.0, 0.44, 0.01), Vector3(-8, 0, 0)), leather * 1.15))
+	parts.append(_box(Vector3(0.05, 0.34, 0.03), _xform(Vector3(-0.09, 0.24, -0.13)), strap))
+	parts.append(_box(Vector3(0.05, 0.34, 0.03), _xform(Vector3(0.09, 0.24, -0.13)), strap))
+	return merge(parts)
+
+
+## 插在地上的标箭。猎人用它标记走过的路。
+static func make_marker_arrow() -> ArrayMesh:
+	var parts: Array = []
+	var shaft := Color(0.28, 0.19, 0.11)
+	var feather := Color(0.52, 0.22, 0.14)
+
+	parts.append(_cylinder(0.018, 0.72, _xform(Vector3(0.0, 0.36, 0.0)), shaft, 5))
+	parts.append(_box(Vector3(0.09, 0.14, 0.02), _xform(Vector3(0.0, 0.62, 0.0)), feather))
+	return merge(parts)
+
+
+# ------------------------------------------------------------------ 溪流
+
+## 溪流里的踩石。猎人铺的过河通路，涨水时会没顶。
+##
+## 是一块齐平的石板：底面坐在河床 -1.15，顶面在 -0.42，
+## 平常水面 -0.94 时露出 0.52 m，涨水到 +0.15 时整个没顶。
+static func make_stepping_stone(seed_value: int = 0) -> ArrayMesh:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value if seed_value != 0 else 3311
+
+	var parts: Array = []
+	var stone := Color(0.33, 0.31, 0.28)
+	var wet := stone * 0.78
+
+	parts.append(_box(Vector3(0.62, 0.72, 0.54),
+		_xform(Vector3(0.0, 0.0, 0.0), Vector3(0.0, rng.randf_range(-18.0, 18.0), 0.0)), stone))
+	# 泡在水里的那一截，颜色更深
+	parts.append(_box(Vector3(0.58, 0.30, 0.50),
+		_xform(Vector3(0.0, -0.21, 0.0)), wet))
+	return merge(parts)
+
+
+## 夜间发光植物：顶端结着发光花苞的一丛芽。
+##
+## 整个网格都是自发光材质，茎和花苞一起亮。
+## 这只在夜里出现，白天事件根本不触发，所以不用区分茎与苞。
+static func make_glow_sprout() -> ArrayMesh:
+	var parts: Array = []
+	var bud := Color(0.50, 0.84, 0.88)
+
+	parts.append(_sphere(0.050, _xform(Vector3(0.0, 0.18, 0.0)), bud, 6))
+	parts.append(_sphere(0.035, _xform(Vector3(-0.05, 0.12, 0.01)), bud * 0.85, 5))
+	parts.append(_sphere(0.032, _xform(Vector3(0.05, 0.11, -0.02)), bud * 0.85, 5))
+	parts.append(_cylinder(0.010, 0.16, _xform(Vector3(0.0, 0.06, 0.0)), bud * 0.45, 4))
+	return merge(parts)

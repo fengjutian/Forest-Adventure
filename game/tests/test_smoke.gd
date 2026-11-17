@@ -54,6 +54,7 @@ func _ready() -> void:
 	_test_save_load_round_trip()
 	_test_migration()
 	_test_backup()
+	await _test_m2_content()
 
 	_finish()
 
@@ -184,13 +185,36 @@ func _test_chunked_world() -> void:
 	_assert(not world.is_chunk_loaded(remote_coord), "远离后远端区块已卸载")
 	_assert(world.loaded_chunk_count() <= chunk_bound, "流式加载后区块数仍有界")
 
+	# 回到营地。
+	#
+	# 这里不能「瞬移回去就立刻开物理」：远行时营地所在的区块已经被卸载，
+	# 碰撞还没重建，玩家会在虚空里一路加速下落（实测 ——53 m/s），
+	# 之后所有依赖「站在地上」的断言都会连带失败（走路镜头起伏、感知距离……）。
+	# 先把区块等回来、把玩家贴回地面，再开物理。
 	_player.global_position = saved_position
-	_player.set_physics_process(true)
-	for enemy in enemies:
-		(enemy as Node).set_physics_process(true)
-	for i in 240:
+	for i in 600:
+		if world.is_chunk_loaded(camp_coord):
+			break
 		await get_tree().process_frame
 	_assert(world.is_chunk_loaded(camp_coord), "回到营地后区块重新加载")
+
+	# 区块标记为已加载不等于碰撞已经进物理空间，多给几帧再落地
+	for i in 8:
+		await get_tree().process_frame
+	_player.global_position = Vector3(
+		saved_position.x,
+		world.height_at(saved_position.x, saved_position.z) + 0.05,
+		saved_position.z)
+	_player.velocity = Vector3.ZERO
+	_player.set_physics_process(true)
+	for i in 120:
+		if _player.is_on_floor():
+			break
+		await get_tree().physics_frame
+	_assert(_player.is_on_floor(), "回到营地后玩家重新站到地面")
+
+	for enemy in enemies:
+		(enemy as Node).set_physics_process(true)
 
 
 ## 第一人称表现：手、手臂、拉弦与走路起伏必须真的在动，而不是一把浮空的弓。
@@ -667,6 +691,243 @@ func _find_arrow() -> ArrowProjectile:
 	return null
 
 
+## M2 收尾内容：异常守护者、隐藏地点、两个世界事件。
+## 见 docs/vertical-slice-completion.md。
+##
+## 放在所有存档测试之后：这里会改 GameState 的时间、天气和事件状态，
+## 也会往背包里发隐藏地点的奖励，放最后就不会污染前面的断言。
+func _test_m2_content() -> void:
+	await _test_guardian()
+	await _test_hidden_location()
+	await _test_world_events()
+	_test_m2_save_fields()
+
+
+## 异常守护者：与林狼的差异、弱点观察机制、掉落。
+func _test_guardian() -> void:
+	var guardian := _find_enemy(&"guardian_01")
+	_assert(guardian != null, "场景里有异常守护者")
+	if guardian == null:
+		return
+
+	# 贴地：守护者的 y 应该等于脚下的地形高度。
+	#
+	# 容差 0.25 m 不是随便给的：守护者守的涌泉在离营地 3 圈远，
+	# 那一圈的区块还没建碰撞（碰撞只做玩家附近 2 圈），
+	# 它会自由落体一小段再被 lerp 拉回，因此稳定悬在地面下约 0.1 m。
+	# 玩家走近到 2 圈内、区块碰撞建好后就严丝合缝了。
+	var world := get_tree().get_first_node_in_group(&"terrain") as ChunkedWorld
+	if world != null and world.field != null:
+		var ground := world.field.height_at(guardian.global_position.x, guardian.global_position.z)
+		_assert(absf(guardian.global_position.y - ground) < 0.25,
+			"守护者贴在地面上（%.2f vs %.2f @ %s）" % [
+				guardian.global_position.y, ground, str(guardian.global_position.round())])
+
+	# 与林狼的关键差异：慢、不逃、前摇长、不追远
+	_assert(not guardian.can_flee, "守护者不会逃跑")
+	_assert(guardian.chase_speed < 7.0,
+		"守护者追不上玩家奔跑速度（%.1f < 7.0）" % guardian.chase_speed)
+	_assert(guardian.attack_windup >= 1.0,
+		"守护者攻击前摇明显（%.2f s）" % guardian.attack_windup)
+	_assert(guardian.leash_radius <= 20.0,
+		"守护者不追远（leash %.0f m）" % guardian.leash_radius)
+	_assert(guardian.weak_point_requires_discovery, "守护者弱点需要被观察")
+	_assert(guardian.weak_point_requires_behind, "守护者弱点在背面")
+
+	# 林狼不受新机制影响
+	var wolf := _find_enemy(&"wolf_01")
+	if wolf != null:
+		_assert(wolf.can_flee, "林狼仍会在血量过低时逃跑")
+		_assert(not wolf.weak_point_requires_discovery, "林狼弱点不受观察机制影响")
+
+	# 弱点：未观察时不生效
+	guardian.set_physics_process(false)
+	var basis := guardian.global_transform.basis
+	var front := guardian.global_position - basis.z * 0.6 \
+		+ Vector3(0.0, guardian.weak_point_height + 0.2, 0.0)
+	var back := guardian.global_position + basis.z * 0.6 \
+		+ Vector3(0.0, guardian.weak_point_height + 0.2, 0.0)
+
+	_assert(not guardian.is_weak_point(front), "未观察时弱点不生效")
+	_assert(not guardian.is_weak_point(back), "未观察时背面也不算弱点")
+
+	# 命中 3 次普通伤害后解锁
+	guardian.apply_damage(5.0, EnemyBase.DamageKind.NORMAL, front)
+	_assert(not guardian.is_weak_point_unlocked(), "命中 1 次还没解锁弱点")
+	guardian.apply_damage(5.0, EnemyBase.DamageKind.NORMAL, front)
+	guardian.apply_damage(5.0, EnemyBase.DamageKind.NORMAL, front)
+	_assert(guardian.is_weak_point_unlocked(), "命中 3 次后弱点被发现")
+
+	# 解锁后仍要方向对：正面不算，背面才算
+	_assert(not guardian.is_weak_point(front), "正面上方不是弱点（要绕到背后）")
+	_assert(guardian.is_weak_point(back), "背面高位判定为弱点")
+
+	# 掉落
+	var drops_core := false
+	var drops_med := false
+	for drop in guardian.drops:
+		var drop_id := StringName(drop.get("id", &""))
+		if drop_id == &"anomaly_core":
+			drops_core = true
+		elif drop_id == &"first_aid":
+			drops_med = true
+	_assert(drops_core, "守护者掉落异常结晶")
+	_assert(drops_med, "守护者掉落急救包")
+
+	# 击败后进入死亡状态，存档键是稳定 ID
+	guardian.apply_damage(9999.0, EnemyBase.DamageKind.NORMAL)
+	_assert(not guardian.is_alive(), "守护者可以被打死")
+	_assert(guardian.stable_id == &"guardian_01", "守护者使用稳定 ID 作存档键")
+
+
+## 隐藏地点：发现流程、奖励只发一次。
+func _test_hidden_location() -> void:
+	var trigger := _find_location(&"ranger_camp")
+	_assert(trigger != null, "场景里有猎人营地遗址")
+	if trigger == null:
+		return
+	_assert(trigger.discoverable, "猎人营地遗址是可发现的隐藏地点")
+
+	var notes_before := _inventory.count_item(&"ranger_note")
+	trigger._discover()
+
+	_assert(GameState.is_location_discovered(&"ranger_camp"), "地点已记录为发现")
+	_assert(_inventory.count_item(&"ranger_note") == notes_before + 1, "发现后拿到猎人笔记")
+	_assert(_inventory.count_item(&"charm_ward") >= 1, "发现后拿到护身符")
+
+	# 重复进入不重复发放
+	var notes_now := _inventory.count_item(&"ranger_note")
+	trigger._discover()
+	_assert(_inventory.count_item(&"ranger_note") == notes_now, "重复进入不重复发放奖励")
+
+
+## 两个世界事件：条件求值、表现开关、存档。
+func _test_world_events() -> void:
+	var manager := get_tree().get_first_node_in_group(&"world_event_manager") as WorldEventManager
+	_assert(manager != null, "世界事件管理器已挂载")
+	if manager == null:
+		return
+
+	# --- 夜间发光 ---
+	GameState.set_time_of_day(22.0 * 60.0)
+	GameState.weather_id = &"clear"
+	EventBus.location_entered.emit(&"creek_upper")
+	_assert(manager.conditions_met_for(&"night_bloom"),
+		"夜间 + 晴天 + 玩家在溪谷上游 → 满足夜间发光条件")
+
+	GameState.set_time_of_day(12.0 * 60.0)
+	_assert(not manager.conditions_met_for(&"night_bloom"), "白天不满足夜间发光条件")
+
+	GameState.weather_id = &"rain"
+	_assert(not manager.conditions_met_for(&"night_bloom"), "下雨天不满足夜间发光条件")
+	GameState.weather_id = &"clear"
+
+	var bloom := _find_night_bloom()
+	_assert(bloom != null, "场景里有夜间发光植物带")
+	if bloom != null:
+		manager.force_start(&"night_bloom")
+		await get_tree().process_frame
+		await get_tree().process_frame
+		_assert(bloom.is_lit(), "夜间发光事件点亮植物带")
+		manager.force_end(&"night_bloom")
+		# 淡出是渐变的：目标强度立刻归零，实际亮度再慢慢降下去
+		_assert(is_zero_approx(bloom.target_glow()), "事件结束后植物带开始淡出")
+		for i in 120:
+			await get_tree().process_frame
+			if not bloom.is_lit():
+				break
+		_assert(not bloom.is_lit(), "事件结束后植物带熄灭")
+
+	# --- 雨后涨水 ---
+	EventBus.location_exited.emit(&"creek_upper")
+	GameState.weather_id = &"rain"
+	EventBus.weather_changed.emit(&"rain")
+	_assert(not manager.conditions_met_for(&"creek_surge"), "刚下雨不满 3 分钟不触发涨水")
+
+	manager.shift_weather_start(200.0)
+	_assert(manager.conditions_met_for(&"creek_surge"), "连续下雨超过 3 分钟触发涨水")
+
+	var water := _find_creek_water()
+	_assert(water != null, "场景里有溪流水面")
+	if water != null:
+		_assert(not water.is_surging(), "初始没有涨水")
+		_assert(not water.is_crossing_blocked(), "初始涉水点可以通行")
+
+		manager.force_start(&"creek_surge")
+		await get_tree().process_frame
+		await get_tree().process_frame
+		_assert(water.is_surging(), "涨水事件让水位上升")
+		_assert(water.is_crossing_blocked(), "涨水时涉水点被挡住")
+
+		manager.force_end(&"creek_surge")
+		await get_tree().process_frame
+		await get_tree().process_frame
+		_assert(not water.is_surging(), "退水后水位回落")
+		_assert(not water.is_crossing_blocked(), "退水后涉水点恢复通行")
+
+	# 主线不受涨水影响：营地到守林站的路不经过涉水点
+	var cache := _find_interactable_by_id(&"east_bank_cache")
+	_assert(cache != null, "东岸的猎人补给堆在场景里（涨水关掉的捷径终点）")
+
+
+## 新增的两段存档字段。
+func _test_m2_save_fields() -> void:
+	var data := GameState.to_dict()
+	_assert(data.has("discovered_locations"), "存档含已发现地点段")
+	_assert(data.has("world_events"), "存档含世界事件段")
+
+	GameState.set_world_event_state(&"night_bloom", {"state": 1, "active_since": 123.0})
+	var saved := GameState.to_dict()
+	GameState.world_events.clear()
+	GameState.from_dict(saved)
+	_assert(int(GameState.get_world_event_state(&"night_bloom").get("state", -1)) == 1,
+		"世界事件状态可存可读")
+
+	# 旧存档缺这两段时按空处理，不能读崩
+	GameState.from_dict({"world_flags": {}, "changed_objects": {}})
+	_assert(GameState.discovered_locations.is_empty(), "旧存档缺少已发现地点段时按空处理")
+	_assert(GameState.world_events.is_empty(), "旧存档缺少世界事件段时按空处理")
+
+
+# ------------------------------------------------------------------ 查找辅助
+
+
+## 按 location_id 找区域触发器。
+func _find_location(location_id: StringName) -> LocationTrigger:
+	for node in get_tree().get_nodes_in_group(&"location_trigger"):
+		var trigger := node as LocationTrigger
+		if trigger != null and trigger.location_id == location_id:
+			return trigger
+	return null
+
+
+## 按稳定 ID 找可交互物。
+func _find_interactable_by_id(object_id: StringName) -> Interactable:
+	for node in get_tree().get_nodes_in_group(&"interactable"):
+		var interactable := node as Interactable
+		if interactable != null and interactable.stable_id == object_id:
+			return interactable
+	return null
+
+
+## 找溪流水面。
+func _find_creek_water() -> CreekWater:
+	for node in get_tree().get_nodes_in_group(&"world_event_effect"):
+		var water := node as CreekWater
+		if water != null:
+			return water
+	return null
+
+
+## 找夜间发光植物带。
+func _find_night_bloom() -> NightBloom:
+	for node in get_tree().get_nodes_in_group(&"world_event_effect"):
+		var bloom := node as NightBloom
+		if bloom != null:
+			return bloom
+	return null
+
+
 func _assert(condition: bool, message: String) -> void:
 	_checks += 1
 	if condition:
@@ -708,4 +969,5 @@ func _teardown() -> void:
 	if _main != null and is_instance_valid(_main):
 		_main.queue_free()
 		_main = null
-	await get_tree().proces
+	await get_tree().process_frame
+	await get_tree().process_frame
