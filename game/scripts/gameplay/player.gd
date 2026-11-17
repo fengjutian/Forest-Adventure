@@ -5,6 +5,7 @@ extends CharacterBody3D
 ## 节点结构：
 ##   Player (CharacterBody3D)
 ##   ├── CollisionShape3D
+##   ├── Body (MeshInstance3D)         程序化躯干 + 双腿，低头时才看得见
 ##   ├── Head (Node3D)
 ##   │   ├── Camera3D
 ##   │   ├── InteractionRay (RayCast3D)
@@ -13,6 +14,10 @@ extends CharacterBody3D
 ##   ├── FootstepDetector (RayCast3D)
 ##   ├── StateMachine (Node)
 ##   └── InteractionSystem (Node)
+
+## 身体模型（PropKit.make_player_body）躯干顶端的高度。
+## 站立时相机在 1.62 m，躯干顶端 1.56 m：平视时身体完全在画面外。
+const BODY_TOP_HEIGHT := 1.56
 
 @export var tuning: PlayerTuning
 
@@ -269,6 +274,20 @@ func _apply_body_size(crouching: bool) -> void:
 	_capsule.radius = radius
 	_collision_shape.position.y = height * 0.5
 	head.position.y = tuning.eye_offset_crouch if crouching else tuning.eye_offset_stand
+	_update_body_scale()
+
+
+## 身体模型跟着相机高度整体压缩。
+##
+## 蹲下时相机降到 0.95 m，躯干还在 1.5 m 的话相机会钻进身体里，
+## 低头直接看到躯干内壁（背面剔除后是一块空洞）。
+## 规则很简单：身体顶端永远略低于相机。
+## 脚不动、整体压扁——低多边形灰盒够用，不必去摆真正的蹲姿。
+func _update_body_scale() -> void:
+	var body := get_node_or_null("Body") as Node3D
+	if body == null:
+		return
+	body.scale.y = clampf((head.position.y - 0.05) / BODY_TOP_HEIGHT, 0.35, 1.0)
 
 
 func _update_noise(delta: float) -> void:

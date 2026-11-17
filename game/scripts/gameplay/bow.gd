@@ -9,13 +9,17 @@ extends Node3D
 ##   - 箭矢从背包扣除，打空就没有远程手段
 ##
 ## 第一人称表现（「人」的动作，而不是一把浮空的弓）：
-##   - 左手扣在握把上、右手捏弦，双手都挂在弓身上，和弓一起缩放
+##   - 左手扣在握把上、右手捏弦，双手都挂在弓身上
 ##   - 蓄力时弓弦折成 V 形、箭一起后移，右手跟着弦走
 ##   - 走路/冲刺时有持弓摆动，站定时有呼吸起伏，转视角有惯性滞后
 ##   - 落地、射击各有一记短促的下沉
 ##
-## 不画手臂：第一人称里伸出来的手臂只有「从画面底边插进来的两根管子」，
-## 读起来比没有手臂更诡异。手直接长在弓上，是这类低多边形游戏更常见的做法。
+## 只画到手腕：第一人称里伸出来的整条手臂只有「从画面底边插进来的两根管子」，
+## 读起来比没有手臂更诡异。手边留一小截小臂就够了——
+## 有它手才不是悬在画面里的方块，又不至于变成两根大锥子糊住半个屏幕。
+##
+## 视图模型单独打光：弓是屏幕左下角唯一的近景，
+## 跟着场景的太阳走会一会儿刺眼一会儿漆黑（见下方 VIEW_MODEL_LAYER）。
 
 signal fired(power: float)
 signal fire_failed(reason: String)
@@ -37,8 +41,8 @@ signal fire_failed(reason: String)
 ## 垂下持弓时相对镜头的偏移与朝向。
 ##
 ## 弓挂在画面右下角、略微侧倾，视野中央完全让给准星。
-@export var view_offset: Vector3 = Vector3(0.36, -0.44, -1.02)
-@export var view_rotation_degrees: Vector3 = Vector3(10.0, 34.0, -14.0)
+@export var view_offset: Vector3 = Vector3(0.42, -0.48, -1.00)
+@export var view_rotation_degrees: Vector3 = Vector3(10.0, 22.0, -14.0)
 ## 举弓瞄准时相对镜头的偏移与朝向。
 ##
 ## 弓摆在画面左侧（屏幕左边三分之一），偏航 26° 让弓面侧过来——
@@ -56,24 +60,25 @@ signal fire_failed(reason: String)
 @export var aim_arrow_direction: Vector3 = Vector3(0.33, 0.09, -0.94)
 @export var hip_arrow_direction: Vector3 = Vector3(0.55, -0.42, -0.72)
 
-## 视图模型单独占一个视觉层。
+## 视图模型单独占一个视觉层（第 19 层）。
 ##
 ## 场景里只有一盏太阳光：弓背对太阳时整把弓会变成一块黑影，
-## 手里的东西必须永远看得清，所以给视图模型单独加一层补光。
+## 手里的东西必须永远看得清，所以给视图模型单独一套固定灯。
+## 世界里的太阳与手电都被排除在这层之外
+## （main.tscn 的 Sun / player.tscn 的 Flashlight 都设了 light_cull_mask = 524287），
+## 否则弓会随时间变成白天刺眼、夜晚漆黑的一块板。
 const VIEW_MODEL_LAYER := 1 << 19
 
 ## 弓本地坐标里的关键点。
-const GRIP_POINT := Vector3(-0.105, 0.0, 0.0)
-const STRING_TOP := Vector3(-0.024, 0.29, 0.0)
-const STRING_BOTTOM := Vector3(-0.024, -0.29, 0.0)
+const GRIP_POINT := Vector3(-0.115, 0.0, 0.0)
+const STRING_TOP := Vector3(-0.030, 0.296, 0.0)
+const STRING_BOTTOM := Vector3(-0.030, -0.296, 0.0)
 ## 弓弦静止位置（也是箭尾位置）。
-const NOCK_REST := Vector3(-0.024, 0.004, 0.018)
+const NOCK_REST := Vector3(-0.030, 0.004, 0.018)
 ## 满蓄力时弦被拉后的距离（弓本地单位）。
 ##
 ## 0.1 m 对应真实弓箭拉弦后的弦心行程，够用又不至于把弓弦拉成一张弓。
 const MAX_DRAW := 0.1
-## 手部相对弓的缩放。弓与手都是真人尺寸，这里保持 1。
-const HAND_SCALE := 1.0
 ## 持弓摆动幅度（米 / 度）。
 const BOB_SIDE := 0.009
 const BOB_UP := 0.006
@@ -81,13 +86,18 @@ const BOB_ROLL_DEGREES := 1.1
 const SWAY_ROTATION_DEGREES := 2.2
 
 ## 左手（握弓）的手指朝向与小臂朝向，相机空间。
+##
+## 小臂指向决定了手从画面哪个方向插进来：左手往左下、右手往右下，
+## 两条手臂各自从画面底边斜插出去，像「人举着弓」而不是「弓浮在半空」。
 const BOW_HAND_FINGER := Vector3(1.0, 0.05, 0.15)
-const BOW_HAND_ARM := Vector3(-0.35, -0.9, 0.25)
+const BOW_HAND_ARM := Vector3(-0.60, -0.78, 0.16)
 ## 右手（拉弦）的手指朝向与小臂朝向，相机空间。
 ##
 ## 拉弦手的手指朝上勾着弦，小臂从右下角伸进来。
+## 肘部必须朝「后下方」（+Z 是身后）：肘部朝前的话小臂会横着掠过
+## 画面中段，像一根横杆横穿视野；朝后下它才会缩到画面右下角出画。
 const STRING_HAND_FINGER := Vector3(0.1, 0.92, 0.38)
-const STRING_HAND_ARM := Vector3(0.32, -0.88, 0.28)
+const STRING_HAND_ARM := Vector3(0.55, -0.80, 0.24)
 
 var _player: Player = null
 var _inventory: Inventory = null
@@ -102,6 +112,10 @@ var _string_top: MeshInstance3D = null
 var _string_bottom: MeshInstance3D = null
 var _left_hand: MeshInstance3D = null
 var _right_hand: MeshInstance3D = null
+## 左右小臂：与对应的手共用同一套基，
+## 手的局部 -Y 就是小臂伸出去的方向，所以两者天然接得上。
+var _left_arm: MeshInstance3D = null
+var _right_arm: MeshInstance3D = null
 
 var _charge: float = 0.0
 var _charging: bool = false
@@ -119,6 +133,8 @@ var _prev_yaw: float = 0.0
 var _prev_pitch: float = 0.0
 ## 箭在相机空间里的当前指向（平滑过渡，避免抬弓瞬间跳变）。
 var _arrow_dir: Vector3 = Vector3(0.33, 0.09, -0.94)
+## 举弓程度：0 = 垂弓，1 = 举弓瞄准。
+var _raise: float = 0.0
 
 
 func _ready() -> void:
@@ -178,9 +194,16 @@ func _build_view_model() -> void:
 	_string_top = _add_mesh(_bow_pivot, "StringTop", string_mesh)
 	_string_bottom = _add_mesh(_bow_pivot, "StringBottom", string_mesh)
 
-	var hand_mesh := PropKit.make_player_hand(Color(0.46, 0.34, 0.25))
+	var hand_mesh := PropKit.make_player_hand(Color(0.235, 0.155, 0.105))
 	_left_hand = _add_mesh(_bow_pivot, "LeftHand", hand_mesh)
 	_right_hand = _add_mesh(_bow_pivot, "RightHand", hand_mesh)
+
+	# 小臂：从画面底边斜插进来，给手一个锚点。
+	# 没有它，两只手就是悬在空中的方块，怎么调都像贴图。
+	# 袖子是深色的：浅色袖子在这套明亮画面里会变成一根抢视线的管子。
+	var arm_mesh := PropKit.make_player_forearm(Color(0.115, 0.09, 0.06), Color(0.165, 0.115, 0.075))
+	_left_arm = _add_mesh(_bow_pivot, "LeftArm", arm_mesh)
+	_right_arm = _add_mesh(_bow_pivot, "RightArm", arm_mesh)
 
 	# 箭挂在相机层，不跟着弓一起偏航。
 	# 跟着弓转的话箭会指向画面左后方，怎么调都不对。
@@ -189,20 +212,30 @@ func _build_view_model() -> void:
 	_build_view_light()
 
 
-## 视图模型补光：一盏跟着相机走的平行光。
+## 视图模型灯组：一盏主光 + 一盏轮廓光。
 ##
-## 场景里只有一盏太阳光，弓背对太阳时整把弓会变成一块黑影，
-## 更别提藏在阴影里的手。这里的补光和太阳光叠加，
-## 保证手里的东西任何时候都看得清。
+## 主光从相机后上方打过来，朝镜头的那一面才有立体感；
+## 轮廓光从左后方压一层暗面，免得弓变成一张剪纸。
 func _build_view_light() -> void:
-	var light := DirectionalLight3D.new()
-	light.name = "BowViewLight"
-	light.light_cull_mask = VIEW_MODEL_LAYER
-	light.light_energy = 0.35
-	light.shadow_enabled = false
-	# 从相机后上方打过来：朝着镜头的那一面才有立体感
-	light.rotation_degrees = Vector3(-32.0, 18.0, 0.0)
-	_camera.add_child(light)
+	var key := DirectionalLight3D.new()
+	key.name = "BowViewKeyLight"
+	key.light_cull_mask = VIEW_MODEL_LAYER
+	key.light_energy = 0.45
+	key.light_color = Color(1.0, 0.97, 0.92)
+	key.shadow_enabled = false
+	key.rotation_degrees = Vector3(-30.0, 22.0, 0.0)
+	_camera.add_child(key)
+
+	var rim := DirectionalLight3D.new()
+	rim.name = "BowViewRimLight"
+	rim.light_cull_mask = VIEW_MODEL_LAYER
+	rim.light_energy = 0.16
+	# 轮廓光不能用冷色：视图模型里的暗色物件（袖子、皮手套）
+	# 会被冷环境光染成青灰色，在暖调的森林里像贴上去的塑料。
+	rim.light_color = Color(0.95, 0.94, 0.92)
+	rim.shadow_enabled = false
+	rim.rotation_degrees = Vector3(-8.0, -135.0, 0.0)
+	_camera.add_child(rim)
 
 
 func _add_mesh(parent: Node3D, node_name: String, mesh: Mesh) -> MeshInstance3D:
@@ -211,6 +244,8 @@ func _add_mesh(parent: Node3D, node_name: String, mesh: Mesh) -> MeshInstance3D:
 	node.mesh = mesh
 	node.material_override = PropKit.painted_material()
 	node.layers = VIEW_MODEL_LAYER
+	# 视图模型不该在世界里投影：一把弓在雪地上投个影子出来会非常出戏
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(node)
 	return node
 
@@ -316,7 +351,8 @@ func _on_arrow_hit(_target: Node, _damage: float, weakpoint: bool) -> void:
 
 ## 更新弓的抬放。
 ##
-## 手里有弓就一直拿在手上（垂在画面右下），瞄准或蓄力时抬到屏幕中心。
+## 手里有弓就一直拿着（垂在画面右下），瞄准或蓄力时抬到画面左侧三分之一，
+## 把屏幕中央让给准星。弓的朝向与位置都在这里平滑过渡。
 func _update_view(has_bow: bool, delta: float) -> void:
 	if _view_root == null:
 		return
@@ -331,6 +367,8 @@ func _update_view(has_bow: bool, delta: float) -> void:
 	var weight := minf(1.0, 12.0 * delta)
 	_bow_pivot.position = _bow_pivot.position.lerp(target_offset, weight)
 	_bow_pivot.rotation_degrees = _bow_pivot.rotation_degrees.lerp(target_rotation, weight)
+	# 举弓程度：0 是垂弓，1 是举弓。右手的位置跟着它走。
+	_raise = lerpf(_raise, 1.0 if raised else 0.0, minf(1.0, 18.0 * delta))
 
 	# 瞄准时收窄视野
 	var target_fov := _base_fov
@@ -356,23 +394,28 @@ func _update_pose(has_bow: bool, delta: float) -> void:
 	var nock_local := NOCK_REST + Vector3(0.0, 0.0, _draw)
 
 	# 弓弦：两段折线，从上下弓梢连到弦心；拉弦时折成 V 形
-	_string_top.transform = _segment_transform(STRING_TOP, nock_local, 0.008)
-	_string_bottom.transform = _segment_transform(STRING_BOTTOM, nock_local, 0.008)
+	_string_top.transform = _segment_transform(STRING_TOP, nock_local, 0.006)
+	_string_bottom.transform = _segment_transform(STRING_BOTTOM, nock_local, 0.006)
 
 	# 左手扣住弓把：四指朝右绕过竖直的弓把，小臂往左下出画
-	_left_hand.transform = Transform3D(
+	var left_transform := Transform3D(
 		_hand_basis(_to_bow_dir(BOW_HAND_FINGER), _to_bow_dir(BOW_HAND_ARM)),
 		GRIP_POINT
 	)
+	_left_hand.transform = left_transform
+	_left_arm.transform = left_transform
 
-	# 右手捏弦：指尖朝上勾着弦。
-	# 右手要往右让开一点，否则两只手在屏幕上会叠在一起，
-	# 看起来就是两块方砖糊在弓把上。
-	var string_hand_pos := GRIP_POINT.lerp(nock_local, 0.62) + Vector3(0.115, -0.075, 0.0)
-	_right_hand.transform = Transform3D(
+	# 右手：拉弦时捏住弦心，没拉弦时垂在弓把下方。
+	# 一直僵在握把边上，两只手会挤在一起，像一块看不出形状的疙瘩。
+	var draw_hand := GRIP_POINT.lerp(nock_local, 0.62) + Vector3(0.115, -0.075, 0.0)
+	var rest_hand := GRIP_POINT + Vector3(0.02, -0.21, 0.05)
+	var string_hand_pos := rest_hand.lerp(draw_hand, _raise)
+	var right_transform := Transform3D(
 		_hand_basis(_to_bow_dir(STRING_HAND_FINGER), _to_bow_dir(STRING_HAND_ARM)),
 		string_hand_pos
 	)
+	_right_hand.transform = right_transform
+	_right_arm.transform = right_transform
 
 	_update_arrow(nock_local, delta)
 

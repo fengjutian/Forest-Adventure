@@ -86,6 +86,16 @@ func _setup_environment() -> void:
 	_environment.adjustment_saturation = 1.06
 	_environment.adjustment_contrast = 1.04
 
+	# 环境光遮蔽：全场景都是顶点色材质，没有贴图也没有法线细节，
+	# 物体「贴不贴地」只能靠接触阴影来交代。半径按 1～2 m 的物体尺寸取，
+	# 调到 4 m 以上会开始糊掉整棵树，调小又只剩石缝里一条黑边。
+	_environment.ssao_enabled = true
+	_environment.ssao_radius = 2.2
+	_environment.ssao_intensity = 2.0
+	_environment.ssao_power = 1.5
+	_environment.ssao_detail = 0.6
+	_environment.ssao_light_affect = 0.2
+
 
 ## 依据一天中的时间计算太阳高度、颜色与环境光。
 func _apply() -> void:

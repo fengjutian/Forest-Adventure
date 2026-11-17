@@ -20,8 +20,16 @@ const WORLD_GROUP := &"chunked_world"
 @export var world_seed: int = TerrainField.DEFAULT_SEED
 @export var world_size: float = 1024.0
 @export var chunk_size: float = 64.0
-## 每个区块的网格分段数。32 段 / 64 m = 2 m 一格。
-@export var terrain_resolution: int = 32
+## 每个区块的网格分段数。40 段 / 64 m = 1.6 m 一格。
+##
+## 这个值就是地面的「精度」：段数不够时坡面是一块块折面，
+## 树影落在坡上的边界也会被网格折线切成锯齿；段数越高，
+## 高度函数被还原得越准，代价是顶点数与生成耗时按平方增长。
+## 三个实测档位（1080p，225 块全加载）：
+##   32 段（2.00 m）— 最省，坡面折面明显
+##   40 段（1.60 m）— 默认，折面基本看不出来
+##   48 段（1.33 m）— 更顺，但流式加载平均帧再涨约 17%
+@export var terrain_resolution: int = 40
 @export_range(0, 8) var terrain_radius_chunks: int = 7
 @export_range(0, 8) var collision_radius_chunks: int = 2
 @export_range(0, 8) var vegetation_radius_chunks: int = 2
@@ -355,6 +363,19 @@ func mark_chunk_modified(coord: Vector2i, state_data: Dictionary) -> void:
 		return
 	GameState.mark_chunk_modified(coord, state_data)
 	rebuild_chunk(coord)
+
+
+## 改变地形网格密度并重建当前加载的区块（画质设置用）。
+##
+## 地形顶点数随密度平方增长：32 段 / 64 m 是 2 m 一格，48 段是 1.33 m 一格。
+## 重建是同步的，调用方应放在加载阶段或设置界面里，不要在跑图途中调用。
+func set_terrain_resolution(resolution: int) -> void:
+	var clamped := clampi(resolution, 8, 128)
+	if clamped == terrain_resolution:
+		return
+	terrain_resolution = clamped
+	for coord in get_loaded_chunk_coords():
+		rebuild_chunk(coord)
 
 
 ## 强制重建某区块。用于应用存档改动，也用于确定性测试。

@@ -1,9 +1,9 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://tests/_probe_arrow.gd" id="1_probe"]
+[ext_resource type="Script" path="res://tests/capture_body.gd" id="1_capture"]
 [ext_resource type="PackedScene" path="res://scenes/main/main.tscn" id="2_main"]
 
-[node name="ProbeArrow" type="Node"]
-script = ExtResource("1_probe")
+[node name="CaptureBody" type="Node"]
+script = ExtResource("1_capture")
 
 [node name="Main" parent="." instance=ExtResource("2_main")]

@@ -493,9 +493,17 @@ func _test_combat() -> void:
 	wolf.set_physics_process(false)
 	var health_before := wolf.get_health()
 
-	# 从林狼正前方射一支箭
+	# 从林狼正面射一支箭。
+	#
+	# 起点不能随便取：箭是逐帧射线检测，撞上地形就停在半路，
+	# 林狼一滴血都不会掉。林狼会到处走，4 米外的地面高低会跟着变，
+	# 固定朝一个方向射，这一项测试就是靠运气——实测十轮里会偶发失败。
+	# 所以沿八个方向采样地形高度，挑一条地面低于胸口的弹道。
 	var target_point: Vector3 = wolf.global_position + Vector3(0.0, 0.45, 0.0)
-	var start_point: Vector3 = target_point + Vector3(0.0, 0.0, -4.0)
+	var route := _clear_shot_route(wolf.global_position, target_point.y)
+	var shot_dir: Vector3 = route[0]
+	var shot_distance: float = route[1]
+	var start_point: Vector3 = target_point + shot_dir * shot_distance
 	var arrow := ArrowProjectile.new()
 	add_child(arrow)
 	arrow.global_position = start_point
@@ -505,7 +513,9 @@ func _test_combat() -> void:
 		await get_tree().physics_frame
 
 	_assert(wolf.get_health() < health_before,
-		"箭矢命中林狼造成伤害（%.0f → %.0f）" % [health_before, wolf.get_health()])
+		"箭矢命中林狼造成伤害（%.0f → %.0f；起点 %s，方向 %s，距离 %.1f m）" % [
+			health_before, wolf.get_health(), str(start_point.round()), str(shot_dir.round()), shot_distance
+		])
 	_assert(is_equal_approx(wolf.get_health(), health_before - arrow.damage),
 		"普通伤害按弓的基础伤害结算")
 
@@ -555,6 +565,45 @@ func _test_enemy_perception() -> void:
 
 func _find_world() -> ChunkedWorld:
 	return get_tree().get_first_node_in_group(&"chunked_world") as ChunkedWorld
+
+
+## 挑一条不会被地形挡住的射击路线。
+##
+## 箭的命中判定是逐帧射线，撞上地形就停在半路，敌人一点血都不会掉。
+## 林狼会走动，它身前 4 米的地面高低随之变化，固定朝一个方向射就是靠运气。
+## 这里沿八个方向、五个距离采样地形高度，取「地面最高点低于胸口」的最长一条。
+## 返回 [方向, 距离]。
+func _clear_shot_route(origin: Vector3, chest_y: float) -> Array:
+	var world := _find_world()
+	if world == null:
+		return [Vector3(0.0, 0.0, -1.0), 4.0]
+
+	var distances := [4.0, 3.0, 2.0, 1.5, 1.0]
+	# 兜底：八个方向都找不到干净弹道时，贴脸打——
+	# 1 米内的地面基本不可能高过胸口 0.45 m
+	var fallback := [Vector3(0.0, 0.0, -1.0), 1.0]
+	var fallback_ridge := INF
+
+	for i in 8:
+		var dir := Vector3(sin(float(i) * PI * 0.25), 0.0, cos(float(i) * PI * 0.25))
+		for distance in distances:
+			if _ridge_along(world, origin, dir, distance) < chest_y - 0.12:
+				return [dir, distance]
+		var near_ridge := _ridge_along(world, origin, dir, 1.0)
+		if near_ridge < fallback_ridge:
+			fallback_ridge = near_ridge
+			fallback = [dir, 1.0]
+
+	return fallback
+
+
+## 沿某个方向采样地形高度，返回这条线上的最高点。
+func _ridge_along(world: ChunkedWorld, origin: Vector3, dir: Vector3, distance: float) -> float:
+	var ridge := -INF
+	for k in range(1, int(distance) + 1):
+		var p := origin + dir * float(k)
+		ridge = maxf(ridge, world.height_at(p.x, p.z))
+	return ridge
 
 
 ## 取区块网格上某个局部坐标处的顶点高度，用来验证接缝。

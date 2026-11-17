@@ -371,7 +371,7 @@ static func make_bow_frame() -> ArrayMesh:
 ##
 ## 上下两段各自摆位，拉弦时折成 V 形，静止时接成一条直线。
 static func make_bow_string() -> ArrayMesh:
-	return make_limb_mesh(Color(0.92, 0.89, 0.80))
+	return make_limb_mesh(Color(0.38, 0.355, 0.29))
 
 
 ## 搭在弦上的箭：箭尾在原点，沿 -Z 伸出。
@@ -386,32 +386,38 @@ static func make_bow_nocked_arrow() -> ArrayMesh:
 ## 弓臂先向外弯，到最宽处再向内回勾出一个弓梢——
 ## 没有回勾的话，弓在屏幕上就是一根直棍，完全看不出是弓。
 const BOW_LIMB_UPPER: Array[Vector2] = [
-	Vector2(-0.105, 0.080),
-	Vector2(-0.094, 0.120),
-	Vector2(-0.072, 0.158),
-	Vector2(-0.044, 0.192),
-	Vector2(-0.012, 0.222),
-	Vector2(0.004, 0.252),
-	Vector2(-0.010, 0.276),
-	Vector2(-0.024, 0.290),
+	Vector2(-0.115, 0.082),
+	Vector2(-0.100, 0.124),
+	Vector2(-0.074, 0.164),
+	Vector2(-0.042, 0.198),
+	Vector2(-0.006, 0.228),
+	Vector2(0.012, 0.256),
+	Vector2(-0.004, 0.280),
+	Vector2(-0.030, 0.296),
 ]
 
 
 static func _bow_frame_parts() -> Array:
 	# 配色跟着场景走：森林是明亮的薄荷绿与雪白，
-	# 深棕色的弓落在这套画面里就是一根黑棍。
-	var wood := Color(0.58, 0.40, 0.23)
-	var wood_light := Color(0.70, 0.52, 0.31)
-	var grip := Color(0.32, 0.23, 0.16)
+	# 深棕色的弓落在这套画面里就是一根黑棍，
+	# 太浅又会被光照顶成奶白。
+	#
+	# 这几个值是「按实机渲染反推」出来的，不是拍脑袋：
+	# 视图模型自带一盏主光 + 一盏轮廓光，再加上天空环境光，
+	# 总照度比纯反射率高一大截，albedo 必须压得比肉眼想的更暗更艳，
+	# 落到屏幕上才是暖木色而不是灰白塑料。
+	var wood := Color(0.30, 0.175, 0.085)
+	var wood_light := Color(0.40, 0.245, 0.125)
+	var grip := Color(0.13, 0.09, 0.06)
 
 	var parts: Array = []
 
 	# 弓把：竖直的一段，外面缠一圈皮条
-	parts.append(_box(Vector3(0.038, 0.15, 0.05), _xform(Vector3(-0.105, 0.0, 0.0)), wood))
-	parts.append(_box(Vector3(0.05, 0.10, 0.062), _xform(Vector3(-0.105, 0.0, 0.0)), grip))
+	parts.append(_box(Vector3(0.038, 0.15, 0.05), _xform(Vector3(-0.115, 0.0, 0.0)), wood))
+	parts.append(_box(Vector3(0.05, 0.10, 0.062), _xform(Vector3(-0.115, 0.0, 0.0)), grip))
 	# 弓把上下的「肩」：弓臂从这里长出去
-	parts.append(_box(Vector3(0.052, 0.03, 0.066), _xform(Vector3(-0.100, 0.076, 0.0)), wood_light))
-	parts.append(_box(Vector3(0.052, 0.03, 0.066), _xform(Vector3(-0.100, -0.076, 0.0)), wood_light))
+	parts.append(_box(Vector3(0.052, 0.03, 0.066), _xform(Vector3(-0.108, 0.078, 0.0)), wood_light))
+	parts.append(_box(Vector3(0.052, 0.03, 0.066), _xform(Vector3(-0.108, -0.078, 0.0)), wood_light))
 
 	# 上下弓臂：同一组折线，镜像一份
 	for i in BOW_LIMB_UPPER.size() - 1:
@@ -421,8 +427,8 @@ static func _bow_frame_parts() -> Array:
 		parts.append(_bow_limb_piece(Vector2(a.x, -a.y), Vector2(b.x, -b.y), wood))
 
 	# 弓梢上的弦扣
-	parts.append(_box(Vector3(0.022, 0.016, 0.032), _xform(Vector3(-0.024, 0.286, 0.0)), wood_light))
-	parts.append(_box(Vector3(0.022, 0.016, 0.032), _xform(Vector3(-0.024, -0.286, 0.0)), wood_light))
+	parts.append(_box(Vector3(0.022, 0.016, 0.032), _xform(Vector3(-0.030, 0.292, 0.0)), wood_light))
+	parts.append(_box(Vector3(0.022, 0.016, 0.032), _xform(Vector3(-0.030, -0.292, 0.0)), wood_light))
 
 	return parts
 
@@ -436,17 +442,17 @@ static func _bow_limb_piece(a: Vector2, b: Vector2, color: Color) -> Array:
 	var angle := rad_to_deg(atan2(-delta.x, delta.y))
 	var mid := (a + b) * 0.5
 	return _box(
-		Vector3(0.030, length + 0.006, 0.038),
+		Vector3(0.032, length + 0.005, 0.034),
 		_xform(Vector3(mid.x, mid.y, 0.0), Vector3(0.0, 0.0, angle)),
 		color
 	)
 
 
 static func _bow_arrow_parts() -> Array:
-	var shaft := Color(0.76, 0.62, 0.38)
-	var head := Color(0.72, 0.75, 0.80)
-	var feather := Color(0.84, 0.36, 0.24)
-	var feather_alt := Color(0.93, 0.89, 0.76)
+	var shaft := Color(0.24, 0.165, 0.085)
+	var head := Color(0.50, 0.525, 0.565)
+	var feather := Color(0.66, 0.145, 0.075)
+	var feather_alt := Color(0.58, 0.545, 0.46)
 
 	var parts: Array = []
 	# 箭杆：箭尾在原点，沿 -Z 伸出
@@ -492,9 +498,10 @@ static func make_arm_mesh(color: Color) -> ArrayMesh:
 ##
 ## 不做手指分节——低多边形下细长的指节会变成一叠纸片，
 ## 比不画手指更怪。四根手指做成并排的指节脊，连成一体包住握把，
-## 再留一个拇指凸起、护腕和一小截小臂。
+## 再留一个拇指凸起。
 ##
-## 手指朝 -Z，手腕与小臂朝 -Y。
+## 手指朝 -Z，手腕朝 -Y。
+## 小臂不在这里，见 make_player_forearm：手臂要单独控制朝向。
 static func make_player_hand(skin: Color) -> ArrayMesh:
 	var parts: Array = []
 	# 手掌/手背主体
@@ -507,11 +514,93 @@ static func make_player_hand(skin: Color) -> ArrayMesh:
 	parts.append(_box(Vector3(0.068, 0.016, 0.026), _xform(Vector3(0.0, 0.03, -0.026)), skin.lightened(0.1)))
 	# 拇指
 	parts.append(_box(Vector3(0.026, 0.05, 0.038), _xform(Vector3(-0.03, -0.012, -0.026), Vector3(0, 0, 22)), skin))
-	# 护腕
-	parts.append(_box(Vector3(0.076, 0.026, 0.076), _xform(Vector3(0.0, -0.048, 0.004)), skin.darkened(0.22)))
-	# 小臂：只露一小截。
-	# 没有它手就是悬在画面里的方块；露太长就变成两根大锥子糊住半个屏幕。
-	parts.append(_cylinder(0.025, 0.105, _xform(Vector3(0.0, -0.113, 0.006)), skin.darkened(0.1), 8))
+	return merge(parts)
+
+
+## 第一人称小臂：手腕在原点，沿 -Y 伸出去的一截袖子。
+##
+## 单独成件，不塞进手模——手臂要能单独摆方向。
+## 现实里手离眼睛 1 m 以上就够不到肩膀了（弓挂在视线前方 1.15 m），
+## 第一人称游戏都是这么「作弊」的：小臂从画面底边斜插进来，
+## 让手有个锚点，看起来才像「人举着弓」而不是「弓浮在半空」。
+##
+## 形状刻意做成「两头细、中间粗」而不是一根等粗圆柱：
+## 等粗圆柱在低多边形下只会读成一根管子，
+## 有肌肉隆起和收窄的肘弯才像手臂。
+static func make_player_forearm(sleeve_color: Color, cuff_color: Color) -> ArrayMesh:
+	var parts: Array = []
+
+	# 靠手腕的一小段：细
+	parts.append(_taper(0.0145, 0.0235, 0.22, _xform(Vector3(0.0, -0.11, 0.0)), sleeve_color))
+	# 肘部一段：最粗，然后往肘弯收一点
+	parts.append(_taper(0.0235, 0.0185, 0.40, _xform(Vector3(0.0, -0.42, 0.0)), sleeve_color))
+
+	# 皮护腕：手腕处一圈，把手和袖子连成一件
+	parts.append(_box(Vector3(0.050, 0.040, 0.050), _xform(Vector3(0.0, -0.021, 0.0)), cuff_color))
+	parts.append(_box(Vector3(0.044, 0.012, 0.044), _xform(Vector3(0.0, -0.048, 0.0)), cuff_color.darkened(0.2)))
+	# 袖口的第二道绑带：给手臂一个「这是布」而不是「这是管子」的读感
+	parts.append(_box(Vector3(0.040, 0.011, 0.040), _xform(Vector3(0.0, -0.112, 0.0)), cuff_color.darkened(0.32)))
+
+	return merge(parts)
+
+
+## 两端半径不同的圆柱段：上端（+Y）在 top_radius，下端（-Y）在 bottom_radius。
+static func _taper(top_radius: float, bottom_radius: float, height: float, xform: Transform3D, color: Color, segments: int = 8) -> Array:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = top_radius
+	mesh.bottom_radius = bottom_radius
+	mesh.height = height
+	mesh.radial_segments = segments
+	mesh.rings = 1
+	return [mesh, xform, color]
+
+
+## 玩家本体：躯干 + 腰 + 双腿 + 靴子。原点在脚下（与 Player 节点一致）。
+##
+## 第一人称游戏里低头看到的是自己的胸口和腿，
+## 没有身体模型的话低头就是一片空洞——脚下的地面直接穿过去，
+## 「我在哪」的空间感也就没了。
+##
+## 这里只做躯干和腿：手臂由弓的视图模型负责，
+## 实体手臂在第一人称下永远看不见，加进来只会多一层穿插和阴影瑕疵。
+##
+## 尺寸约定：躯干顶端（脖子）落在 1.56 m，
+## 正好低于站立时的相机高度 1.62 m——抬头平视时身体完全在画面外，
+## 只有低头才会露出来。蹲下时整个身体按 Y 压缩（见 player.gd）。
+static func make_player_body() -> ArrayMesh:
+	var coat := Color(0.185, 0.205, 0.135)
+	var coat_dark := Color(0.135, 0.15, 0.095)
+	var trouser := Color(0.145, 0.145, 0.115)
+	var leather := Color(0.115, 0.082, 0.055)
+	var skin := Color(0.40, 0.27, 0.20)
+
+	var parts: Array = []
+
+	# 胯 + 腰
+	parts.append(_box(Vector3(0.32, 0.16, 0.22), _xform(Vector3(0.0, 0.97, 0.0)), coat_dark))
+	parts.append(_box(Vector3(0.29, 0.12, 0.20), _xform(Vector3(0.0, 1.10, 0.0)), trouser))
+	# 腰带
+	parts.append(_box(Vector3(0.315, 0.05, 0.215), _xform(Vector3(0.0, 1.035, 0.0)), leather))
+
+	# 胸：上宽下窄，压出一点腰线
+	parts.append(_box(Vector3(0.35, 0.26, 0.23), _xform(Vector3(0.0, 1.28, 0.0)), coat))
+	parts.append(_box(Vector3(0.39, 0.11, 0.235), _xform(Vector3(0.0, 1.44, 0.0)), coat))
+	# 肩
+	parts.append(_box(Vector3(0.095, 0.11, 0.21), _xform(Vector3(-0.195, 1.44, 0.0)), coat))
+	parts.append(_box(Vector3(0.095, 0.11, 0.21), _xform(Vector3(0.195, 1.44, 0.0)), coat))
+	# 脖子（头就是相机，不画）
+	parts.append(_box(Vector3(0.095, 0.075, 0.095), _xform(Vector3(0.0, 1.525, 0.0)), skin))
+
+	# 斜挎的背带：给胸口一个非对称的细节，避免纯色方块
+	parts.append(_box(Vector3(0.06, 0.46, 0.02), _xform(Vector3(-0.05, 1.28, 0.118), Vector3(0, 0, 13)), leather))
+
+	# 双腿：大腿 + 小腿 + 靴子
+	for i in 2:
+		var x := -0.085 if i == 0 else 0.085
+		parts.append(_taper(0.082, 0.068, 0.42, _xform(Vector3(x, 0.68, 0.0)), trouser, 6))
+		parts.append(_taper(0.068, 0.052, 0.36, _xform(Vector3(x, 0.31, 0.0)), trouser, 6))
+		parts.append(_box(Vector3(0.112, 0.14, 0.235), _xform(Vector3(x, 0.07, -0.025)), leather))
+
 	return merge(parts)
 
 
