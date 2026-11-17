@@ -343,61 +343,88 @@ static func make_arrow_bundle() -> ArrayMesh:
 	return merge(parts)
 
 
-## 猎弓：上下弓臂 + 握把 + 弓弦。弓臂分段折线，接近真实弓的弧度。
+## 猎弓：握把 + 上下弓臂 + 弓弦 + 搭在弦上的箭。
+##
+## 造型按「从弓手视角看过去」设计：弓臂在 XY 平面内弯成一条弧，
+## 弓弦是一条竖直线并落在弦心 x=0，举弓瞄准时弦正好压在屏幕中心，
+## 弓身向左侧张开。弓臂上下各四段，倾角沿曲线切线递增。
 static func make_bow() -> ArrayMesh:
 	var wood := Color(0.33, 0.23, 0.14)
 	var grip := Color(0.22, 0.16, 0.11)
 	var string := Color(0.8, 0.78, 0.72)
+	var shaft := Color(0.45, 0.35, 0.22)
+	var head := Color(0.55, 0.56, 0.58)
+	var feather := Color(0.72, 0.68, 0.6)
+
 	var parts: Array = []
 
-	parts.append(_box(Vector3(0.05, 0.24, 0.06), _xform(Vector3(0, 0, 0)), grip))
+	# 握把（偏向左侧，弦心留在 x=0）
+	parts.append(_box(Vector3(0.055, 0.26, 0.07), _xform(Vector3(-0.2, 0, 0)), grip))
 
-	# 上下各四段弓臂
-	for i in 4:
-		var t := (float(i) + 0.5) / 4.0
-		var angle := lerpf(-40.0, -10.0, t)
-		var y := 0.13 + float(i) * 0.16
-		var x := sin(deg_to_rad(angle)) * 0.15
-		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, y, 0), Vector3(0, 0, angle)), wood))
-		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(-x, y, 0), Vector3(0, 0, -angle)), wood))
+	# 上下弓臂：从握把弯向弦心
+	const SEGMENTS := 4
+	for i in SEGMENTS:
+		var t := (float(i) + 0.5) / float(SEGMENTS)
+		var y := 0.13 + t * 0.5
+		var x := -0.2 + sin(t * PI * 0.5) * 0.2
+		# 段轴沿曲线切线旋转：越往上越向内合拢
+		var rot_z := rad_to_deg(atan2(0.3142 * cos(t * PI * 0.5), 0.5))
+		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, y, 0), Vector3(0, 0, rot_z)), wood))
+		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, -y, 0), Vector3(0, 0, rot_z)), wood))
 
-	# 弓弦
-	parts.append(_box(Vector3(0.008, 0.72, 0.008), _xform(Vector3(0.03, 0.4, 0)), string))
+	# 弓弦：竖直一条，连接上下弓臂尖端
+	parts.append(_box(Vector3(0.009, 1.26, 0.009), _xform(Vector3(0, 0, 0)), string))
+
+	# 搭在弦上的箭，沿视线方向（-Z）
+	parts.append(_cylinder(0.016, 0.62, _xform(Vector3(0, 0.02, -0.28), Vector3(90, 0, 0)), shaft, 6))
+	parts.append(_cone(0.026, 0.1, _xform(Vector3(0, 0.02, -0.64), Vector3(-90, 0, 0)), head, 6))
+	parts.append(_box(Vector3(0.13, 0.005, 0.05), _xform(Vector3(0, 0.02, 0.04)), feather))
+	parts.append(_box(Vector3(0.13, 0.005, 0.05), _xform(Vector3(0, 0.02, 0.04), Vector3(0, 45, 0)), feather))
 
 	return merge(parts)
 
 
 ## 箭矢：细杆 + 箭头 + 尾羽。
+##
+## 箭头朝 -Z（Godot 的「前方」），投射物可以直接用 look_at 对齐飞行方向。
 static func make_arrow() -> ArrayMesh:
 	var shaft := Color(0.45, 0.35, 0.22)
 	var head := Color(0.55, 0.56, 0.58)
 	var feather := Color(0.72, 0.68, 0.6)
 	var parts: Array = []
-	parts.append(_cylinder(0.012, 0.72, _xform(Vector3(0, 0, 0), Vector3(0, 0, 90)), shaft, 5))
-	parts.append(_cone(0.022, 0.09, _xform(Vector3(0.4, 0, 0), Vector3(0, 0, -90)), head, 5))
+	parts.append(_cylinder(0.012, 0.72, _xform(Vector3(0, 0, 0), Vector3(90, 0, 0)), shaft, 5))
+	parts.append(_cone(0.022, 0.09, _xform(Vector3(0, 0, -0.4), Vector3(-90, 0, 0)), head, 5))
 	# 尾羽
-	parts.append(_box(Vector3(0.12, 0.002, 0.05), _xform(Vector3(-0.33, 0, 0.03)), feather))
-	parts.append(_box(Vector3(0.12, 0.002, 0.05), _xform(Vector3(-0.33, 0, -0.03)), feather))
+	parts.append(_box(Vector3(0.05, 0.002, 0.12), _xform(Vector3(0.03, 0, 0.33)), feather))
+	parts.append(_box(Vector3(0.05, 0.002, 0.12), _xform(Vector3(-0.03, 0, 0.33)), feather))
 	return merge(parts)
 
 
-## 狼的躯干（不含四肢，便于单独摆动）。
+## 林狼的躯干（不含四肢，便于单独摆动）。
+##
+## 配色刻意压深并加背部深色鞍纹：浅灰狼落在浅色地面上会糊成一团，
+## 玩家分不清那是什么，也就没有威胁感。
 static func make_wolf_body(fur: Color, belly: Color) -> ArrayMesh:
 	var parts: Array = []
 	# 躯干
 	parts.append(_box(Vector3(0.42, 0.42, 1.05), _xform(Vector3(0, 0.62, 0)), fur))
+	# 背部深色鞍纹
+	parts.append(_box(Vector3(0.38, 0.1, 0.92), _xform(Vector3(0, 0.81, 0.02)), fur.darkened(0.3)))
 	# 胸腹略浅
 	parts.append(_box(Vector3(0.36, 0.18, 0.9), _xform(Vector3(0, 0.5, 0)), belly))
 	# 颈与头
 	parts.append(_box(Vector3(0.26, 0.26, 0.34), _xform(Vector3(0, 0.7, -0.6)), fur))
 	parts.append(_box(Vector3(0.28, 0.26, 0.4), _xform(Vector3(0, 0.74, -0.86)), fur))
 	# 吻部
-	parts.append(_box(Vector3(0.16, 0.14, 0.26), _xform(Vector3(0, 0.68, -1.12)), fur.lightened(0.08)))
+	parts.append(_box(Vector3(0.16, 0.14, 0.26), _xform(Vector3(0, 0.68, -1.12)), fur.lightened(0.06)))
 	# 耳
-	parts.append(_cone(0.08, 0.16, _xform(Vector3(0.1, 0.92, -0.76)), fur.darkened(0.1), 4))
-	parts.append(_cone(0.08, 0.16, _xform(Vector3(-0.1, 0.92, -0.76)), fur.darkened(0.1), 4))
+	parts.append(_cone(0.08, 0.16, _xform(Vector3(0.1, 0.92, -0.76)), fur.darkened(0.2), 4))
+	parts.append(_cone(0.08, 0.16, _xform(Vector3(-0.1, 0.92, -0.76)), fur.darkened(0.2), 4))
 	# 尾
-	parts.append(_box(Vector3(0.12, 0.12, 0.45), _xform(Vector3(0, 0.66, 0.66), Vector3(-18, 0, 0)), fur.darkened(0.06)))
+	parts.append(_box(Vector3(0.12, 0.12, 0.45), _xform(Vector3(0, 0.66, 0.66), Vector3(-18, 0, 0)), fur.darkened(0.12)))
+	# 眼睛：近黑的小方块，凑近能分辨朝向
+	parts.append(_box(Vector3(0.05, 0.045, 0.03), _xform(Vector3(0.085, 0.79, -1.05)), Color(0.06, 0.05, 0.05)))
+	parts.append(_box(Vector3(0.05, 0.045, 0.03), _xform(Vector3(-0.085, 0.79, -1.05)), Color(0.06, 0.05, 0.05)))
 	return merge(parts)
 
 

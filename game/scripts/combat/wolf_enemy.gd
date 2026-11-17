@@ -32,8 +32,8 @@ func _ready() -> void:
 
 ## 狼的躯干与四条腿。腿单独建，便于摆动。
 func _build_visual() -> void:
-	var fur := Color(0.33, 0.3, 0.28)
-	var belly := Color(0.52, 0.49, 0.45)
+	var fur := Color(0.24, 0.21, 0.19)
+	var belly := Color(0.45, 0.41, 0.36)
 
 	var body := MeshInstance3D.new()
 	body.name = "Body"

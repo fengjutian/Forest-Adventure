@@ -72,7 +72,7 @@ func _physics_process(delta: float) -> void:
 	# 让箭矢始终指向飞行方向
 	if velocity.length_squared() > 0.01:
 		var direction := velocity.normalized()
-		look_at(global_position - direction, Vector3.UP)
+		look_at(global_position + direction, Vector3.UP)
 
 
 func _apply_hit(result: Dictionary) -> void:

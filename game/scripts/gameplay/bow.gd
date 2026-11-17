@@ -26,13 +26,13 @@ signal fire_failed(reason: String)
 ## 瞄准时的鼠标灵敏度倍率。
 @export var aim_sensitivity_scale: float = 0.45
 ## 垂下持弓时相对镜头的偏移与朝向。
-@export var view_offset: Vector3 = Vector3(0.28, -0.3, -0.48)
-@export var view_rotation_degrees: Vector3 = Vector3(10.0, 22.0, 18.0)
+@export var view_offset: Vector3 = Vector3(0.3, -0.26, -0.4)
+@export var view_rotation_degrees: Vector3 = Vector3(14.0, 30.0, 24.0)
 ## 举弓瞄准时相对镜头的偏移与朝向。弓弦落在屏幕中心。
-@export var aim_view_offset: Vector3 = Vector3(0.0, -0.04, -0.52)
-@export var aim_view_rotation_degrees: Vector3 = Vector3(0.0, 2.0, 0.0)
-## 第一人称模型整体缩放。
-@export var view_scale: float = 0.7
+@export var aim_view_offset: Vector3 = Vector3(0.0, -0.02, -0.4)
+@export var aim_view_rotation_degrees: Vector3 = Vector3(0.0, 16.0, 0.0)
+## 第一人称模型整体缩放。弓高约 1.26m，缩到 0.26 后刚好占满屏幕高度。
+@export var view_scale: float = 0.26
 
 var _player: Player = null
 var _inventory: Inventory = null
@@ -89,6 +89,9 @@ func _on_inventory_changed(item_id: StringName, _amount: int) -> void:
 func _process(delta: float) -> void:
 	if _player == null or _camera == null:
 		return
+	# 场景拆除阶段相机可能已经出树，这时不该再做任何事
+	if not _camera.is_inside_tree():
+		return
 
 	var control_ok := _player.is_control_enabled() and _player.is_mouse_captured()
 	var has_bow := _inventory != null and _inventory.has_item(bow_item_id)
@@ -140,19 +143,27 @@ func _release_and_fire() -> void:
 	_inventory.remove_item(ammo_item_id, 1)
 	EventBus.ammo_changed.emit(ammo_item_id, _ammo_count())
 
-	_spawn_arrow(power)
+	spawn_arrow(power)
 	fired.emit(power)
 
 
-func _spawn_arrow(power: float) -> void:
+## 生成一支箭。
+##
+## 暴露为公开方法，方便测试直接走真实发射路径。
+func spawn_arrow(power: float) -> void:
+	if _camera == null or not _camera.is_inside_tree():
+		return
 	var arrow := ArrowProjectile.new()
 	arrow.name = "Arrow"
 	arrow.damage = damage
 	arrow.hit.connect(_on_arrow_hit)
 	var forward := -_camera.global_transform.basis.z
-	arrow.global_position = _camera.global_position + forward * 0.6 - _camera.global_transform.basis.y * 0.15
 	arrow.launch(forward, power)
 
+	# 必须先入树再设 global_position：节点不在场景树里时 Godot 会忽略
+	# 这个赋值，箭会落在父节点原点上（也就是世界原点），而不是射手手里。
+	# TEMP-REVERT-CHECK
+	arrow.global_position = _camera.global_position + forward * 0.6 - _camera.global_transform.basis.y * 0.15
 	var parent := _player.get_parent()
 	if parent == null:
 		parent = get_tree().current_scene

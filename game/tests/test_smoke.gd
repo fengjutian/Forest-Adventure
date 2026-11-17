@@ -235,6 +235,23 @@ func _test_combat() -> void:
 	_assert(_inventory.has_item(&"bow"), "出发时带着弓")
 	_assert(_inventory.count_item(&"arrow") >= 10, "出发时带着箭矢（实际 %d）" % _inventory.count_item(&"arrow"))
 
+	# 真实发射路径：箭必须从射手位置射出。
+	# 这条曾经漏过——测试自己造箭时是先入树再定位，而游戏里顺序反了，
+	# Godot 会忽略未入树节点的 global_position，箭全部从世界原点飞出去。
+	var bow := _player.get_node_or_null("Bow") as Bow
+	_assert(bow != null, "玩家身上挂着弓节点")
+	if bow != null:
+		bow.spawn_arrow(1.0)
+		await get_tree().process_frame
+		var spawned := _find_arrow()
+		_assert(spawned != null, "弓能生成箭矢实体")
+		if spawned != null:
+			var gap := spawned.global_position.distance_to(_player.global_position)
+			_assert(gap < 3.0, "箭矢从射手位置射出（距射手 %.2f m）" % gap)
+			_assert(spawned.global_position.length() > 1.0, "箭矢不是从世界原点射出")
+			_assert(spawned.velocity.length() > 0.0, "箭矢带有飞行速度")
+			spawned.queue_free()
+
 	var wolf := _find_enemy(&"wolf_01")
 	_assert(wolf != null, "场景里有林狼")
 	if wolf == null:
@@ -326,6 +343,17 @@ func _find_drop(item_id: StringName) -> PickupInteractable:
 		var pickup := node as PickupInteractable
 		if pickup != null and pickup.item_id == item_id:
 			return pickup
+	return null
+
+
+## 找玩家身边刚生成的箭矢。
+func _find_arrow() -> ArrowProjectile:
+	var parent := _player.get_parent()
+	if parent == null:
+		return null
+	for child in parent.get_children():
+		if child is ArrowProjectile:
+			return child as ArrowProjectile
 	return null
 
 
