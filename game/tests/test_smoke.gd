@@ -235,22 +235,35 @@ func _test_combat() -> void:
 	_assert(_inventory.has_item(&"bow"), "出发时带着弓")
 	_assert(_inventory.count_item(&"arrow") >= 10, "出发时带着箭矢（实际 %d）" % _inventory.count_item(&"arrow"))
 
-	# 真实发射路径：箭必须从射手位置射出。
-	# 这条曾经漏过——测试自己造箭时是先入树再定位，而游戏里顺序反了，
-	# Godot 会忽略未入树节点的 global_position，箭全部从世界原点飞出去。
+	# 真实发射路径：箭必须按世界坐标落在射手手边。
+	# 这里把主场景整体横移 5m：如果箭是按父节点的局部坐标定位的，
+	# 它会跟着偏移 5m（父节点在原点时看不出来，所以普通断言抓不到）。
+	var main_node := _main as Node3D
+	var origin_backup := Vector3.ZERO
+	if main_node != null:
+		origin_backup = main_node.position
+		main_node.position = Vector3(5.0, 0.0, 0.0)
+		await get_tree().process_frame
+
 	var bow := _player.get_node_or_null("Bow") as Bow
 	_assert(bow != null, "玩家身上挂着弓节点")
 	if bow != null:
+		var camera := _player.get_node_or_null("Head/Camera3D") as Camera3D
 		bow.spawn_arrow(1.0)
 		await get_tree().process_frame
 		var spawned := _find_arrow()
 		_assert(spawned != null, "弓能生成箭矢实体")
-		if spawned != null:
-			var gap := spawned.global_position.distance_to(_player.global_position)
-			_assert(gap < 3.0, "箭矢从射手位置射出（距射手 %.2f m）" % gap)
-			_assert(spawned.global_position.length() > 1.0, "箭矢不是从世界原点射出")
+		if spawned != null and camera != null:
+			var forward := -camera.global_transform.basis.z
+			var muzzle := camera.global_position + forward * 0.6 - camera.global_transform.basis.y * 0.15
+			var offset := spawned.global_position.distance_to(muzzle)
+			_assert(offset < 0.2, "箭矢按世界坐标落在射手手边（偏差 %.2f m）" % offset)
 			_assert(spawned.velocity.length() > 0.0, "箭矢带有飞行速度")
 			spawned.queue_free()
+
+	if main_node != null:
+		main_node.position = origin_backup
+		await get_tree().process_frame
 
 	var wolf := _find_enemy(&"wolf_01")
 	_assert(wolf != null, "场景里有林狼")

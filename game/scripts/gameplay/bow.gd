@@ -162,12 +162,19 @@ func spawn_arrow(power: float) -> void:
 
 	# 必须先入树再设 global_position：节点不在场景树里时 Godot 会忽略
 	# 这个赋值，箭会落在父节点原点上（也就是世界原点），而不是射手手里。
-	# TEMP-REVERT-CHECK
-	arrow.global_position = _camera.global_position + forward * 0.6 - _camera.global_transform.basis.y * 0.15
+	# 必须先入树再设 global_position：
+	# 节点没入树时 Godot 会把 global_position 写进「局部」变换，
+	# 结果就是箭整体偏移父节点的位移（父节点在原点时看不出来），
+	# 而且每次射击都会刷一条引擎错误。
+	# 必须先入树再设 global_position：
+	# 节点没入树时 Godot 会把 global_position 写进「局部」变换，
+	# 结果就是箭整体偏移父节点的位移（父节点在原点时看不出来），
+	# 而且每次射击都会刷一条引擎错误。
 	var parent := _player.get_parent()
 	if parent == null:
 		parent = get_tree().current_scene
 	parent.add_child(arrow)
+	arrow.global_position = _camera.global_position + forward * 0.6 - _camera.global_transform.basis.y * 0.15
 
 	# 弓响会暴露位置
 	_player.notify_noise(1.2)
