@@ -172,7 +172,7 @@ footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-si
   <div class="hero-meta">
     <span class="chip">D:\GitHub\Forest-Adventure</span>
     <span class="chip">branch: main</span>
-    <span class="chip">12 commits · 2026-11-17</span>
+    <span class="chip">快照 a7d5304 · 12 commits</span>
     <span class="chip">43 个 .gd / 12 个 .tscn</span>
     <span class="chip">105 项冒烟断言全过</span>
   </div>
@@ -469,7 +469,7 @@ footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-si
       <tr>
         <td><span class="sev p2">P2</span></td>
         <td><strong>每次开火产生一条引擎错误</strong></td>
-        <td><code>spawn_arrow()</code> 在节点入树前设置 <code>global_position</code>，Godot 报 <code>Condition "!is_inside_tree()" is true</code>。当前因为父节点是单位变换，箭的实际位置<strong>侥幸正确</strong>——一旦父节点带偏移（分块、区域根节点），箭就会从错误位置飞出。已在 21:17 的提交里改为「先入树、后设位置」，并补了真实发射路径的断言。
+        <td><code>spawn_arrow()</code> 在节点入树前设置 <code>global_position</code>，Godot 报 <code>Condition "!is_inside_tree()" is true</code>。当前因为父节点是单位变换，箭的实际位置<strong>侥幸正确</strong>——一旦父节点带偏移（分块、区域根节点），箭就会从错误位置飞出。已改为「先入树、后设位置」，并补了真实发射路径的断言（本报告完成时该修复已提交）。
         <div class="ev">ERROR: Condition "!is_inside_tree()" is true. Returning: Transform3D()
     [0] spawn_arrow (res://scripts/gameplay/bow.gd:166)</div></td>
       </tr>
@@ -663,17 +663,19 @@ user://logs/game.log</div>
         <dt>文档规模</dt><dd>7 篇 + README，非空 1,285 行（与上一版报告同口径）</dd>
         <dt>测试结果</dt><dd>105 项 / 0 失败 / 退出码 0</dd>
       </dl>
-      <p style="font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.55">分析过程中仓库仍在被另一条工作线推进（21:04 → 21:17 之间有 6 次提交），因此结论锁定在上述快照；快照之后修复的问题已在正文中标注。</p>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.55">分析过程中仓库仍在被另一条工作线推进（21:04 之后连续多次提交），因此结论锁定在上述快照；快照之后修复的问题已在正文中标注。</p>
     </div>
   </div>
 </section>
 
 <footer>
   <span>Forest Adventure · 项目分析报告 v2 · 基于 43 个脚本、7 篇设计文档、实际运行日志与截图</span>
-  <span>快照 a7d5304 · 2026-11-17 · 未纳入版本控制说明</span>
+  <span>快照 a7d5304 · 2026-11-17 · 结论以该快照为准</span>
 </footer>
 
 </div>
 </body>
 </html>
+
+
 

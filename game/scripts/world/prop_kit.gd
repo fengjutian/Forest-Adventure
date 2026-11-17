@@ -367,13 +367,14 @@ static func make_bow() -> ArrayMesh:
 		var t := (float(i) + 0.5) / float(SEGMENTS)
 		var y := 0.13 + t * 0.5
 		var x := -0.2 + sin(t * PI * 0.5) * 0.2
-		# 段轴沿曲线切线旋转：越往上越向内合拢
-		var rot_z := rad_to_deg(atan2(0.3142 * cos(t * PI * 0.5), 0.5))
-		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, y, 0), Vector3(0, 0, rot_z)), wood))
-		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, -y, 0), Vector3(0, 0, rot_z)), wood))
+		# 段轴沿曲线切线旋转。上弓臂顺时针、下弓臂逆时针，互为镜像——
+		# 两者用同一个角度会把弓臂拧反，段与段之间裂开。
+		var tilt := rad_to_deg(atan2(0.3142 * cos(t * PI * 0.5), 0.5))
+		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, y, 0), Vector3(0, 0, -tilt)), wood))
+		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, -y, 0), Vector3(0, 0, tilt)), wood))
 
 	# 弓弦：竖直一条，连接上下弓臂尖端
-	parts.append(_box(Vector3(0.009, 1.26, 0.009), _xform(Vector3(0, 0, 0)), string))
+	parts.append(_box(Vector3(0.009, 1.32, 0.009), _xform(Vector3(0, 0, 0)), string))
 
 	# 搭在弦上的箭，沿视线方向（-Z）
 	parts.append(_cylinder(0.016, 0.62, _xform(Vector3(0, 0.02, -0.28), Vector3(90, 0, 0)), shaft, 6))

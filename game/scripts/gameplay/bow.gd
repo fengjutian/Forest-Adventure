@@ -26,8 +26,8 @@ signal fire_failed(reason: String)
 ## 瞄准时的鼠标灵敏度倍率。
 @export var aim_sensitivity_scale: float = 0.45
 ## 垂下持弓时相对镜头的偏移与朝向。
-@export var view_offset: Vector3 = Vector3(0.3, -0.26, -0.4)
-@export var view_rotation_degrees: Vector3 = Vector3(14.0, 30.0, 24.0)
+@export var view_offset: Vector3 = Vector3(0.3, -0.3, -0.42)
+@export var view_rotation_degrees: Vector3 = Vector3(10.0, 18.0, 12.0)
 ## 举弓瞄准时相对镜头的偏移与朝向。弓弦落在屏幕中心。
 @export var aim_view_offset: Vector3 = Vector3(0.0, -0.02, -0.4)
 @export var aim_view_rotation_degrees: Vector3 = Vector3(0.0, 16.0, 0.0)

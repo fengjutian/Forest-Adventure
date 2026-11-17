@@ -140,11 +140,11 @@ func _shot_overhead(main: Node) -> void:
 		ui.visible = false
 
 	var camera := Camera3D.new()
-	camera.fov = 62.0
+	camera.fov = 56.0
 	camera.far = 500.0
-	camera.position = Vector3(16.0, 46.0, 40.0)
+	camera.position = Vector3(11.0, 31.0, 29.0)
 	main.add_child(camera)
-	camera.look_at(Vector3(0.0, 2.0, 0.0), Vector3.UP)
+	camera.look_at(Vector3(0.0, 1.5, 1.0), Vector3.UP)
 	camera.current = true
 
 	await _settle(16)

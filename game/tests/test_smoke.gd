@@ -259,6 +259,14 @@ func _test_combat() -> void:
 			var offset := spawned.global_position.distance_to(muzzle)
 			_assert(offset < 0.2, "箭矢按世界坐标落在射手手边（偏差 %.2f m）" % offset)
 			_assert(spawned.velocity.length() > 0.0, "箭矢带有飞行速度")
+
+			# 箭矢网格的箭头必须朝 -Z，才能用 look_at 对齐飞行方向
+			var mesh := spawned.get_node_or_null("ArrowMesh") as MeshInstance3D
+			_assert(mesh != null, "箭矢带网格")
+			if mesh != null and mesh.mesh != null:
+				var bounds := mesh.mesh.get_aabb()
+				_assert(bounds.size.z > bounds.size.x,
+					"箭矢网格朝向 -Z（Z 边 %.2f > X 边 %.2f）" % [bounds.size.z, bounds.size.x])
 			spawned.queue_free()
 
 	if main_node != null:
