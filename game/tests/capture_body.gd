@@ -37,14 +37,19 @@ func _ready() -> void:
 
 	_place(player)
 
-	# 1) 低头看身体
+	# 1) 略微低头：胸口应该出现在画面下缘，上面还是世界
 	await _settle(16)
-	_set_pitch(player, -62.0)
+	_set_pitch(player, -55.0)
 	await _settle(10)
 	await _shot(OUT_DIR + "/body_lookdown.png")
 
-	# 2) 蹲下 + 低头：相机不能钻进躯干
-	await _set_pitch(player, -52.0)
+	# 2) 深度低头：应该能看到腿和靴子，而不是空洞
+	await _set_pitch(player, -80.0)
+	await _settle(10)
+	await _shot(OUT_DIR + "/body_legs.png")
+
+	# 3) 蹲下 + 低头：相机不能钻进躯干里
+	await _set_pitch(player, -60.0)
 	Input.action_press("crouch")
 	await _settle(20)
 	await _shot(OUT_DIR + "/body_crouch.png")

@@ -14,3 +14,9 @@ extends MeshInstance3D
 func _ready() -> void:
 	mesh = PropKit.make_player_body()
 	material_override = PropKit.painted_material()
+	# 躯干整体后移 12 cm。
+	#
+	# 眼睛本来就该在胸口前面一点（人的头是往前探的）。
+	# 不后移的话，胸口正正好挡在腿前面：
+	# 低头时视线先撞上胸口，腿和靴子永远被挡在后面，怎么低头都看不见。
+	position = Vector3(0.0, 0.0, 0.12)

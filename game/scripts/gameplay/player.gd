@@ -15,9 +15,9 @@ extends CharacterBody3D
 ##   ├── StateMachine (Node)
 ##   └── InteractionSystem (Node)
 
-## 身体模型（PropKit.make_player_body）躯干顶端的高度。
-## 站立时相机在 1.62 m，躯干顶端 1.56 m：平视时身体完全在画面外。
-const BODY_TOP_HEIGHT := 1.56
+## 身体模型（PropKit.make_player_body）肩线的高度。
+## 站立时相机在 1.62 m，肩线 1.44 m：平视时身体完全在画面外。
+const BODY_TOP_HEIGHT := 1.44
 
 @export var tuning: PlayerTuning
 
@@ -287,7 +287,7 @@ func _update_body_scale() -> void:
 	var body := get_node_or_null("Body") as Node3D
 	if body == null:
 		return
-	body.scale.y = clampf((head.position.y - 0.05) / BODY_TOP_HEIGHT, 0.35, 1.0)
+	body.scale.y = clampf((head.position.y - 0.12) / BODY_TOP_HEIGHT, 0.35, 1.0)
 
 
 func _update_noise(delta: float) -> void:

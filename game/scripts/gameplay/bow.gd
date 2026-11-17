@@ -45,17 +45,22 @@ signal fire_failed(reason: String)
 @export var view_rotation_degrees: Vector3 = Vector3(10.0, 22.0, -14.0)
 ## 举弓瞄准时相对镜头的偏移与朝向。
 ##
-## 弓摆在画面左侧（屏幕左边三分之一），偏航 26° 让弓面侧过来——
+## 弓摆在画面左侧，偏航 26° 让弓面侧过来——
 ## 正对着镜头时弓臂会缩成一根竖棍，偏一点才有厚度和纵深。
+## 往左下再压一点：举弓时弓的最上端不越过地平线太多，
+## 视野中央和准星周围完全让出来，只留弓臂和弓弦贴在左边缘。
 ## 箭不跟着弓转，它单独朝相机前方偏右，箭尖因此收拢到准星附近。
 ## 箭的实际飞行方向仍取自相机前方，与画面构图无关。
-@export var aim_view_offset: Vector3 = Vector3(-0.40, -0.10, -1.15)
-@export var aim_view_rotation_degrees: Vector3 = Vector3(3.0, -26.0, 7.0)
+@export var aim_view_offset: Vector3 = Vector3(-0.44, -0.20, -1.10)
+@export var aim_view_rotation_degrees: Vector3 = Vector3(5.0, -26.0, 8.0)
 ## 第一人称模型整体缩放。
 ##
-## 弓按视图模型的尺寸（0.58 m 高的短弓）建模，这里不再缩放：
-## 缩放会把左手一起缩小，手就变成画面里的小方块。
-@export var view_scale: float = 1.0
+## 弓按视图模型的尺寸（0.58 m 高的短弓）建模，1.0 时在 1.15 m 处
+## 会占到屏幕高度的六成、横在画面左三分之一——举弓时上半支弓臂
+## 越过了地平线，把左边那片林子整块吃掉。
+## 0.90 加上左下方的偏移，最上端压在视线下沿、准星周围全让出来，
+## 同时弓和手仍是同一套缩放，不会出现「小方块手」。
+@export var view_scale: float = 0.90
 ## 箭在相机空间里的指向（举起瞄准 / 垂弓时）。
 @export var aim_arrow_direction: Vector3 = Vector3(0.33, 0.09, -0.94)
 @export var hip_arrow_direction: Vector3 = Vector3(0.55, -0.42, -0.72)
@@ -90,14 +95,14 @@ const SWAY_ROTATION_DEGREES := 2.2
 ## 小臂指向决定了手从画面哪个方向插进来：左手往左下、右手往右下，
 ## 两条手臂各自从画面底边斜插出去，像「人举着弓」而不是「弓浮在半空」。
 const BOW_HAND_FINGER := Vector3(1.0, 0.05, 0.15)
-const BOW_HAND_ARM := Vector3(-0.60, -0.78, 0.16)
+const BOW_HAND_ARM := Vector3(-0.58, -0.80, 0.15)
 ## 右手（拉弦）的手指朝向与小臂朝向，相机空间。
 ##
 ## 拉弦手的手指朝上勾着弦，小臂从右下角伸进来。
 ## 肘部必须朝「后下方」（+Z 是身后）：肘部朝前的话小臂会横着掠过
 ## 画面中段，像一根横杆横穿视野；朝后下它才会缩到画面右下角出画。
 const STRING_HAND_FINGER := Vector3(0.1, 0.92, 0.38)
-const STRING_HAND_ARM := Vector3(0.55, -0.80, 0.24)
+const STRING_HAND_ARM := Vector3(0.32, -0.92, 0.18)
 
 var _player: Player = null
 var _inventory: Inventory = null
@@ -194,14 +199,14 @@ func _build_view_model() -> void:
 	_string_top = _add_mesh(_bow_pivot, "StringTop", string_mesh)
 	_string_bottom = _add_mesh(_bow_pivot, "StringBottom", string_mesh)
 
-	var hand_mesh := PropKit.make_player_hand(Color(0.235, 0.155, 0.105))
+	var hand_mesh := PropKit.make_player_hand(Color(0.185, 0.10, 0.058))
 	_left_hand = _add_mesh(_bow_pivot, "LeftHand", hand_mesh)
 	_right_hand = _add_mesh(_bow_pivot, "RightHand", hand_mesh)
 
 	# 小臂：从画面底边斜插进来，给手一个锚点。
 	# 没有它，两只手就是悬在空中的方块，怎么调都像贴图。
 	# 袖子是深色的：浅色袖子在这套明亮画面里会变成一根抢视线的管子。
-	var arm_mesh := PropKit.make_player_forearm(Color(0.115, 0.09, 0.06), Color(0.165, 0.115, 0.075))
+	var arm_mesh := PropKit.make_player_forearm(Color(0.095, 0.068, 0.038), Color(0.14, 0.09, 0.052))
 	_left_arm = _add_mesh(_bow_pivot, "LeftArm", arm_mesh)
 	_right_arm = _add_mesh(_bow_pivot, "RightArm", arm_mesh)
 
@@ -403,11 +408,20 @@ func _update_pose(has_bow: bool, delta: float) -> void:
 		GRIP_POINT
 	)
 	_left_hand.transform = left_transform
-	_left_arm.transform = left_transform
+	# 小臂不能用手的基。
+	# 手要同时对齐「手指」和「小臂」两个方向，可这两个方向并不正交，
+	# Basis.looking_at 会把小臂投影到手指的垂面上——右手因此被拧成
+	# 92% 朝右、横着扫过整个屏幕，而不是按设定往右下出画。
+	# 小臂是根轴对称的长条，单独给它一个「-Y 对准手臂方向」的基即可。
+	_left_arm.transform = Transform3D(_limb_basis(_to_bow_dir(BOW_HAND_ARM)), GRIP_POINT)
 
 	# 右手：拉弦时捏住弦心，没拉弦时垂在弓把下方。
 	# 一直僵在握把边上，两只手会挤在一起，像一块看不出形状的疙瘩。
-	var draw_hand := GRIP_POINT.lerp(nock_local, 0.62) + Vector3(0.115, -0.075, 0.0)
+	#
+	# 手必须真的搭在弦上：偏移一大，弦就从手边擦过去而不是穿过指弯，
+	# 看起来就是「一只手悬在弦旁边」。+X 是手从右侧捏弦的那点厚度，
+	# +Z 让掌心落在弦后（手指才包得住弦）。
+	var draw_hand := nock_local + Vector3(0.030, -0.020, 0.028)
 	var rest_hand := GRIP_POINT + Vector3(0.02, -0.21, 0.05)
 	var string_hand_pos := rest_hand.lerp(draw_hand, _raise)
 	var right_transform := Transform3D(
@@ -415,7 +429,7 @@ func _update_pose(has_bow: bool, delta: float) -> void:
 		string_hand_pos
 	)
 	_right_hand.transform = right_transform
-	_right_arm.transform = right_transform
+	_right_arm.transform = Transform3D(_limb_basis(_to_bow_dir(STRING_HAND_ARM)), string_hand_pos)
 
 	_update_arrow(nock_local, delta)
 
@@ -436,13 +450,28 @@ func _update_arrow(nock_local: Vector3, delta: float) -> void:
 ## 手的第一人称朝向。
 ##
 ## 手模的手指是 -Z、小臂是 -Y，所以造一个正交基：
-## -Z 对准手指方向，-Y 对准小臂方向。
+## -Z 对准手指方向，-Y 大致对准小臂方向。
+##
+## 注意这只是「手」的朝向：手指与小臂在解剖上并不垂直，
+## 这里以手指为准，小臂方向会被投影到手指的垂面上。
+## 小臂本身另用 _limb_basis 摆，见 _update_pose。
 static func _hand_basis(finger_dir: Vector3, arm_dir: Vector3) -> Basis:
 	var forward := finger_dir.normalized()
 	var up := -arm_dir.normalized()
 	if absf(forward.dot(up)) > 0.98:
 		up = Vector3.UP if absf(forward.dot(Vector3.UP)) < 0.9 else Vector3.RIGHT
 	return Basis.looking_at(forward, up)
+
+
+## 肢体（小臂）的朝向：网格沿 -Y 伸长，所以本地 -Y 精确对准 direction。
+##
+## 绕自身长轴的旋转对圆柱段没有意义，取任意正交补即可。
+static func _limb_basis(direction: Vector3) -> Basis:
+	var y := -direction.normalized()
+	var reference := Vector3.UP if absf(y.dot(Vector3.UP)) < 0.95 else Vector3.RIGHT
+	var x := reference.cross(y).normalized()
+	var z := x.cross(y)
+	return Basis(x, y, z)
 
 
 ## 把相机空间的方向换算成弓的本地方向。

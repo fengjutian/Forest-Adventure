@@ -406,9 +406,9 @@ static func _bow_frame_parts() -> Array:
 	# 视图模型自带一盏主光 + 一盏轮廓光，再加上天空环境光，
 	# 总照度比纯反射率高一大截，albedo 必须压得比肉眼想的更暗更艳，
 	# 落到屏幕上才是暖木色而不是灰白塑料。
-	var wood := Color(0.30, 0.175, 0.085)
-	var wood_light := Color(0.40, 0.245, 0.125)
-	var grip := Color(0.13, 0.09, 0.06)
+	var wood := Color(0.26, 0.125, 0.052)
+	var wood_light := Color(0.35, 0.185, 0.082)
+	var grip := Color(0.115, 0.075, 0.048)
 
 	var parts: Array = []
 
@@ -449,10 +449,10 @@ static func _bow_limb_piece(a: Vector2, b: Vector2, color: Color) -> Array:
 
 
 static func _bow_arrow_parts() -> Array:
-	var shaft := Color(0.24, 0.165, 0.085)
-	var head := Color(0.50, 0.525, 0.565)
+	var shaft := Color(0.26, 0.13, 0.055)
+	var head := Color(0.42, 0.45, 0.50)
 	var feather := Color(0.66, 0.145, 0.075)
-	var feather_alt := Color(0.58, 0.545, 0.46)
+	var feather_alt := Color(0.55, 0.52, 0.44)
 
 	var parts: Array = []
 	# 箭杆：箭尾在原点，沿 -Z 伸出
@@ -502,6 +502,10 @@ static func make_arm_mesh(color: Color) -> ArrayMesh:
 ##
 ## 手指朝 -Z，手腕朝 -Y。
 ## 小臂不在这里，见 make_player_forearm：手臂要单独控制朝向。
+##
+## 配色一律用「乘系数」而不是 Color.lightened()：
+## lightened() 是往白色混，混完之后饱和度被冲掉，
+## 深棕手套立刻变成一块灰砖——这正是第一版弓手看起来像贴图的原因。
 static func make_player_hand(skin: Color) -> ArrayMesh:
 	var parts: Array = []
 	# 手掌/手背主体
@@ -509,11 +513,11 @@ static func make_player_hand(skin: Color) -> ArrayMesh:
 	# 四根手指的指节脊：并排向前下方包过去
 	for i in 4:
 		var x := -0.0255 + float(i) * 0.017
-		parts.append(_box(Vector3(0.015, 0.05, 0.05), _xform(Vector3(x, -0.004, -0.052), Vector3(-16, 0, 0)), skin.lightened(0.07)))
+		parts.append(_box(Vector3(0.015, 0.05, 0.05), _xform(Vector3(x, -0.004, -0.052), Vector3(-16, 0, 0)), skin * 1.22))
 	# 指关节：让手背不是一块死方块
-	parts.append(_box(Vector3(0.068, 0.016, 0.026), _xform(Vector3(0.0, 0.03, -0.026)), skin.lightened(0.1)))
+	parts.append(_box(Vector3(0.068, 0.016, 0.026), _xform(Vector3(0.0, 0.03, -0.026)), skin * 1.38))
 	# 拇指
-	parts.append(_box(Vector3(0.026, 0.05, 0.038), _xform(Vector3(-0.03, -0.012, -0.026), Vector3(0, 0, 22)), skin))
+	parts.append(_box(Vector3(0.026, 0.05, 0.038), _xform(Vector3(-0.03, -0.012, -0.026), Vector3(0, 0, 22)), skin * 0.88))
 	return merge(parts)
 
 
@@ -527,19 +531,24 @@ static func make_player_hand(skin: Color) -> ArrayMesh:
 ## 形状刻意做成「两头细、中间粗」而不是一根等粗圆柱：
 ## 等粗圆柱在低多边形下只会读成一根管子，
 ## 有肌肉隆起和收窄的肘弯才像手臂。
+##
+## 长度（0.88 m）远超真人小臂，这是故意的：
+## 弓挂在视线前 1.15 m 处，按比例伸到肩膀会超出臂长，
+## 所以袖子必须一直延伸到画面外才不会被看到断口——
+## 半空中断掉的管子比没有手臂更假。
 static func make_player_forearm(sleeve_color: Color, cuff_color: Color) -> ArrayMesh:
 	var parts: Array = []
 
 	# 靠手腕的一小段：细
-	parts.append(_taper(0.0145, 0.0235, 0.22, _xform(Vector3(0.0, -0.11, 0.0)), sleeve_color))
-	# 肘部一段：最粗，然后往肘弯收一点
-	parts.append(_taper(0.0235, 0.0185, 0.40, _xform(Vector3(0.0, -0.42, 0.0)), sleeve_color))
+	parts.append(_taper(0.0135, 0.021, 0.22, _xform(Vector3(0.0, -0.11, 0.0)), sleeve_color))
+	# 肘部一段：最粗，然后一路收细伸向画面外
+	parts.append(_taper(0.021, 0.015, 0.66, _xform(Vector3(0.0, -0.55, 0.0)), sleeve_color))
 
 	# 皮护腕：手腕处一圈，把手和袖子连成一件
-	parts.append(_box(Vector3(0.050, 0.040, 0.050), _xform(Vector3(0.0, -0.021, 0.0)), cuff_color))
-	parts.append(_box(Vector3(0.044, 0.012, 0.044), _xform(Vector3(0.0, -0.048, 0.0)), cuff_color.darkened(0.2)))
+	parts.append(_box(Vector3(0.046, 0.038, 0.046), _xform(Vector3(0.0, -0.020, 0.0)), cuff_color))
+	parts.append(_box(Vector3(0.040, 0.011, 0.040), _xform(Vector3(0.0, -0.045, 0.0)), cuff_color * 0.80))
 	# 袖口的第二道绑带：给手臂一个「这是布」而不是「这是管子」的读感
-	parts.append(_box(Vector3(0.040, 0.011, 0.040), _xform(Vector3(0.0, -0.112, 0.0)), cuff_color.darkened(0.32)))
+	parts.append(_box(Vector3(0.036, 0.010, 0.036), _xform(Vector3(0.0, -0.105, 0.0)), cuff_color * 0.62))
 
 	return merge(parts)
 
@@ -564,15 +573,19 @@ static func _taper(top_radius: float, bottom_radius: float, height: float, xform
 ## 这里只做躯干和腿：手臂由弓的视图模型负责，
 ## 实体手臂在第一人称下永远看不见，加进来只会多一层穿插和阴影瑕疵。
 ##
-## 尺寸约定：躯干顶端（脖子）落在 1.56 m，
-## 正好低于站立时的相机高度 1.62 m——抬头平视时身体完全在画面外，
-## 只有低头才会露出来。蹲下时整个身体按 Y 压缩（见 player.gd）。
+## 尺寸约定：肩线落在 1.44 m，低于站立时的相机高度 1.62 m——
+## 平视时身体完全在画面外，只有低头才会露出来。
+##
+## 刻意不画脖子：脖子就在下巴底下 6 cm 处，
+## 低头时那一小块顶面会占满整个屏幕（实测是一整片肉色），
+## 比没有身体更糟。肩膀做成两块略高于胸口的小方块，
+## 低头看到的是「有起伏的肩膀 + 胸口」，而不是一块平板。
+## 蹲下时整个身体按 Y 压缩（见 player.gd）。
 static func make_player_body() -> ArrayMesh:
 	var coat := Color(0.185, 0.205, 0.135)
 	var coat_dark := Color(0.135, 0.15, 0.095)
 	var trouser := Color(0.145, 0.145, 0.115)
 	var leather := Color(0.115, 0.082, 0.055)
-	var skin := Color(0.40, 0.27, 0.20)
 
 	var parts: Array = []
 
@@ -582,24 +595,28 @@ static func make_player_body() -> ArrayMesh:
 	# 腰带
 	parts.append(_box(Vector3(0.315, 0.05, 0.215), _xform(Vector3(0.0, 1.035, 0.0)), leather))
 
-	# 胸：上宽下窄，压出一点腰线
-	parts.append(_box(Vector3(0.35, 0.26, 0.23), _xform(Vector3(0.0, 1.28, 0.0)), coat))
-	parts.append(_box(Vector3(0.39, 0.11, 0.235), _xform(Vector3(0.0, 1.44, 0.0)), coat))
-	# 肩
-	parts.append(_box(Vector3(0.095, 0.11, 0.21), _xform(Vector3(-0.195, 1.44, 0.0)), coat))
-	parts.append(_box(Vector3(0.095, 0.11, 0.21), _xform(Vector3(0.195, 1.44, 0.0)), coat))
-	# 脖子（头就是相机，不画）
-	parts.append(_box(Vector3(0.095, 0.075, 0.095), _xform(Vector3(0.0, 1.525, 0.0)), skin))
+	# 胸：由下往上三段收窄。
+	# 做成阶梯而不是一整块：低头时看到的是一个有起伏的胸口，
+	# 而不是一块铺满屏幕的平板（实测一整块时画面像贴了张墙）。
+	parts.append(_box(Vector3(0.36, 0.13, 0.23), _xform(Vector3(0.0, 1.195, 0.0)), coat))
+	parts.append(_box(Vector3(0.32, 0.10, 0.215), _xform(Vector3(0.0, 1.31, 0.0)), coat))
+	parts.append(_box(Vector3(0.26, 0.08, 0.19), _xform(Vector3(0.0, 1.40, 0.0)), coat))
+	# 肩：略低于胸口正中，两侧各一块
+	parts.append(_box(Vector3(0.09, 0.11, 0.18), _xform(Vector3(-0.165, 1.375, 0.0)), coat))
+	parts.append(_box(Vector3(0.09, 0.11, 0.18), _xform(Vector3(0.165, 1.375, 0.0)), coat))
 
-	# 斜挎的背带：给胸口一个非对称的细节，避免纯色方块
-	parts.append(_box(Vector3(0.06, 0.46, 0.02), _xform(Vector3(-0.05, 1.28, 0.118), Vector3(0, 0, 13)), leather))
+	# 斜挎的背带：给胸口一个非对称的细节，避免纯色方块。
+	# 上沿必须低于胸口顶面，否则会变成一块悬在肩膀上方的浮板。
+	parts.append(_box(Vector3(0.06, 0.35, 0.02), _xform(Vector3(-0.05, 1.205, 0.116), Vector3(0, 0, 13)), leather))
 
-	# 双腿：大腿 + 小腿 + 靴子
+	# 双腿：大腿 + 小腿 + 靴子。
+	# 小腿和脚掌比胯往前探一截：胸口比眼睛只低十几厘米，
+	# 不往前探的话小腿整段被胸口挡住，低头只看得见两只悬空的靴子。
 	for i in 2:
 		var x := -0.085 if i == 0 else 0.085
-		parts.append(_taper(0.082, 0.068, 0.42, _xform(Vector3(x, 0.68, 0.0)), trouser, 6))
-		parts.append(_taper(0.068, 0.052, 0.36, _xform(Vector3(x, 0.31, 0.0)), trouser, 6))
-		parts.append(_box(Vector3(0.112, 0.14, 0.235), _xform(Vector3(x, 0.07, -0.025)), leather))
+		parts.append(_taper(0.082, 0.068, 0.42, _xform(Vector3(x, 0.68, -0.02)), trouser, 6))
+		parts.append(_taper(0.068, 0.052, 0.36, _xform(Vector3(x, 0.31, -0.095)), trouser, 6))
+		parts.append(_box(Vector3(0.112, 0.14, 0.235), _xform(Vector3(x, 0.07, -0.135)), leather))
 
 	return merge(parts)
 

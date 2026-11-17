@@ -99,23 +99,19 @@ Forest-Adventure/
 │   └── tests/
 ├── tools/
 │   └── forest_generator/
-│       ├── agent/
-│       │   ├── planner.py
-│       │   ├── scene_parser.py
-│       │   └── validator.py
+│       ├── lib/
+│       │   ├── seed.py            确定性种子派生（FNV-1a）
+│       │   ├── manifest.py        manifest 读写与统计
+│       │   └── budget.py          预算检查
 │       ├── blender/
-│       │   ├── terrain.py
-│       │   ├── vegetation.py
-│       │   ├── rocks.py
-│       │   ├── river.py
-│       │   ├── buildings.py
-│       │   ├── materials.py
-│       │   ├── exporter.py
-│       │   └── renderer.py
+│       │   ├── vegetation.py      树、灌木、草、岩石
+│       │   ├── props.py           建筑与道具
+│       │   ├── materials.py       顶点色材质
+│       │   ├── exporter.py        GLB 导出
+│       │   └── renderer.py        预览图渲染
 │       ├── schemas/
 │       │   └── scene_spec.schema.json
 │       ├── presets/
-│       ├── assets/
 │       ├── output/
 │       └── main.py
 └── README.md
@@ -203,12 +199,22 @@ extends Resource
 |---|---|---|
 | `Camera3D` 局部变换 | 走路上下起伏、左右侧倾、落地下沉 | `PlayerTuning.head_bob_amplitude / head_bob_roll_degrees / head_bob_landing_dip` |
 | `Bow` 的 `BowViewModel` | 持弓摆动、呼吸起伏、转视角惯性、拉弦与双手 | `bow.gd` 的 `BOB_*`、`SWAY_*`、`MAX_DRAW` |
+| `Player` 的 `Body` | 玩家本体：躯干、腰、双腿、靴子 | `PropKit.make_player_body`、`player.gd` 的 `BODY_TOP_HEIGHT` |
 
 - 镜头只动局部位置和 roll，不碰 `Head` 的高度——蹲伏改的是 `Head`，两者叠加才是「人蹲下了，头还在动」。
 - 第一人称模型不参与物理。弓按**视图模型尺寸**建模（约 0.58 m 的短弓，整体不再缩放）：缩放会把左手一起缩小，手就成了画面里的小方块；不缩放则手与握把的比例天然正确。
 - 弓弦是两段运行时摆位的细柱，拉弦时折成 V 形，箭和右手跟着后移；落地与射箭各有一记短促下沉。
 - **箭不跟着弓的偏航转**：它单独挂在相机层，方向写在相机空间里，箭尖因此收拢到准星附近；弓在画面左侧三分之一，屏幕中央完全让给准星。
 - **视图模型单独打光**：`Bow` 的模型占用单独一层视觉层（`VIEW_MODEL_LAYER`），场景里的太阳与手电用 `light_cull_mask` 排除这一层。否则弓背光时是一块黑影，白天又被顶成奶白。
+- **手与小臂分件**：手模只画手（`make_player_hand`），小臂是单独成件（`make_player_forearm`）。手臂要能单独摆方向，否则两只手就是悬在空中的方块。
+  - **两者用不同的基**：手的朝向要同时对齐「手指方向」和「小臂方向」，但这两个方向并不正交，`Basis.looking_at` 会把小的方向投影到手指的垂面上——右手因此被拧成 92% 朝右、横着扫过整个屏幕。所以手用 `_hand_basis`（以手指为准），小臂用 `_limb_basis`（只对齐手臂方向，小臂是根轴对称的长条，不需要第二个约束）。
+  - 拉弦手的肘部必须朝**后下方**（相机空间 `+Z` 是身后）。肘部朝前时小臂会横着掠过画面中段，像一根横杆横穿视野；朝后下它才会缩到画面右下角出画。
+  - 袖子刻意做得比真人小臂长（0.88 m）：弓挂在视线前 1.15 m 处，按比例伸到肩膀会超出臂长，袖子必须一直延伸到画面外才不会被看到断口——半空中断掉的管子比没有手臂更假。
+- **视图模型配色用乘系数，不用 `Color.lightened()`**：`lightened()` 是往白色混，混完饱和度就没了，深棕手套会渲染成一块灰砖。配色深浅靠「实机取色 → 反推 albedo」迭代（工装 `res://tests/capture_bow.tscn`）。
+- **玩家本体网格**（`PropKit.make_player_body`）：躯干由下往上三段收窄，肩线落在 1.44 m，低于站立相机高度 1.62 m，所以平视时身体完全在画面外，只有低头才露出胸口与腿——避免「低头看腿是一片空洞」。
+  - 刻意不画脖子：脖子就在下巴底下十几厘米处，低头时那一小块顶面会占满整个屏幕（实测是一整片肉色），比没有身体更糟。
+  - **躯干整体后移 12 cm**：眼睛本来就该在胸口前面一点。不后移的话胸口正正好挡在腿前面，低头时视线先撞上胸口，腿和靴子永远被挡住。小腿与脚掌再往前探一截，靴子才不会变成两只悬空的黑方块。
+  - 蹲下时相机降到 0.95 m，躯干若还在 1.5 m 相机会钻进身体里。规则是「身体顶端始终略低于相机」，按 Y 整体压缩（脚不动），低多边形灰盒够用。
 
 ### 4.3 交互系统
 
@@ -398,6 +404,15 @@ camp.returned(camp_id)
 
 ## 6. AI → Blender 内容生产管线
 
+> **职责边界已由 [`forest-pipeline-spec.md`](./forest-pipeline-spec.md) §2 裁决。**
+> 本节原先设想「Blender 生成地形分块 GLB、Godot 导入」，但那会与运行时的
+> `TerrainField` 高度真相、`ChunkedWorld` 流式加载、`WorldChunk` 撒点
+> 构成两套世界生成系统。现裁决为：**Blender 生产资产，运行时生产世界**。
+>
+> 本节保留设计原则、流程骨架与安全边界；
+> SceneSpec 字段、资产契约、manifest 格式与导入检查规则以
+> [`forest-pipeline-spec.md`](./forest-pipeline-spec.md) 为准。
+
 ### 6.1 设计原则
 
 AI 只负责把设计意图转换为受约束的 SceneSpec。具体几何生成由版本受控的 Python 模块完成。
@@ -405,6 +420,12 @@ AI 只负责把设计意图转换为受约束的 SceneSpec。具体几何生成�
 禁止让模型在生产流程中直接执行任意 Python。所有参数先通过 JSON Schema 校验，再映射到允许的生成函数。
 
 ### 6.2 SceneSpec
+
+> **权威结构见 [`forest-pipeline-spec.md`](./forest-pipeline-spec.md) §3。**
+> 下面是 1.0 版示意，仅用于说明 SceneSpec 的形态与「seed 决定一切」的意图。
+> 现行 1.1 版新增 `assets`（资产生产清单）、`budget` 与 `export.material_mode`；
+> 片段里的 `terrain` / `river` / `vegetation` 在 1.1 版中归入 `world` 段，
+> 而 `world` 段在 v1 **不参与生成**。
 
 ~~~json
 {
@@ -451,35 +472,32 @@ AI 只负责把设计意图转换为受约束的 SceneSpec。具体几何生成�
 
 1. 解析自然语言并生成 SceneSpec 草案。
 2. 使用 Schema 校验类型、范围和必填项。
-3. 执行设计规则校验，例如道路坡度、地标间距和资源预算。
+3. 执行设计规则校验，例如资产键合法性、命名规范和资源预算。
 4. 人工查看配置差异并确认。
-5. Blender 后台模式生成地形。
-6. 根据坡度、高度、湿度和排除区分布植被。
-7. 生成河流、岩石、道路与建筑占位。
-8. 生成碰撞代理、LOD 和命名元数据。
-9. 渲染俯视图与关键视角预览。
-10. 导出分块 GLB 和 manifest.json。
-11. Godot 导入检查器验证坐标、材质、碰撞和资源预算。
+5. Blender 后台模式按 `assets` 清单生成网格。
+6. 生成材质（v1 为顶点色）、LOD 与碰撞代理。
+7. 生成命名元数据并按规范排序，保证同一 seed 的输出逐字节稳定。
+8. 渲染预览图。
+9. 导出资产 GLB 和 manifest.json。
+10. Godot 导入检查器验证键名、材质、碰撞、预算与种子一致性。
 
-命令形式：
-
-~~~bash
-blender --background --python tools/forest_generator/main.py -- --spec presets/pine_valley.json --output output/pine_valley
-~~~
+> 撒点与地形不在此列：它们由运行时生产（见 §6 开头的职责边界说明）。
 
 ### 6.4 局部重生成
 
-生成器必须按稳定 ID 管理对象，支持只更新指定层：
+生成器必须按**资产键**管理对象，支持只更新指定资产：
 
-- terrain
-- river
-- vegetation
-- rocks
-- landmarks
-- lighting
-- export
+~~~json
+{
+  "operation": "update_asset",
+  "region_id": "pine_valley",
+  "key": "pine_0",
+  "changes": {"height_m": [8.0, 13.0], "tags": ["sway"]}
+}
+~~~
 
-例如“增加松树”只重建 vegetation 层，不应删除人工调整的守林站或任务对象。
+重生成单个资产只影响该资产，其他资产的产物与校验值保持不变。
+例如「重做松树」不会删除人工调整的守林站或任务对象。
 
 生成资产与人工资产分目录保存。生成器不得覆盖 authored 目录。
 
@@ -487,8 +505,8 @@ blender --background --python tools/forest_generator/main.py -- --spec presets/p
 
 - 坐标和单位统一：1 Godot 单位 = 1 米。
 - 应用对象变换后再导出。
-- 网格名称采用 type_variant_lod 格式。
-- 材质使用可预测的命名和 PBR 贴图槽。
+- 网格名称遵循 `content-pipeline.md` §4.2 的命名规范（`env_<category>_<name>_<variant>_lod<N>`）。
+- 材质使用可预测的命名和贴图槽（v1 为顶点色，不产出贴图）。
 - 任务对象只导出占位点和稳定 ID，逻辑在 Godot 中绑定。
 - manifest.json 记录生成器版本、seed、源配置、文件校验值与资源统计。
 

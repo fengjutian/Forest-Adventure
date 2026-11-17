@@ -8,10 +8,16 @@ AI 不直接制作最终游戏逻辑，也不执行任意代码。
 
 ## 2. 内容分层
 
+> 职责边界以 [`forest-pipeline-spec.md`](./forest-pipeline-spec.md) §2 为准：
+> **Blender 生产资产，运行时生产世界**。地形高度真相、区块流式加载与植被撒点
+> 留在运行时（`TerrainField` / `ChunkedWorld` / `WorldChunk`），
+> 管线只负责生产网格、材质、LOD 与碰撞代理。
+
 | 层 | 主要来源 | 是否允许重新生成 |
 |---|---|---|
-| 基础地形 | Blender 程序化生成 | 是 |
-| 自然植被与岩石 | Blender 程序化生成 | 是 |
+| 基础地形 | **运行时程序化生成**（`TerrainField`） | 是（换种子重建世界） |
+| 植被与岩石的**网格资产** | Blender 程序化生成 | 是（按资产粒度） |
+| 植被与岩石的**摆放位置** | **运行时撒点**（`WorldChunk` 全局格点） | 是（随区块重建） |
 | 道路、河流 | 程序化生成 + 人工修正 | 分层重生成 |
 | 主地标与建筑 | 人工资产 | 不自动覆盖 |
 | 任务对象与敌人 | Godot 场景 | 不由 Blender 修改 |
@@ -25,13 +31,18 @@ AI 不直接制作最终游戏逻辑，也不执行任意代码。
   → JSON Schema 校验
   → 规则与预算校验
   → 人工确认差异
-  → Blender 后台生成
+  → Blender 后台生成资产（网格 / 材质 / LOD / 碰撞代理）
   → 自动几何检查
   → 渲染预览
-  → 分块导出 GLB + manifest
+  → 导出资产 GLB + manifest
   → Godot 导入检查
-  → 关卡设计与游戏逻辑绑定
+  → 运行时按资产键装载，替换 PropKit 的程序化网格
 ~~~
+
+> 与原文的差别：管线**不再输出地形与撒点**。
+> 地形与撒点由运行时的 `TerrainField` / `WorldChunk` 生产，
+> 管线只替换「长什么样」，不替换「在哪」。
+> 详见 [`forest-pipeline-spec.md`](./forest-pipeline-spec.md) §2。
 
 ## 4. 资产规范
 
@@ -77,22 +88,22 @@ LOD：      env_tree_pine_a_lod0
 - 碰撞使用简化形状，不直接使用高模三角网格。
 - 草、灌木和小石头默认无碰撞。
 
-## 5. Chunk 输出
+## 5. 产物输出
 
-每个 Chunk 输出：
+管线不再按世界分块输出。产物按**区域 + 资产**组织：
 
 ~~~text
 region_pine_valley/
-├── chunks/
-│   ├── chunk_00_00.glb
-│   ├── chunk_00_01.glb
-│   └── ...
-├── proxies/
-├── previews/
-├── nav_hints/
 ├── manifest.json
-└── scene_spec.json
+├── seed_report.json
+└── meshes/
+    ├── env_tree_pine_a_lod0.glb
+    ├── env_tree_pine_a_lod1.glb
+    ├── env_tree_pine_a_lod2.glb
+    └── ...
 ~~~
+
+manifest 的字段规格见 [`forest-pipeline-spec.md`](./forest-pipeline-spec.md) §7。
 
 manifest 至少记录：
 
@@ -100,12 +111,10 @@ manifest 至少记录：
 - generator_version
 - seed
 - region_id
-- chunk 坐标和边界
-- 资产列表
+- 每个资产的键、文件路径与校验值
 - 三角面与实例统计
 - 材质与纹理统计
 - 稳定对象 ID
-- 文件校验值
 - 生成时间与警告
 
 ## 6. 关卡设计保护
@@ -142,15 +151,19 @@ AI 输出只允许 SceneSpec JSON。解析器拒绝额外脚本、命令或未�
 
 ~~~json
 {
-  "operation": "update_layer",
+  "operation": "update_asset",
   "region_id": "pine_valley",
-  "layer": "vegetation",
+  "key": "pine_0",
   "changes": {
-    "pine_count": 420,
-    "density": 0.78
+    "height_m": [8.0, 13.0],
+    "tags": ["sway"]
   }
 }
 ~~~
+
+> 原先的 `update_layer`（按 terrain / vegetation / rocks 等层整体重建）不再适用：
+> 管线不生产地形与撒点，改为按**资产键**局部重建。
+> 规则见 [`forest-pipeline-spec.md`](./forest-pipeline-spec.md) §9。
 
 ## 8. 自动检查
 
@@ -177,15 +190,12 @@ AI 输出只允许 SceneSpec JSON。解析器拒绝额外脚本、命令或未�
 
 ## 10. 首个管线里程碑
 
-输入一个固定 SceneSpec，自动生成：
+首个管线的里程碑拆分见 [`forest-pipeline-spec.md`](./forest-pipeline-spec.md) §10
+（M3-1 规格与骨架 → M3-2 单资产端到端 → M3-3 全量资产 → M3-4 工程化）。
 
-- 1 km × 1 km 灰度地形。
-- 一条溪流。
-- 三类松树实例。
-- 两类岩石实例。
-- 一个守林站占位点。
-- 64 m 或 128 m Chunk。
-- 俯视图和两个玩家视角预览。
-- Godot 可导入的 GLB 与 manifest。
+核心原则不变：**首个里程碑先不接大语言模型**。
+固定 SceneSpec 稳定后，再加入自然语言到 SceneSpec 的转换。
 
-首个里程碑先不接大语言模型。固定配置稳定后，再加入自然语言到 SceneSpec 的转换。
+与传统"整场景生成"里程碑的差别：M3-2 的退出条件不是"产出了一片森林"，
+而是**运行时真的从 GLB 加载了 `pine_0` 这一个网格**。
+不接受"产出了但没接上"——那等于多了一套没人用的资产管线。
