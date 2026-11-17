@@ -123,17 +123,16 @@ func _test_first_person_motion() -> void:
 	_assert(view != null, "第一人称持弓挂在相机下")
 	if view == null:
 		return
-	_assert(view.get_node_or_null("BowPivot") != null, "弓有单独的抬放枢轴")
-	_assert(view.get_node_or_null("LeftHand") != null, "有左手")
-	_assert(view.get_node_or_null("RightHand") != null, "有右手")
-	_assert(view.get_node_or_null("UpperArmLeft") != null and view.get_node_or_null("ForearmLeft") != null,
-		"左臂由肩到腕的两段组成")
-	_assert(view.get_node_or_null("UpperArmRight") != null and view.get_node_or_null("ForearmRight") != null,
-		"右臂由肩到腕的两段组成")
+	var pivot := view.get_node_or_null("BowPivot") as Node3D
+	_assert(pivot != null, "弓有单独的抬放枢轴")
+	if pivot == null:
+		return
+	# 手挂在弓身上，和弓共用缩放：缩小后的弓配真人尺寸的手会立刻穿帮
+	var left_hand := pivot.get_node_or_null("LeftHand") as Node3D
+	var right_hand := pivot.get_node_or_null("RightHand") as Node3D
+	_assert(left_hand != null and right_hand != null, "有左手和右手（挂在弓身上）")
 	_assert(view.get_node_or_null("BowPivot/StringTop") != null
 		and view.get_node_or_null("BowPivot/StringBottom") != null, "弓弦是两段可拉开的折线")
-
-	var right_hand := view.get_node_or_null("RightHand") as Node3D
 	if right_hand == null:
 		return
 

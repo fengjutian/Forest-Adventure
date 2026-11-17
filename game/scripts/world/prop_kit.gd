@@ -410,8 +410,8 @@ static func _bow_arrow_parts() -> Array:
 	# 搭在弦上的箭，沿视线方向（-Z）
 	parts.append(_cylinder(0.016, 0.62, _xform(Vector3(0, 0.02, -0.28), Vector3(90, 0, 0)), shaft, 6))
 	parts.append(_cone(0.026, 0.1, _xform(Vector3(0, 0.02, -0.64), Vector3(-90, 0, 0)), head, 6))
-	parts.append(_box(Vector3(0.13, 0.005, 0.05), _xform(Vector3(0, 0.02, 0.04)), feather))
-	parts.append(_box(Vector3(0.13, 0.005, 0.05), _xform(Vector3(0, 0.02, 0.04), Vector3(0, 45, 0)), feather))
+	parts.append(_box(Vector3(0.16, 0.005, 0.055), _xform(Vector3(0, 0.02, 0.04)), feather))
+	parts.append(_box(Vector3(0.16, 0.005, 0.055), _xform(Vector3(0, 0.02, 0.04), Vector3(0, 45, 0)), feather))
 	return parts
 
 
@@ -441,14 +441,14 @@ static func make_arm_mesh(color: Color) -> ArrayMesh:
 ##
 ## 拇指压在握把靠近镜头的一侧——第一人称里能看见它，手才像在“握”，
 ## 而不是一只悬空的方块。手腕朝下接前臂。
+##
+## 四指要拼成一整块：手指之间留缝的话，侧过来看会变成一把梳子。
 static func make_player_hand(skin: Color) -> ArrayMesh:
 	var parts: Array = []
 	# 手背
 	parts.append(_box(Vector3(0.082, 0.1, 0.062), _xform(Vector3.ZERO), skin))
-	# 四指：在 -Z 侧竖直叠起来，正好扣住竖直的弓把
-	for i in 4:
-		var y := 0.03 - float(i) * 0.022
-		parts.append(_box(Vector3(0.074, 0.018, 0.05), _xform(Vector3(0.0, y, -0.052)), skin.darkened(0.12)))
+	# 四指：在 -Z 侧竖直叠成一整片，正好扣住竖直的弓把
+	parts.append(_box(Vector3(0.074, 0.086, 0.038), _xform(Vector3(0.0, 0.0, -0.046)), skin.darkened(0.12)))
 	# 指节：手背外沿
 	parts.append(_box(Vector3(0.072, 0.018, 0.024), _xform(Vector3(0.0, 0.044, -0.022)), skin.lightened(0.04)))
 	# 拇指：压在握把靠镜头一侧，从第一人称能直接看见

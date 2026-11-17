@@ -9,11 +9,11 @@ signal props_built()
 
 @export var camp_seed: int = 90210
 
-var _terrain: ProcTerrain
+var _height_provider: Node = null
 
 
-func build(terrain: ProcTerrain) -> void:
-	_terrain = terrain
+func build(height_provider: Node) -> void:
+	_height_provider = height_provider
 
 	_place_cabin()
 	_place_supply_shed()
@@ -63,9 +63,9 @@ func _add_prop(node_name: String, mesh: Mesh, position: Vector2, rotation_y: flo
 
 
 func _ground(x: float, z: float) -> float:
-	if _terrain == null:
+	if _height_provider == null or not _height_provider.has_method("height_at"):
 		return 0.0
-	return _terrain.height_at(x, z)
+	return float(_height_provider.call("height_at", x, z))
 
 
 # ------------------------------------------------------------------ 各建筑

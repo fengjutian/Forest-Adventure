@@ -88,7 +88,7 @@ var _home: Vector3 = Vector3.ZERO
 var _patrol_target: Vector3 = Vector3.ZERO
 var _has_patrol_target: bool = false
 var _rng := RandomNumberGenerator.new()
-var _terrain: ProcTerrain = null
+var _terrain: Node3D = null
 var _flash_timer: float = 0.0
 var _base_scale: Vector3 = Vector3.ONE
 
@@ -99,7 +99,7 @@ func _ready() -> void:
 	_rng.randomize()
 	_base_scale = scale
 	_home = global_position
-	_terrain = get_tree().get_first_node_in_group(&"terrain") as ProcTerrain
+	_terrain = get_tree().get_first_node_in_group(&"terrain") as Node3D
 	_build_visual()
 
 
@@ -317,8 +317,8 @@ func _apply_gravity(delta: float) -> void:
 
 ## 贴地：优先用地形高度查询，落在地面上。
 func _clamp_to_home() -> void:
-	if _terrain != null:
-		var ground := _terrain.height_at(global_position.x, global_position.z)
+	if _terrain != null and _terrain.has_method("height_at"):
+		var ground := float(_terrain.call("height_at", global_position.x, global_position.z))
 		if global_position.y < ground:
 			global_position.y = lerpf(global_position.y, ground, 0.5)
 

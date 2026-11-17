@@ -9,10 +9,13 @@ extends Node3D
 ##   - 箭矢从背包扣除，打空就没有远程手段
 ##
 ## 第一人称表现（「人」的动作，而不是一把浮空的弓）：
-##   - 左手扣在握把上、右手捏弦，双手与两条手臂都挂在相机下
+##   - 左手扣在握把上、右手捏弦，双手都挂在弓身上，和弓一起缩放
 ##   - 蓄力时弓弦折成 V 形、箭一起后移，右手跟着弦走
 ##   - 走路/冲刺时有持弓摆动，站定时有呼吸起伏，转视角有惯性滞后
 ##   - 落地、射击各有一记短促的下沉
+##
+## 不画手臂：第一人称里伸出来的手臂只有「从画面底边插进来的两根管子」，
+## 读起来比没有手臂更诡异。手直接长在弓上，是这类低多边形游戏更常见的做法。
 
 signal fired(power: float)
 signal fire_failed(reason: String)
@@ -32,17 +35,21 @@ signal fire_failed(reason: String)
 ## 瞄准时的鼠标灵敏度倍率。
 @export var aim_sensitivity_scale: float = 0.45
 ## 垂下持弓时相对镜头的偏移与朝向。
-@export var view_offset: Vector3 = Vector3(0.08, -0.3, -0.55)
-@export var view_rotation_degrees: Vector3 = Vector3(0.0, 10.0, 14.0)
+@export var view_offset: Vector3 = Vector3(0.24, -0.3, -0.62)
+@export var view_rotation_degrees: Vector3 = Vector3(6.0, 16.0, 12.0)
 ## 举弓瞄准时相对镜头的偏移与朝向。
 ##
-## 主要靠滚转（绕 Z）把弓身侧过来，偏航只留一点点：
-## 偏航越大越容易看见箭杆，但箭也会越明显地偏向准星左侧。
-@export var aim_view_offset: Vector3 = Vector3(0.0, -0.03, -0.56)
-@export var aim_view_rotation_degrees: Vector3 = Vector3(0.0, 6.0, 18.0)
+## 弓弦心落在 x=0，所以弓的水平位置就是弦心的位置：
+## 偏移 x=0 时弓弦正压屏幕中心，箭也正对准星。
+## 只留一点点偏航：完全侧过去虽然能看清箭杆，箭也会明显偏到准星左边。
+@export var aim_view_offset: Vector3 = Vector3(0.0, -0.02, -0.64)
+@export var aim_view_rotation_degrees: Vector3 = Vector3(0.0, 0.0, 3.0)
 ## 第一人称模型整体缩放。
-## 弓本身是 1.32 m 的猎弓，缩到 0.32 后与相机距离配合，正好占满画面高度。
-@export var view_scale: float = 0.32
+##
+## 弓按真实尺寸（1.32 m）建模，这里缩一半再把距离调近，
+## 让弓高约占瞄准画面的八成——弓太大就会把整个屏幕糊住。
+## 手挂在弓上跟着一起缩，手掌与握把的比例始终是对的。
+@export var view_scale: float = 0.5
 
 ## 弓本地坐标里的关键点。
 const GRIP_POINT := Vector3(-0.2, 0.0, 0.0)
@@ -50,10 +57,13 @@ const STRING_TOP := Vector3(0.0, 0.66, 0.0)
 const STRING_BOTTOM := Vector3(0.0, -0.66, 0.0)
 ## 弓弦静止位置（也是箭尾位置）。
 const NOCK_REST := Vector3(0.0, 0.02, 0.06)
-## 满蓄力时弦被拉后的距离（弓本地单位）。乘上 view_scale 约 0.25 m。
-const MAX_DRAW := 0.72
-## 手部缩放。弓是缩小的视图模型，手不能按真人尺寸摆，否则像个巨人。
-const HAND_SCALE := 0.42
+## 满蓄力时弦被拉后的距离（弓本地单位）。
+##
+## 不宜太大：弦心后移越多，两段弦就越接近两条贯穿屏幕的斜线。
+## 0.3 刚好是一个「拉满的 V」，而不是一把劈开画面的刀。
+const MAX_DRAW := 0.3
+## 手部相对弓的缩放。弓是 1.32 m 的猎弓，手按真实尺寸（约 0.1 m）摆。
+const HAND_SCALE := 1.0
 ## 持弓摆动幅度（米 / 度）。
 const BOB_SIDE := 0.009
 const BOB_UP := 0.006
@@ -73,10 +83,6 @@ var _string_top: MeshInstance3D = null
 var _string_bottom: MeshInstance3D = null
 var _left_hand: MeshInstance3D = null
 var _right_hand: MeshInstance3D = null
-var _upper_left: MeshInstance3D = null
-var _fore_left: MeshInstance3D = null
-var _upper_right: MeshInstance3D = null
-var _fore_right: MeshInstance3D = null
 
 var _charge: float = 0.0
 var _charging: bool = false
@@ -118,17 +124,19 @@ func _ready() -> void:
 	EventBus.ammo_changed.emit(ammo_item_id, _ammo_count())
 
 
-## 第一人称持弓：弓、弦、箭、双手、两段手臂，全部挂在相机下。
+## 第一人称持弓：弓、弦、箭、双手，全部挂在弓上。
 ##
 ## 结构：
 ##   Camera3D
 ##   └── BowViewModel (Node3D)        摆动/呼吸/落地下沉都加在这一层
-##       ├── BowPivot (Node3D)        弓的抬放与缩放
-##       │   ├── BowFrame
-##       │   ├── NockedArrow
-##       │   ├── StringTop / StringBottom
-##       ├── LeftHand / RightHand     相机空间尺寸，不跟弓一起缩小
-##       └── UpperArmLeft / ForearmLeft / UpperArmRight / ForearmRight
+##       └── BowPivot (Node3D)        弓的抬放与缩放
+##           ├── BowFrame
+##           ├── NockedArrow
+##           ├── StringTop / StringBottom
+##           └── LeftHand / RightHand
+##
+## 手挂在弓上而不是相机上：这样手和弓共用一套缩放，
+## 手掌与握把的比例才是对的（弓缩到 0.32 而手按真实尺寸摆会立刻穿帮）。
 func _build_view_model() -> void:
 	_view_root = Node3D.new()
 	_view_root.name = "BowViewModel"
@@ -150,16 +158,8 @@ func _build_view_model() -> void:
 	_string_bottom = _add_mesh(_bow_pivot, "StringBottom", string_mesh)
 
 	var hand_mesh := PropKit.make_player_hand(Color(0.6, 0.45, 0.33))
-	_left_hand = _add_mesh(_view_root, "LeftHand", hand_mesh)
-	_right_hand = _add_mesh(_view_root, "RightHand", hand_mesh)
-
-	var sleeve := Color(0.16, 0.18, 0.14)
-	var upper_mesh := PropKit.make_arm_mesh(sleeve)
-	var fore_mesh := PropKit.make_arm_mesh(sleeve.lightened(0.05))
-	_upper_left = _add_mesh(_view_root, "UpperArmLeft", upper_mesh)
-	_fore_left = _add_mesh(_view_root, "ForearmLeft", fore_mesh)
-	_upper_right = _add_mesh(_view_root, "UpperArmRight", upper_mesh)
-	_fore_right = _add_mesh(_view_root, "ForearmRight", fore_mesh)
+	_left_hand = _add_mesh(_bow_pivot, "LeftHand", hand_mesh)
+	_right_hand = _add_mesh(_bow_pivot, "RightHand", hand_mesh)
 
 
 func _add_mesh(parent: Node3D, node_name: String, mesh: Mesh) -> MeshInstance3D:
@@ -298,7 +298,7 @@ func _update_view(has_bow: bool, delta: float) -> void:
 		_player.look_sensitivity_scale = aim_sensitivity_scale if _aiming else 1.0
 
 
-## 每帧摆放双手、手臂、弓弦与箭，并叠加持弓的摆动。
+## 每帧摆放双手、弓弦与箭，并叠加持弓的摆动。
 func _update_pose(has_bow: bool, delta: float) -> void:
 	_update_bob(delta)
 	if not has_bow or _view_root == null:
@@ -308,32 +308,23 @@ func _update_pose(has_bow: bool, delta: float) -> void:
 	var draw_target := _charge * MAX_DRAW if (_aiming or _charging) else 0.0
 	_draw = lerpf(_draw, draw_target, minf(1.0, 18.0 * delta))
 
-	var bow := _bow_pivot.transform
-	var bow_rotation := bow.basis.orthonormalized()
+	# 双手与弓同一个父节点，用弓的本地坐标摆位即可
 	var nock_local := NOCK_REST + Vector3(0.0, 0.0, _draw)
-	var grip := bow * GRIP_POINT
-	var nock := bow * nock_local
 
-	# 双手：左手扣住握把，右手捏着弦并跟着拉开。
-	# 右手往右偏一点，免得把准星和箭挡住。
-	var left_hand_pos := grip + bow_rotation * Vector3(0.0, 0.0, 0.03)
-	var right_hand_pos := nock + bow_rotation * Vector3(0.012, -0.055, 0.02)
-	var hand_basis := bow_rotation.scaled(Vector3.ONE * HAND_SCALE)
-	_left_hand.transform = Transform3D(hand_basis, left_hand_pos)
-	_right_hand.transform = Transform3D(hand_basis, right_hand_pos)
+	# 两只手都转成侧握：绕 Y 转 90° 后，手模的 -Z 手指方向变成 -X。
+	# 正面对镜头的话只能看见手背，手指全被挡在后面，手就成了贴片；
+	# 侧过来才看得见指节包住握把与弓弦。
+	var side_basis := Basis(Vector3.UP, deg_to_rad(90.0)).scaled(Vector3.ONE * HAND_SCALE)
 
-	# 前臂从画面下方竖直伸上来接住手。上臂再往下、往身后去，
-	# 整段都在画面外——第一人称里看到的只有一小截小臂，和真实持弓视角一致。
-	var left_elbow := left_hand_pos + Vector3(-0.02, -0.3, 0.05)
-	var right_elbow := right_hand_pos + Vector3(0.03, -0.28, 0.05)
-	_fore_left.transform = _segment_transform(left_elbow, left_hand_pos, 0.032)
-	_fore_right.transform = _segment_transform(right_elbow, right_hand_pos, 0.03)
-	_upper_left.transform = _segment_transform(left_elbow + Vector3(-0.1, -0.26, 0.08), left_elbow, 0.04)
-	_upper_right.transform = _segment_transform(right_elbow + Vector3(0.1, -0.26, 0.08), right_elbow, 0.04)
+	# 左手扣住握把：手指从 +X 一侧绕过去包住竖直的弓把
+	_left_hand.transform = Transform3D(side_basis, GRIP_POINT + Vector3(0.075, 0.0, 0.02))
+
+	# 右手捏弦：指尖朝向弦心，位置跟着拉弦量走
+	_right_hand.transform = Transform3D(side_basis, nock_local + Vector3(0.062, -0.015, 0.0))
 
 	# 弓弦：两段折线，从上下弓臂尖端连到弦心；拉弦时折成 V 形
-	_string_top.transform = _segment_transform(STRING_TOP, nock_local, 0.012)
-	_string_bottom.transform = _segment_transform(STRING_BOTTOM, nock_local, 0.012)
+	_string_top.transform = _segment_transform(STRING_TOP, nock_local, 0.009)
+	_string_bottom.transform = _segment_transform(STRING_BOTTOM, nock_local, 0.009)
 
 	# 箭跟着弦一起后移
 	_nocked_arrow.position = Vector3(0.0, 0.0, _draw)

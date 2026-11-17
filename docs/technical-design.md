@@ -202,10 +202,10 @@ extends Resource
 | 层 | 负责 | 参数 |
 |---|---|---|
 | `Camera3D` 局部变换 | 走路上下起伏、左右侧倾、落地下沉 | `PlayerTuning.head_bob_amplitude / head_bob_roll_degrees / head_bob_landing_dip` |
-| `Bow` 的 `BowViewModel` | 持弓摆动、呼吸起伏、转视角惯性、拉弦与手臂 | `bow.gd` 的 `BOB_*`、`SWAY_*`、`MAX_DRAW` |
+| `Bow` 的 `BowViewModel` | 持弓摆动、呼吸起伏、转视角惯性、拉弦与双手 | `bow.gd` 的 `BOB_*`、`SWAY_*`、`MAX_DRAW` |
 
 - 镜头只动局部位置和 roll，不碰 `Head` 的高度——蹲伏改的是 `Head`，两者叠加才是「人蹲下了，头还在动」。
-- 第一人称模型全部挂在相机下，不参与物理；手和弓按 `view_scale` 单独缩放，避免真人尺寸的手配缩小后的弓。
+- 第一人称模型不参与物理；弓按真实尺寸建模，手挂在弓身上与弓共用一套缩放，避免手掌和握把比例穿帮。
 - 弓弦是两段运行时摆位的细柱，拉弦时折成 V 形，箭和右手跟着后移；落地与射箭各有一记短促下沉。
 
 ### 4.3 交互系统
@@ -231,9 +231,13 @@ func interact(actor: Node) -> void:
 1. Camera3D 中心发射射线。
 2. 查找碰撞体或其父节点上的 Interactable。
 3. 调用 can_interact。
-4. UI 显示 get_prompt 返回的文本。
+4. UI 显示 get_prompt 返回的文本，并在前面标出当前交互键（从输入映射读取）。
 5. 玩家按下交互键后调用 interact。
 6. 交互对象发出领域事件，任务系统按事件推进。
+
+HUD 的按键提示面板（`scripts/ui/hud.gd`）进入游戏时自动显示，9 秒后收起，
+之后用 `toggle_help`（默认 H）开关；收起时右上角保留一个角标。
+面板内容与交互提示的键位前缀都直接读 `InputMap`，改键后不需要同步改界面。
 
 ### 4.4 物品与任务数据
 

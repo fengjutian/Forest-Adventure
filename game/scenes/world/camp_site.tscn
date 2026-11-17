@@ -1,0 +1,52 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/interactables/supply_crate.tscn" id="1_crate"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/camp_radio.tscn" id="2_radio"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/campfire.tscn" id="3_campfire"]
+[ext_resource type="Script" path="res://scripts/world/location_trigger.gd" id="4_location"]
+[ext_resource type="Script" path="res://scripts/world/camp_site.gd" id="5_camp"]
+[ext_resource type="Script" path="res://scripts/world/camp_builder.gd" id="6_builder"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/wolf.tscn" id="7_wolf"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_camp_area"]
+size = Vector3(40, 4, 40)
+
+[node name="CampSite" type="Node3D"]
+script = ExtResource("5_camp")
+
+[node name="AuthoredProps" type="Node3D" parent="."]
+script = ExtResource("6_builder")
+
+[node name="SupplyCrate" parent="." instance=ExtResource("1_crate")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.6, 0, 4.2)
+
+[node name="CampRadio" parent="." instance=ExtResource("2_radio")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.8, 0, -3.2)
+
+[node name="Campfire" parent="." instance=ExtResource("3_campfire")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="SpawnPoint" type="Marker3D" parent="." groups=["spawn_point"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 7.5)
+
+[node name="Wolf01" parent="." instance=ExtResource("7_wolf")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0, -21.5)
+stable_id = &"wolf_01"
+
+[node name="Wolf02" parent="." instance=ExtResource("7_wolf")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.2, 0, -26.5)
+stable_id = &"wolf_02"
+
+[node name="Wolf03" parent="." instance=ExtResource("7_wolf")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 0, -17.5)
+stable_id = &"wolf_03"
+
+[node name="CampArea" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("4_location")
+location_id = &"camp"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CampArea"]
+shape = SubResource("BoxShape3D_camp_area")

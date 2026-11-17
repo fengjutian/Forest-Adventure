@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/chunked_world.gd" id="1_world"]
+[ext_resource type="PackedScene" path="res://scenes/world/camp_site.tscn" id="2_camp"]
+
+[node name="PineValley" type="Node3D"]
+
+[node name="ChunkedWorld" type="Node3D" parent="."]
+script = ExtResource("1_world")
+
+[node name="CampSite" parent="ChunkedWorld" instance=ExtResource("2_camp")]
