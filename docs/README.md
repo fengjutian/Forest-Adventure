@@ -12,6 +12,7 @@
 - [战斗与成长系统](./combat-and-progression.md)：第一人称战斗、敌人架构、资源、制作与成长边界。
 - [内容生产管线](./content-pipeline.md)：AI、Blender、Godot 的资产分层、导出规范和自动检查。
 - [开发计划](./development-plan.md)：里程碑、优先级、完成定义、风险与近期执行顺序。
+- [第一个场景设计](./first-scene-design.md)：林间营地的空间布局、教学流程、任务状态、Godot 结构与验收标准。
 
 ## 引擎分工
 
