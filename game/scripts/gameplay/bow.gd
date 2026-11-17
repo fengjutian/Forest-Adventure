@@ -25,8 +25,14 @@ signal fire_failed(reason: String)
 @export var aim_fov: float = 55.0
 ## 瞄准时的鼠标灵敏度倍率。
 @export var aim_sensitivity_scale: float = 0.45
-## 弓与镜头之间的手持偏移。
-@export var view_offset: Vector3 = Vector3(0.24, -0.2, -0.42)
+## 垂下持弓时相对镜头的偏移与朝向。
+@export var view_offset: Vector3 = Vector3(0.28, -0.3, -0.48)
+@export var view_rotation_degrees: Vector3 = Vector3(10.0, 22.0, 18.0)
+## 举弓瞄准时相对镜头的偏移与朝向。弓弦落在屏幕中心。
+@export var aim_view_offset: Vector3 = Vector3(0.0, -0.04, -0.52)
+@export var aim_view_rotation_degrees: Vector3 = Vector3(0.0, 2.0, 0.0)
+## 第一人称模型整体缩放。
+@export var view_scale: float = 0.7
 
 var _player: Player = null
 var _inventory: Inventory = null
@@ -50,6 +56,13 @@ func _ready() -> void:
 	_base_fov = _camera.fov
 
 	_build_view_model()
+
+	# 箭矢数量会因为初始装备、拾取掉落物、其它消耗而变化，
+	# 背包一有变动就重新广播，否则 HUD 会一直显示 0。
+	if _inventory != null:
+		_inventory.item_added.connect(_on_inventory_changed)
+		_inventory.item_removed.connect(_on_inventory_changed)
+
 	EventBus.ammo_changed.emit(ammo_item_id, _ammo_count())
 
 
@@ -60,9 +73,17 @@ func _build_view_model() -> void:
 	_view_model.mesh = PropKit.make_bow()
 	_view_model.material_override = PropKit.painted_material()
 	_view_model.position = view_offset
-	_view_model.rotation_degrees = Vector3(4.0, 9.0, 6.0)
+	_view_model.rotation_degrees = view_rotation_degrees
+	_view_model.scale = Vector3.ONE * view_scale
 	_view_model.visible = false
 	_camera.add_child(_view_model)
+
+
+## 背包里箭矢数量变了。
+func _on_inventory_changed(item_id: StringName, _amount: int) -> void:
+	if item_id != ammo_item_id:
+		return
+	EventBus.ammo_changed.emit(ammo_item_id, _ammo_count())
 
 
 func _process(delta: float) -> void:
@@ -79,7 +100,7 @@ func _process(delta: float) -> void:
 	elif _charging:
 		_release_and_fire()
 
-	_update_view(control_ok and has_bow)
+	_update_view(has_bow, delta)
 
 
 func _charge_up(delta: float) -> void:
@@ -145,10 +166,19 @@ func _on_arrow_hit(_target: Node, _damage: float, weakpoint: bool) -> void:
 	EventBus.hit_confirmed.emit(weakpoint)
 
 
-func _update_view(can_use: bool) -> void:
+## 更新第一人称弓的姿态。
+##
+## 手里有弓就一直拿在手上（垂在画面右下），瞄准或蓄力时抬到屏幕中心。
+func _update_view(has_bow: bool, delta: float) -> void:
 	if _view_model != null:
-		# 瞄准或蓄力时才举起弓
-		_view_model.visible = can_use and (_aiming or _charging)
+		_view_model.visible = has_bow
+
+		var raised := _aiming or _charging
+		var target_offset := aim_view_offset if raised else view_offset
+		var target_rotation := aim_view_rotation_degrees if raised else view_rotation_degrees
+		var weight := minf(1.0, 12.0 * delta)
+		_view_model.position = _view_model.position.lerp(target_offset, weight)
+		_view_model.rotation_degrees = _view_model.rotation_degrees.lerp(target_rotation, weight)
 
 	# 瞄准时收窄视野
 	var target_fov := _base_fov
