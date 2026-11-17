@@ -159,10 +159,15 @@ func _test_chunked_world() -> void:
 	if rebuilt != null:
 		_assert(signature == rebuilt.signature(), "同一区块重建后植被逐实例一致")
 
-	# 流式加载：走远后营地卸载、脚下加载
+	# 流式加载：走远后营地卸载、脚下加载。
+	# 先把敌人冻住，免得它们追着瞬移的玩家跑出营地，影响后续感知测试。
+	var enemies := get_tree().get_nodes_in_group(&"enemy")
+	for enemy in enemies:
+		(enemy as Node).set_physics_process(false)
+
 	var saved_position := _player.global_position
 	_player.set_physics_process(false)
-	_player.global_position = Vector3(400.0, world.height_at(400.0, 400.0) + 2.0, 400.0)
+	_player.global_position = Vector3(460.0, world.height_at(460.0, 460.0) + 2.0, 460.0)
 	for i in 240:
 		await get_tree().process_frame
 
@@ -173,6 +178,8 @@ func _test_chunked_world() -> void:
 
 	_player.global_position = saved_position
 	_player.set_physics_process(true)
+	for enemy in enemies:
+		(enemy as Node).set_physics_process(true)
 	for i in 240:
 		await get_tree().process_frame
 	_assert(world.is_chunk_loaded(camp_coord), "回到营地后区块重新加载")
@@ -511,8 +518,9 @@ func _test_enemy_perception() -> void:
 	wolf.set_physics_process(true)
 	var start_state := wolf.state
 
-	# 把玩家挪到林狼面前
-	_player.global_position = wolf.global_position + Vector3(0.0, 0.0, -3.0)
+	# 把玩家挪到林狼正视方向的前方
+	var facing := -wolf.global_transform.basis.z
+	_player.global_position = wolf.global_position + facing * 3.0
 	for i in 30:
 		await get_tree().physics_frame
 

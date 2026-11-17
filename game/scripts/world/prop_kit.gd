@@ -803,22 +803,6 @@ static func make_radio() -> ArrayMesh:
 	return merge(parts)
 
 
-## 远处远景剪影用的低面数山体。
-static func make_backdrop_hills(seed_value: int) -> ArrayMesh:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = seed_value
-	var parts: Array = []
-	for i in 7:
-		var angle := TAU * float(i) / 7.0 + rng.randf_range(-0.2, 0.2)
-		var dist := rng.randf_range(95.0, 130.0)
-		var height := rng.randf_range(14.0, 30.0)
-		var radius := rng.randf_range(22.0, 38.0)
-		var tint := Color(0.16, 0.22, 0.24).lerp(Color(0.24, 0.3, 0.3), rng.randf())
-		parts.append(_cone(radius, height,
-			_xform(Vector3(cos(angle) * dist, height * 0.5 - 6.0, sin(angle) * dist)), tint, 7))
-	return merge(parts)
-
-
 ## 按名称取道具网格，供可交互物脚本使用。
 static func make_prop(prop_name: StringName) -> Mesh:
 	match prop_name:

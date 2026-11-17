@@ -23,7 +23,6 @@ func build(height_provider: Variant) -> void:
 	_place_signpost()
 	_place_camp_details()
 	_place_creek()
-	_place_backdrop()
 	_place_camp_glow()
 
 	props_built.emit()
@@ -217,15 +216,6 @@ func _place_creek() -> void:
 		var position := Vector2(11.0 + side * rng.randf_range(2.6, 4.4), rng.randf_range(-28.0, 28.0))
 		_add_prop("CreekRock%02d" % i, PropKit.make_rock(camp_seed + 100 + i),
 			position, rng.randf_range(0.0, 360.0), Vector3(0.6, 0.5, 0.6))
-
-
-func _place_backdrop() -> void:
-	var hills := MeshInstance3D.new()
-	hills.name = "BackdropHills"
-	hills.mesh = PropKit.make_backdrop_hills(camp_seed)
-	hills.material_override = PropKit.painted_material()
-	hills.position = Vector3(0.0, -4.0, 0.0)
-	add_child(hills)
 
 
 func _place_camp_glow() -> void:
