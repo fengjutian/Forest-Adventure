@@ -81,6 +81,14 @@ pause={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"physical_keycode":4194305)]
 }
+quick_save={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194336)]
+}
+quick_load={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194340)]
+}
 
 [layer_names]
 

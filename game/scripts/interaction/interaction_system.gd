@@ -54,7 +54,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	target.interact(actor)
 
-	var target_id := target.get("stable_id")
+	var target_id: Variant = target.get("stable_id")
 	if target_id is StringName:
 		EventBus.object_interacted.emit(target_id)
 

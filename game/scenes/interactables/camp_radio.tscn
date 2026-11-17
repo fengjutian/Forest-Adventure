@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/interaction/device_interactable.gd" id="1_device"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_radio"]
+size = Vector3(0.5, 0.35, 0.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_radio"]
+size = Vector3(0.5, 0.35, 0.4)
+
+[node name="CampRadio" type="Node3D"]
+script = ExtResource("1_device")
+stable_id = &"camp_radio"
+device_id = &"camp_radio"
+required_item_id = &"fuse"
+required_amount = 1
+prompt_text = "调查无线电"
+
+[node name="Body" type="StaticBody3D" parent="."]
+collision_layer = 4
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Body"]
+shape = SubResource("BoxShape3D_radio")
+
+[node name="Mesh" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.175, 0)
+mesh = SubResource("BoxMesh_radio")

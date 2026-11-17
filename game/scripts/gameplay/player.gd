@@ -289,11 +289,11 @@ func is_control_enabled() -> bool:
 
 func to_dict() -> Dictionary:
 	return {
-		"transform": {
+		"player_transform": {
 			"position": [global_position.x, global_position.y, global_position.z],
 			"rotation_y": rotation.y,
 		},
-		"state": {
+		"player_state": {
 			"health": health,
 			"stamina": stamina,
 			"flashlight_on": flashlight_on,
@@ -304,13 +304,13 @@ func to_dict() -> Dictionary:
 
 
 func from_dict(data: Dictionary) -> void:
-	var transform_data: Dictionary = data.get("transform", {})
+	var transform_data: Dictionary = data.get("player_transform", {})
 	var position: Array = transform_data.get("position", [0.0, 0.0, 0.0])
 	if position.size() == 3:
 		global_position = Vector3(float(position[0]), float(position[1]), float(position[2]))
 	rotation.y = float(transform_data.get("rotation_y", 0.0))
 
-	var state: Dictionary = data.get("state", {})
+	var state: Dictionary = data.get("player_state", {})
 	health = float(state.get("health", tuning.max_health))
 	stamina = float(state.get("stamina", tuning.max_stamina))
 	flashlight_battery = float(state.get("flashlight_battery", tuning.flashlight_battery_max))

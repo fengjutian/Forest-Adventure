@@ -14,6 +14,20 @@ extends Node3D
 @export var stable_id: StringName = &""
 
 
+func _ready() -> void:
+	add_to_group(&"interactable")
+
+
+## 需要持久化的状态。写入存档的 changed_objects。
+func get_persistent_state() -> Dictionary:
+	return {}
+
+
+## 从存档恢复状态。
+func apply_persistent_state(_state: Dictionary) -> void:
+	pass
+
+
 func can_interact(_actor: Node) -> bool:
 	return true
 
@@ -29,3 +43,20 @@ func interact(_actor: Node) -> void:
 ## 交互后是否隐藏自身（拾取类对象）。
 func is_consumed_on_interact() -> bool:
 	return false
+
+
+## 关闭交互能力：隐藏模型并移除碰撞，使射线不再命中。
+func set_interactive_enabled(enabled: bool) -> void:
+	for child in get_children():
+		if child is CollisionObject3D:
+			var body := child as CollisionObject3D
+			if enabled:
+				if not body.has_meta(&"original_layer"):
+					body.set_meta(&"original_layer", body.collision_layer)
+				body.collision_layer = int(body.get_meta(&"original_layer"))
+			else:
+				body.collision_layer = 0
+			body.visible = enabled
+		elif child is Node3D:
+			(child as Node3D).visible = enabled
+	visible = enabled

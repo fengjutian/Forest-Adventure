@@ -1,0 +1,203 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/interactables/supply_crate.tscn" id="1_crate"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/camp_radio.tscn" id="2_radio"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/campfire.tscn" id="3_campfire"]
+[ext_resource type="Script" path="res://scripts/world/location_trigger.gd" id="4_location"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_ground"]
+size = Vector3(60, 1, 60)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(60, 1, 60)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cabin"]
+size = Vector3(6, 4, 5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cabin"]
+size = Vector3(6, 4, 5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+size = Vector3(60, 6, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+size = Vector3(60, 6, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tree"]
+top_radius = 0.35
+bottom_radius = 0.45
+height = 9.0
+radial_segments = 8
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_tree"]
+height = 9.0
+radius = 0.45
+
+[sub_resource type="BoxMesh" id="BoxMesh_creek"]
+size = Vector3(4, 0.3, 44)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_camp_area"]
+size = Vector3(40, 4, 40)
+
+[sub_resource type="StandardMaterial3D" id="Mat_ground"]
+albedo_color = Color(0.29, 0.35, 0.24, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_wood"]
+albedo_color = Color(0.42, 0.31, 0.21, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="Mat_water"]
+albedo_color = Color(0.2, 0.38, 0.47, 1)
+roughness = 0.15
+metallic = 0.1
+
+[sub_resource type="StandardMaterial3D" id="Mat_bark"]
+albedo_color = Color(0.33, 0.25, 0.18, 1)
+roughness = 1.0
+
+[node name="GreyboxCamp" type="Node3D"]
+
+[node name="Ground" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("BoxShape3D_ground")
+
+[node name="Mesh" type="MeshInstance3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+mesh = SubResource("BoxMesh_ground")
+surface_material_override/0 = SubResource("Mat_ground")
+
+[node name="Creek" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0.02, 2)
+mesh = SubResource("BoxMesh_creek")
+surface_material_override/0 = SubResource("Mat_water")
+
+[node name="Cabin" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 2, -6)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Cabin"]
+shape = SubResource("BoxShape3D_cabin")
+
+[node name="Mesh" type="MeshInstance3D" parent="Cabin"]
+mesh = SubResource("BoxMesh_cabin")
+surface_material_override/0 = SubResource("Mat_wood")
+
+[node name="BoundaryNorth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, -30)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundaryNorth"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="BoundarySouth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 30)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundarySouth"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="BoundaryEast" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 3, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundaryEast"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="BoundaryWest" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 3, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundaryWest"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="Tree01" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 4.5, 8)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Tree01"]
+shape = SubResource("CylinderShape3D_tree")
+
+[node name="Mesh" type="MeshInstance3D" parent="Tree01"]
+mesh = SubResource("CylinderMesh_tree")
+surface_material_override/0 = SubResource("Mat_bark")
+
+[node name="Tree02" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 4.5, 14)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Tree02"]
+shape = SubResource("CylinderShape3D_tree")
+
+[node name="Mesh" type="MeshInstance3D" parent="Tree02"]
+mesh = SubResource("CylinderMesh_tree")
+surface_material_override/0 = SubResource("Mat_bark")
+
+[node name="Tree03" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 4.5, 12)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Tree03"]
+shape = SubResource("CylinderShape3D_tree")
+
+[node name="Mesh" type="MeshInstance3D" parent="Tree03"]
+mesh = SubResource("CylinderMesh_tree")
+surface_material_override/0 = SubResource("Mat_bark")
+
+[node name="Tree04" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 4.5, -8)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Tree04"]
+shape = SubResource("CylinderShape3D_tree")
+
+[node name="Mesh" type="MeshInstance3D" parent="Tree04"]
+mesh = SubResource("CylinderMesh_tree")
+surface_material_override/0 = SubResource("Mat_bark")
+
+[node name="Tree05" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 4.5, -18)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Tree05"]
+shape = SubResource("CylinderShape3D_tree")
+
+[node name="Mesh" type="MeshInstance3D" parent="Tree05"]
+mesh = SubResource("CylinderMesh_tree")
+surface_material_override/0 = SubResource("Mat_bark")
+
+[node name="SupplyCrate" parent="." instance=ExtResource("1_crate")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 5)
+
+[node name="CampRadio" parent="." instance=ExtResource("2_radio")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -4)
+
+[node name="Campfire" parent="." instance=ExtResource("3_campfire")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="SpawnPoint" type="Marker3D" parent="." groups=["spawn_point"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+
+[node name="CampArea" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("4_location")
+location_id = &"camp"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CampArea"]
+shape = SubResource("BoxShape3D_camp_area")

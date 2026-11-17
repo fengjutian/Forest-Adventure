@@ -1,0 +1,55 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/world/world_manager.gd" id="2_world"]
+[ext_resource type="Script" path="res://scripts/world/chunk_loader.gd" id="3_chunk"]
+[ext_resource type="Script" path="res://scripts/world/time_of_day.gd" id="4_time"]
+[ext_resource type="Script" path="res://scripts/world/weather_controller.gd" id="5_weather"]
+[ext_resource type="Script" path="res://scripts/world/world_audio.gd" id="6_audio"]
+[ext_resource type="Script" path="res://scripts/world/spawn_manager.gd" id="7_spawn"]
+[ext_resource type="Script" path="res://scripts/gameplay/quest_manager.gd" id="8_quest"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="9_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="10_hud"]
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldManager" type="Node3D" parent="."]
+script = ExtResource("2_world")
+region_id = &"region_00_camp"
+
+[node name="WorldRoot" type="Node3D" parent="WorldManager"]
+
+[node name="ChunkLoader" type="Node" parent="WorldManager"]
+script = ExtResource("3_chunk")
+initial_scene = "res://scenes/world/greybox_camp.tscn"
+
+[node name="TimeOfDay" type="Node3D" parent="WorldManager"]
+script = ExtResource("4_time")
+day_length_seconds = 600.0
+start_minutes = 480.0
+
+[node name="WeatherController" type="Node" parent="WorldManager"]
+script = ExtResource("5_weather")
+
+[node name="WorldAudio" type="Node" parent="WorldManager"]
+script = ExtResource("6_audio")
+
+[node name="Player" parent="." instance=ExtResource("9_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+
+[node name="QuestManager" type="Node" parent="." groups=["quest_manager"]]
+script = ExtResource("8_quest")
+
+[node name="SpawnManager" type="Node" parent="."]
+script = ExtResource("7_spawn")
+
+[node name="UI" parent="." instance=ExtResource("10_hud")]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 0)
+light_energy = 1.0
+shadow_enabled = true
+directional_shadow_max_distance = 60.0

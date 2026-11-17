@@ -77,6 +77,7 @@ func load_game(slot: int = DEFAULT_SLOT) -> bool:
 		return false
 
 	var data: Dictionary = parsed
+	var original_version := int(data.get("save_version", 0))
 	if not _migrate(data):
 		EventBus.save_failed.emit("存档迁移失败")
 		return false
@@ -84,6 +85,11 @@ func load_game(slot: int = DEFAULT_SLOT) -> bool:
 	if not _apply(data):
 		EventBus.save_failed.emit("存档格式不匹配")
 		return false
+
+	# 迁移成功后回写，把旧存档就地升级到当前版本，避免每次读档重复迁移
+	if int(data.get("save_version", 0)) > original_version:
+		if _write_atomic(slot, JSON.stringify(data, "\t")):
+			GameLog.info("存档已升级到当前版本", {"slot": slot, "from": original_version, "to": SAVE_VERSION})
 
 	GameLog.info("存档读取成功", {"slot": slot, "version": SAVE_VERSION})
 	EventBus.game_loaded.emit(slot)

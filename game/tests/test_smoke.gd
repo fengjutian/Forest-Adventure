@@ -1,0 +1,230 @@
+extends Node
+## 无头冒烟测试（docs/development-plan.md M0 / M1）。
+##
+## 运行：godot --headless --path game res://tests/test_smoke.tscn
+##
+## 覆盖：autoload 注册、输入映射、任务推进、背包、存档写读与迁移。
+
+const REQUIRED_ACTIONS := [
+	"move_forward", "move_back", "move_left", "move_right",
+	"sprint", "crouch", "jump", "interact", "flashlight",
+	"inventory", "map", "compass", "pause", "quick_save", "quick_load",
+]
+
+const REQUIRED_SAVE_KEYS := [
+	"save_version", "current_scene", "player_transform", "player_state",
+	"inventory", "quest_states", "world_flags", "changed_objects", "time_and_weather",
+]
+
+var _checks: int = 0
+var _failures: Array[String] = []
+var _main: Node
+var _player: Player
+var _inventory: Inventory
+var _quest_manager: QuestManager
+
+
+func _ready() -> void:
+	await get_tree().process_frame
+
+	_main = get_node_or_null("Main")
+	if _main == null:
+		_fail("主场景未实例化")
+		_finish()
+		return
+
+	_player = _main.get("player")
+	_inventory = _main.get("inventory")
+	_quest_manager = _main.get("quest_manager")
+
+	_test_autoloads()
+	_test_input_map()
+	_test_quest_definition()
+	_test_quest_chain()
+	_test_inventory()
+	_test_save_keys()
+	_test_save_load_round_trip()
+	_test_migration()
+	_test_backup()
+
+	_finish()
+
+
+# ------------------------------------------------------------------ 检查项
+
+func _test_autoloads() -> void:
+	_assert(get_node_or_null("/root/EventBus") != null, "EventBus 已注册")
+	_assert(get_node_or_null("/root/GameState") != null, "GameState 已注册")
+	_assert(get_node_or_null("/root/SettingsManager") != null, "SettingsManager 已注册")
+	_assert(get_node_or_null("/root/SaveManager") != null, "SaveManager 已注册")
+
+
+func _test_input_map() -> void:
+	for action in REQUIRED_ACTIONS:
+		_assert(InputMap.has_action(action), "输入动作存在：%s" % action)
+		if InputMap.has_action(action):
+			_assert(InputMap.action_get_events(action).size() > 0, "输入动作已绑定事件：%s" % action)
+
+
+func _test_quest_definition() -> void:
+	var definition := _quest_manager.get_definition(&"camp_comm_radio")
+	_assert(definition != null, "任务定义已注册")
+	if definition == null:
+		return
+	_assert(definition.stages.size() == 3, "任务阶段数为 3（实际 %d）" % definition.stages.size())
+	_assert(_quest_manager.get_active_quests().has(&"camp_comm_radio"), "任务已自动开始")
+	_assert(not _quest_manager.is_quest_completed(&"camp_comm_radio"), "任务初始未处于完成状态")
+
+
+## 端到端驱动 M1 灰盒链路：拾取保险丝 → 修复无线电 → 返回营火。
+func _test_quest_chain() -> void:
+	var crate := _find_interactable(&"supply_crate")
+	var radio := _find_interactable(&"camp_radio")
+	var campfire := _find_interactable(&"campfire")
+	_assert(crate != null, "物资箱已找到")
+	_assert(radio != null, "无线电已找到")
+	_assert(campfire != null, "营火已找到")
+	if crate == null or radio == null or campfire == null:
+		return
+
+	var state := _quest_manager.get_state(&"camp_comm_radio")
+	_assert(state.current_stage == 0, "初始阶段为 0（实际 %d）" % state.current_stage)
+
+	# 第一步：拾取保险丝
+	crate.interact(_player)
+	_assert(_inventory.has_item(&"fuse"), "保险丝已进入背包")
+	_assert(state.current_stage == 1, "拾取后阶段为 1（实际 %d）" % state.current_stage)
+
+	# 第二步：修复无线电（消耗保险丝）
+	radio.interact(_player)
+	_assert(not _inventory.has_item(&"fuse"), "修复后保险丝已被消耗")
+	_assert(state.current_stage == 2, "修复后阶段为 2（实际 %d）" % state.current_stage)
+
+	# 第三步：返回营火
+	campfire.interact(_player)
+	_assert(_quest_manager.is_quest_completed(&"camp_comm_radio"), "返回营火后任务已完成")
+	_assert(state.is_completed, "任务状态已标记完成")
+
+
+func _test_inventory() -> void:
+	_assert(_inventory.count_item(&"fuse") == 0, "修复后背包已无保险丝")
+
+	var before := _inventory.count_item(&"arrow")
+	_inventory.add_item(&"arrow", 5)
+	_assert(_inventory.count_item(&"arrow") == before + 5, "物品数量已增加")
+	_assert(_inventory.remove_item(&"arrow", 2), "物品已移除")
+	_assert(_inventory.count_item(&"arrow") == before + 3, "移除物品数量正确")
+	_assert(not _inventory.remove_item(&"arrow", 999), "数量不足时移除被正确拒绝")
+
+
+func _test_save_keys() -> void:
+	_assert(SaveManager.save_game(0), "存档写入成功")
+
+	var path := "user://saves/slot_0.json"
+	_assert(FileAccess.file_exists(path), "存档文件已生成")
+
+	var text := FileAccess.get_file_as_string(path)
+	var parsed: Variant = JSON.parse_string(text)
+	_assert(parsed is Dictionary, "存档为合法 JSON")
+	if not (parsed is Dictionary):
+		return
+
+	var data: Dictionary = parsed
+	for key in REQUIRED_SAVE_KEYS:
+		_assert(data.has(key), "存档含必需字段：%s" % key)
+	_assert(int(data.get("save_version", 0)) == SaveManager.SAVE_VERSION, "存档版本号正确")
+
+
+func _test_save_load_round_trip() -> void:
+	# 存档后破坏状态，再读档验证恢复
+	_inventory.add_item(&"test_marker", 3)
+	GameState.set_flag(&"test_flag", true)
+	SaveManager.save_game(0)
+
+	_inventory.remove_item(&"test_marker", 3)
+	GameState.set_flag(&"test_flag", false)
+	_assert(not _inventory.has_item(&"test_marker"), "破坏状态成功：物品已从背包移除")
+	_assert(not GameState.get_flag(&"test_flag"), "破坏状态成功：标记已置假")
+
+	_assert(SaveManager.load_game(0), "读档成功")
+	_assert(_inventory.has_item(&"test_marker"), "读档后物品已恢复")
+	_assert(GameState.get_flag(&"test_flag"), "读档后世界标记已恢复")
+	_assert(_quest_manager.is_quest_completed(&"camp_comm_radio"), "读档后任务完成状态已恢复")
+
+	# 对象状态也应恢复：已拾取的物资箱应保持隐藏
+	var crate := _find_interactable(&"supply_crate")
+	if crate != null:
+		_assert(not crate.can_interact(_player), "读档后已拾取的物资箱不可交互")
+
+
+func _test_migration() -> void:
+	# 构造一个 v0 存档（缺少 v1 引入的字段），验证迁移路径
+	var legacy := {
+		"format": "forest_adventure_save",
+		"save_version": 0,
+		"player_transform": {"position": [1.0, 2.0, 3.0]},
+	}
+	var dir := DirAccess.open("user://saves")
+	_assert(dir != null, "存档目录可打开")
+	if dir == null:
+		return
+	var file := FileAccess.open("user://saves/slot_2.json", FileAccess.WRITE)
+	_assert(file != null, "迁移测试存档已写入")
+	if file == null:
+		return
+	file.store_string(JSON.stringify(legacy))
+	file.close()
+
+	_assert(SaveManager.load_game(2), "v0 存档迁移后加载成功")
+
+	var text := FileAccess.get_file_as_string("user://saves/slot_2.json")
+	var parsed: Variant = JSON.parse_string(text)
+	if parsed is Dictionary:
+		_assert(int((parsed as Dictionary).get("save_version", 0)) == SaveManager.SAVE_VERSION,
+			"迁移后版本号已提升")
+
+
+func _test_backup() -> void:
+	SaveManager.save_game(0)
+	SaveManager.save_game(0)
+	_assert(FileAccess.file_exists("user://saves/slot_0.json.bak"), "已生成上一版本备份")
+	_assert(not FileAccess.file_exists("user://saves/slot_0.json.tmp"), "临时文件已清理")
+
+
+# ------------------------------------------------------------------ 工具
+
+func _find_interactable(object_id: StringName) -> Node:
+	for node in get_tree().get_nodes_in_group(&"interactable"):
+		var interactable := node as Interactable
+		if interactable != null and interactable.stable_id == object_id:
+			return interactable
+	return null
+
+
+func _assert(condition: bool, message: String) -> void:
+	_checks += 1
+	if condition:
+		print("  PASS  %s" % message)
+	else:
+		_failures.append(message)
+		push_error("  FAIL  %s" % message)
+
+
+func _fail(message: String) -> void:
+	_checks += 1
+	_failures.append(message)
+	push_error("  FAIL  %s" % message)
+
+
+func _finish() -> void:
+	print("")
+	print("── 冒烟测试结果 ──")
+	print("检查项：%d    失败：%d" % [_checks, _failures.size()])
+	if _failures.is_empty():
+		print("结果：全部通过")
+		get_tree().quit(0)
+	else:
+		for failure in _failures:
+			print("  - %s" % failure)
+		print("结果：存在失败项")
+		get_tree().quit(1)

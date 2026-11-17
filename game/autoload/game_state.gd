@@ -7,6 +7,9 @@ extends Node
 ## 稳定 ID → bool。用于剧情开关，避免在存档里写运行时实例 ID。
 var world_flags: Dictionary = {}
 
+## 稳定 ID → 状态字典。记录已改变对象的持久化状态（已拾取、已修复等）。
+var changed_objects: Dictionary = {}
+
 var current_scene_id: StringName = &""
 var current_region_id: StringName = &""
 
@@ -36,6 +39,13 @@ func clear_flags() -> void:
 	world_flags.clear()
 
 
+## 记录已改变对象的持久化状态。
+func mark_changed(object_id: StringName, state: Dictionary) -> void:
+	if object_id == &"":
+		return
+	changed_objects[object_id] = state.duplicate(true)
+
+
 func set_time_of_day(minutes: float) -> void:
 	time_of_day_minutes = fposmod(minutes, 1440.0)
 
@@ -48,16 +58,22 @@ func get_time_string() -> String:
 func to_dict() -> Dictionary:
 	return {
 		"world_flags": world_flags.duplicate(true),
-		"current_scene_id": String(current_scene_id),
-		"current_region_id": String(current_region_id),
-		"time_of_day_minutes": time_of_day_minutes,
-		"weather_id": String(weather_id),
+		"changed_objects": changed_objects.duplicate(true),
+		"time_and_weather": {
+			"current_scene_id": String(current_scene_id),
+			"current_region_id": String(current_region_id),
+			"time_of_day_minutes": time_of_day_minutes,
+			"weather_id": String(weather_id),
+		},
 	}
 
 
 func from_dict(data: Dictionary) -> void:
 	world_flags = (data.get("world_flags", {}) as Dictionary).duplicate(true)
-	current_scene_id = StringName(data.get("current_scene_id", ""))
-	current_region_id = StringName(data.get("current_region_id", ""))
-	time_of_day_minutes = float(data.get("time_of_day_minutes", 8.0 * 60.0))
-	weather_id = StringName(data.get("weather_id", "clear"))
+	changed_objects = (data.get("changed_objects", {}) as Dictionary).duplicate(true)
+
+	var time_and_weather: Dictionary = data.get("time_and_weather", {})
+	current_scene_id = StringName(time_and_weather.get("current_scene_id", ""))
+	current_region_id = StringName(time_and_weather.get("current_region_id", ""))
+	time_of_day_minutes = float(time_and_weather.get("time_of_day_minutes", 8.0 * 60.0))
+	weather_id = StringName(time_and_weather.get("weather_id", "clear"))

@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="QuestDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/quest_definition.gd" id="1_def"]
+[ext_resource type="Script" path="res://scripts/gameplay/quest_stage.gd" id="2_stage"]
+[ext_resource type="Script" path="res://scripts/gameplay/quest_objective.gd" id="3_obj"]
+
+[sub_resource type="Resource" id="QuestObjective_fuse"]
+script = ExtResource("3_obj")
+id = &"collect_fuse"
+event_type = &"item.collected"
+target = &"fuse"
+amount = 1
+description = "在溪边的物资箱中找到备用保险丝"
+
+[sub_resource type="Resource" id="QuestObjective_radio"]
+script = ExtResource("3_obj")
+id = &"repair_radio"
+event_type = &"device.repaired"
+target = &"camp_radio"
+amount = 1
+description = "把保险丝装进营地的无线电，修复通信"
+
+[sub_resource type="Resource" id="QuestObjective_camp"]
+script = ExtResource("3_obj")
+id = &"return_camp"
+event_type = &"camp.returned"
+target = &"camp"
+amount = 1
+description = "回到中央营火"
+
+[sub_resource type="Resource" id="QuestStage_collect_fuse"]
+script = ExtResource("2_stage")
+id = &"collect_fuse"
+description = "守林员日志提到备用保险丝可能还在溪边的物资箱里。"
+objectives = [SubResource("QuestObjective_fuse")]
+
+[sub_resource type="Resource" id="QuestStage_repair_radio"]
+script = ExtResource("2_stage")
+id = &"repair_radio"
+description = "无线电的通信模块缺少保险丝，装上之后应该能收到守林站的信号。"
+objectives = [SubResource("QuestObjective_radio")]
+
+[sub_resource type="Resource" id="QuestStage_return_camp"]
+script = ExtResource("2_stage")
+id = &"return_camp"
+description = "修好无线电后回到中央营火整理发现。"
+objectives = [SubResource("QuestObjective_camp")]
+
+[resource]
+script = ExtResource("1_def")
+id = &"camp_comm_radio"
+title = "恢复营地通信"
+description = "暴雨损坏了通信设备。先找到备用保险丝，再修好营地无线电。"
+auto_start = true
+stages = [SubResource("QuestStage_collect_fuse"), SubResource("QuestStage_repair_radio"), SubResource("QuestStage_return_camp")]
