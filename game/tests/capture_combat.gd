@@ -24,6 +24,11 @@ func _ready() -> void:
 	for i in 4:
 		await get_tree().process_frame
 
+	# 按键提示会盖住画面右侧，战斗截图时先收起
+	var hud := main.get_node_or_null("UI") as HUD
+	if hud != null:
+		hud.close_controls_hint()
+
 	var player: Player = main.get("player")
 	var camera: Camera3D = main.get_node_or_null("Player/Head/Camera3D")
 	if player == null or camera == null:

@@ -151,6 +151,12 @@ func toggle_controls_hint() -> void:
 	_show_controls_hint(next)
 
 
+## 直接收起按键提示（截图、过场等场景用），不改变「玩家手动打开」状态。
+func close_controls_hint() -> void:
+	_controls_auto_timer = 0.0
+	_show_controls_hint(false)
+
+
 func _show_controls_hint(show: bool) -> void:
 	if _controls_panel == null:
 		return
@@ -207,7 +213,6 @@ func _controls_entries() -> Array:
 		[_binding_text(&"compass"), "指南针"],
 		["%s / %s" % [_binding_text(&"quick_save"), _binding_text(&"quick_load")], "快速存档 / 读档"],
 		[_binding_text(&"pause"), "释放鼠标"],
-		[_binding_text(TOGGLE_HELP_ACTION), "开关按键提示"],
 	]
 
 
