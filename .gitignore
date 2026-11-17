@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------- Godot 4.x
+.godot/
+.import/
+export.cfg
+*.translation
+# Windows 构建产物（由 tools/build_windows.ps1 生成）
+build/
+game/bin/
+# Godot 编辑器自动保存
+*.tmp
+
+# ---------------------------------------------------------------- Blender
+*.blend1
+*.blend2
+*.blend3
+*.blend4
+*.blend5
+
+# ---------------------------------------------------------------- Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# ---------------------------------------------------------------- 生成器产物
+# 生成物不入库，SceneSpec / manifest 等源数据入库
+tools/forest_generator/output/*
+!tools/forest_generator/output/.gitkeep
+
+# ---------------------------------------------------------------- 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
