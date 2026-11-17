@@ -160,9 +160,9 @@ func _place_camp_details() -> void:
 	_place_barrels()
 
 
-## 帐篷：有人驻扎过的痕迹。
+## 帐篷：有人驻扎过的痕迹。放在木屋一侧，不挡出生点视线。
 func _place_tent() -> void:
-	_add_prop("Tent", PropKit.make_tent(), Vector2(-6.4, 5.0), 18.0, Vector3(2.8, 1.8, 2.4))
+	_add_prop("Tent", PropKit.make_tent(), Vector2(-10.5, 4.5), 24.0, Vector3(2.4, 1.6, 2.2))
 
 
 ## 灯柱：天黑后给营地补一点暖光。

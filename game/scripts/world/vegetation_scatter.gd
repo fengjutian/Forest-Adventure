@@ -30,6 +30,18 @@ signal scatter_complete(tree_count: int, rock_count: int, shrub_count: int)
 @export var path_end: Vector2 = Vector2(1.5, -26.0)
 @export var path_half_width: float = 3.6
 
+@export_group("树种")
+## 松树变体数量：每个变体是一棵形态不同的树，避免森林像复制粘贴。
+@export var pine_variant_count: int = 5
+## 桦树变体数量。
+@export var birch_variant_count: int = 2
+## 桦树在乔木中的占比。
+@export var birch_ratio: float = 0.22
+## 枯立木在乔木中的占比。
+@export var snag_ratio: float = 0.07
+## 倒木与树桩的密度（相对非乔木空位）。
+@export var deadwood_ratio: float = 0.012
+
 @export_group("坡度")
 ## 坡度超过该值的地面不生长（1 表示垂直）。
 @export var max_slope: float = 0.45
@@ -57,9 +69,18 @@ func scatter(terrain: ProcTerrain) -> void:
 	_density_noise.frequency = 0.035
 	_density_noise.fractal_octaves = 3
 
-	var tree_placements: Array = []
 	var rock_placements: Array = []
 	var shrub_placements: Array = []
+	var snag_placements: Array = []
+	var log_placements: Array = []
+	var stump_placements: Array = []
+	# 每个变体一张独立网格，森林里不会出现一排复制品
+	var pine_variants: Array = []
+	for i in maxi(pine_variant_count, 1):
+		pine_variants.append([])
+	var birch_variants: Array = []
+	for i in maxi(birch_variant_count, 1):
+		birch_variants.append([])
 
 	var half := area_size * 0.5
 	var steps := int(area_size.x / cell_size)
@@ -82,22 +103,59 @@ func scatter(terrain: ProcTerrain) -> void:
 
 			var density := _density_at(position)
 			if _rng.randf() <= density:
-				tree_placements.append(_make_transform(position, 0.8, 1.35))
+				var roll := _rng.randf()
+				if roll < birch_ratio:
+					var birch := _rng.randi_range(0, birch_variants.size() - 1)
+					birch_variants[birch].append(_make_transform(position, 0.8, 1.25))
+				elif roll < birch_ratio + snag_ratio:
+					snag_placements.append(_make_transform(position, 0.75, 1.1))
+				else:
+					var variant := _rng.randi_range(0, pine_variants.size() - 1)
+					pine_variants[variant].append(_make_transform(position, 0.8, 1.35))
+			elif _rng.randf() < deadwood_ratio:
+				if _rng.randf() < 0.6:
+					log_placements.append(_make_transform(position, 0.75, 1.15))
+				else:
+					stump_placements.append(_make_transform(position, 0.8, 1.2))
 			elif _rng.randf() < rock_density:
 				rock_placements.append(_make_transform(position, 0.55, 1.5))
 			elif _rng.randf() < shrub_density:
 				shrub_placements.append(_make_transform(position, 0.7, 1.4))
 
-	_build_multimesh("Pines", PropKit.make_pine_tree(
-		Color(0.27, 0.19, 0.14), Color(0.15, 0.29, 0.17)), tree_placements, 0.0)
+	var tree_count := 0
+	for i in pine_variants.size():
+		if pine_variants[i].is_empty():
+			continue
+		_build_multimesh("Pines%02d" % (i + 1), PropKit.make_pine_tree(
+			Color(0.27, 0.19, 0.14), Color(0.15, 0.29, 0.17),
+			scatter_seed + 131 * (i + 1)), pine_variants[i], 0.0, true, true)
+		tree_count += pine_variants[i].size()
+
+	for i in birch_variants.size():
+		if birch_variants[i].is_empty():
+			continue
+		_build_multimesh("Birches%02d" % (i + 1), PropKit.make_birch_tree(
+			Color(0.76, 0.73, 0.66), Color(0.21, 0.32, 0.15),
+			scatter_seed + 977 * (i + 1)), birch_variants[i], 0.0, true, true)
+		tree_count += birch_variants[i].size()
+
+	_build_multimesh("Snags", PropKit.make_dead_tree(Color(0.34, 0.28, 0.22),
+		scatter_seed + 613), snag_placements, 0.0)
+	tree_count += snag_placements.size()
+
+	_build_multimesh("FallenLogs", PropKit.make_fallen_log(scatter_seed + 71),
+		log_placements, 0.0)
+	_build_multimesh("Stumps", PropKit.make_stump(scatter_seed + 89),
+		stump_placements, 0.0)
+
 	_build_multimesh("Rocks", PropKit.make_rock(scatter_seed + 5), rock_placements, 0.0)
 	_build_multimesh("Shrubs", PropKit.make_shrub(Color(0.2, 0.32, 0.17)), shrub_placements, 0.0)
 
 	_build_ground_cover(half)
 
-	scatter_complete.emit(tree_placements.size(), rock_placements.size(), shrub_placements.size())
+	scatter_complete.emit(tree_count, rock_placements.size(), shrub_placements.size())
 	GameLog.info("植被散布完成", {
-		"trees": tree_placements.size(),
+		"trees": tree_count,
 		"rocks": rock_placements.size(),
 		"shrubs": shrub_placements.size(),
 	})
@@ -129,7 +187,7 @@ func _build_ground_cover(half: Vector2) -> void:
 			placements.append(_make_transform(position, 0.6, 1.15, 0.03))
 
 	_build_multimesh("GrassTufts", PropKit.make_grass_tuft(Color(0.19, 0.28, 0.12)),
-		placements, 0.0)
+		placements, 0.0, false)
 	GameLog.info("地被层完成", {"tufts": placements.size()})
 
 
@@ -193,16 +251,20 @@ func _make_transform(position: Vector2, min_scale: float, max_scale: float,
 	return {
 		"transform": Transform3D(basis, Vector3(position.x, height - sink * scale, position.y)),
 		"color": Color(1, 1, 1).lerp(Color(0.82, 0.88, 0.78), _rng.randf() * 0.5),
+		# 风摆相位：按位置错开，整片林子不同步
+		"phase": fposmod(position.x * 0.31 + position.y * 0.27, TAU),
 	}
 
 
-func _build_multimesh(node_name: String, mesh: Mesh, placements: Array, y_offset: float) -> void:
+func _build_multimesh(node_name: String, mesh: Mesh, placements: Array, y_offset: float,
+		cast_shadow: bool = true, sway: bool = false) -> void:
 	if placements.is_empty():
 		return
 
 	var multimesh := MultiMesh.new()
 	multimesh.transform_format = MultiMesh.TRANSFORM_3D
 	multimesh.use_colors = true
+	multimesh.use_custom_data = true
 	multimesh.mesh = mesh
 	multimesh.instance_count = placements.size()
 
@@ -210,9 +272,14 @@ func _build_multimesh(node_name: String, mesh: Mesh, placements: Array, y_offset
 		var placement: Dictionary = placements[i]
 		multimesh.set_instance_transform(i, placement["transform"])
 		multimesh.set_instance_color(i, placement["color"])
+		# 红色分量是风摆相位（归一化到 0~1），让每棵树各摆各的
+		multimesh.set_instance_custom_data(i, Color(placement["phase"], 0.0, 0.0, 1.0))
 
 	var instance := MultiMeshInstance3D.new()
 	instance.name = node_name
 	instance.multimesh = multimesh
-	instance.material_override = PropKit.painted_material()
+	instance.material_override = PropKit.swaying_material() if sway else PropKit.painted_material()
+	if not cast_shadow:
+		# 地被层不投影：阴影看不出来，却要多走一遍阴影 pass
+		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(instance)

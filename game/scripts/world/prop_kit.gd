@@ -41,6 +41,46 @@ static func water_material() -> StandardMaterial3D:
 	return mat
 
 
+## 随风摆动的材质：顶点色即反照率，树越高摆得越多。
+##
+## 每棵树用世界坐标错开相位，整片林子不会齐刷刷一起晃。
+## 只给树木用；MultiMesh 的 INSTANCE_TRANSFORM 提供每棵树的个体变换。
+static func swaying_material() -> ShaderMaterial:
+	var shader := Shader.new()
+	shader.code = """
+shader_type spatial;
+render_mode cull_back, diffuse_burley;
+
+uniform float sway_amount : hint_range(0.0, 0.3) = 0.055;
+uniform float sway_speed : hint_range(0.0, 4.0) = 1.15;
+uniform float sway_height = 9.0;
+uniform float sway_falloff : hint_range(1.0, 4.0) = 2.2;
+
+void vertex() {
+	float h = clamp(VERTEX.y / sway_height, 0.0, 1.0);
+	float weight = pow(h, sway_falloff);
+	// 每棵树的相位：散落时写进实例自定义数据，保证整片林子不会齐刷刷一起晃
+	float phase = INSTANCE_CUSTOM.r * 6.2831853;
+	if (phase == 0.0) {
+		vec3 world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+		phase = world_pos.x * 0.31 + world_pos.z * 0.27;
+	}
+	float t = TIME * sway_speed + phase;
+	VERTEX.x += sin(t) * sway_amount * weight;
+	VERTEX.z += cos(t * 0.83) * sway_amount * 0.7 * weight;
+}
+
+void fragment() {
+	ALBEDO = COLOR.rgb;
+	ROUGHNESS = 0.88;
+	SPECULAR = 0.0;
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	return mat
+
+
 # ------------------------------------------------------------------ 网格工具
 
 ## 把若干 (网格, 变换, 颜色) 合并成一张带顶点色的网格。
@@ -150,14 +190,144 @@ static func _xform(pos: Vector3, rot_deg: Vector3 = Vector3.ZERO, scale: Vector3
 
 # ------------------------------------------------------------------ 植被
 
-## 松树：树干 + 三层针叶冠。合并成一张网格供 MultiMesh 使用。
-static func make_pine_tree(trunk_color: Color, foliage_color: Color) -> ArrayMesh:
-	var parts: Array = []
-	parts.append(_cylinder(0.28, 7.0, _xform(Vector3(0, 3.5, 0)), trunk_color, 6))
+## 松树：带随机形态的针叶树。
+##
+## 层数、每层半径/高度、层间偏移都随 seed 变化，配合多个变体网格，
+## 森林里每棵树的轮廓都不一样，不会变成一排复制品。
+static func make_pine_tree(trunk_color: Color, foliage_color: Color, seed_value: int = 0) -> ArrayMesh:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value if seed_value != 0 else 20261117
 
-	parts.append(_cone(2.1, 3.4, _xform(Vector3(0, 5.2, 0)), foliage_color))
-	parts.append(_cone(1.7, 3.0, _xform(Vector3(0, 7.1, 0)), foliage_color.lightened(0.06)))
-	parts.append(_cone(1.2, 2.6, _xform(Vector3(0, 8.9, 0)), foliage_color.lightened(0.12)))
+	var parts: Array = []
+
+	# 树干：下粗上细
+	var trunk_height := rng.randf_range(6.2, 7.4)
+	var trunk_bottom := rng.randf_range(0.3, 0.42)
+	var trunk := CylinderMesh.new()
+	trunk.top_radius = trunk_bottom * 0.45
+	trunk.bottom_radius = trunk_bottom
+	trunk.height = trunk_height
+	trunk.radial_segments = 7
+	trunk.rings = 1
+	parts.append([trunk, _xform(Vector3(0, trunk_height * 0.5, 0)), trunk_color])
+
+	# 针叶冠：4~6 层，越往上越窄越小，彼此交叠
+	var layers := rng.randi_range(4, 6)
+	var base_y := trunk_height * 0.36
+	var base_radius := rng.randf_range(1.9, 2.4)
+	var layer_height := rng.randf_range(2.0, 2.5)
+	# 层间距要小于层高，否则每层底盘会露出来，像叠盘子
+	var step := layer_height * 0.44
+
+	for i in layers:
+		var t := float(i) / float(layers)
+		var radius := lerpf(base_radius, 0.42, pow(t, 0.85))
+		var height := lerpf(layer_height, 1.6, t)
+		var y := base_y + float(i) * step
+		# 每层轻微错位，轮廓不再是一圈圈同心圆锥；上层收拢避免尖头脱节
+		var spread := 0.18 * (1.0 - t)
+		var offset := Vector3(rng.randf_range(-spread, spread), 0.0, rng.randf_range(-spread, spread))
+		# 树冠下部偏暗、顶部偏亮
+		var tint := foliage_color.lightened(0.05 * float(i))
+		parts.append(_cone(radius, height, _xform(offset + Vector3(0, y, 0)), tint, 8))
+
+	# 收尖
+	parts.append(_cone(0.34, 1.3,
+		_xform(Vector3(0, base_y + float(layers) * step, 0)), foliage_color.lightened(0.16), 6))
+
+	# 枯枝：下段伸出两根
+	for i in 2:
+		var angle := rng.randf_range(0.0, TAU)
+		var y := rng.randf_range(trunk_height * 0.42, trunk_height * 0.66)
+		var length := rng.randf_range(0.9, 1.6)
+		var dir := Vector3(cos(angle), -0.3, sin(angle)).normalized()
+		var rot := Vector3(rad_to_deg(dir.y), rad_to_deg(atan2(dir.z, dir.x)), 0.0)
+		parts.append(_cylinder(0.05, length,
+			_xform(dir * length * 0.5 + Vector3(0, y, 0), rot), trunk_color.darkened(0.12), 5))
+
+	return merge(parts)
+
+
+## 白桦：浅色树干 + 几团圆润树冠。与松林混交能拉开树种层次。
+static func make_birch_tree(bark_color: Color, leaf_color: Color, seed_value: int = 0) -> ArrayMesh:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value if seed_value != 0 else 777
+
+	var parts: Array = []
+	var trunk_height := rng.randf_range(5.0, 6.2)
+
+	# 树干
+	parts.append(_cylinder(0.19, trunk_height, _xform(Vector3(0, trunk_height * 0.5, 0)), bark_color, 6))
+
+	# 树皮斑纹
+	for i in 3:
+		var y := trunk_height * (0.22 + 0.24 * float(i))
+		parts.append(_box(Vector3(0.4, 0.1, 0.4),
+			_xform(Vector3(0, y, 0), Vector3(0, rng.randf_range(0.0, 180.0), 0)), bark_color.darkened(0.3)))
+
+	# 树冠：几团压扁的球
+	var crown_y := trunk_height * 0.84
+	parts.append(_sphere(1.45, _xform(Vector3(0, crown_y, 0), Vector3.ZERO, Vector3(1.0, 0.8, 1.0)), leaf_color, 7))
+	parts.append(_sphere(1.0, _xform(Vector3(0.78, crown_y - 0.38, 0.26), Vector3.ZERO, Vector3(1.0, 0.74, 1.0)),
+		leaf_color.lightened(0.07), 7))
+	parts.append(_sphere(0.9, _xform(Vector3(-0.72, crown_y - 0.22, -0.32), Vector3.ZERO, Vector3(1.0, 0.74, 1.0)),
+		leaf_color.darkened(0.06), 7))
+	parts.append(_sphere(0.8, _xform(Vector3(0.1, crown_y + 0.52, -0.4), Vector3.ZERO, Vector3(1.0, 0.8, 1.0)),
+		leaf_color.lightened(0.03), 6))
+
+	return merge(parts)
+
+
+## 枯立木：只剩树干和光秃的枝条，森林里的死亡气息。
+static func make_dead_tree(trunk_color: Color, seed_value: int = 0) -> ArrayMesh:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value if seed_value != 0 else 4242
+
+	var parts: Array = []
+	var trunk_height := rng.randf_range(5.4, 7.2)
+	var trunk_bottom := rng.randf_range(0.26, 0.38)
+	var trunk := CylinderMesh.new()
+	trunk.top_radius = trunk_bottom * 0.4
+	trunk.bottom_radius = trunk_bottom
+	trunk.height = trunk_height
+	trunk.radial_segments = 6
+	trunk.rings = 1
+	parts.append([trunk, _xform(Vector3(0, trunk_height * 0.5, 0)), trunk_color])
+
+	# 向上伸的枯枝
+	var branches := rng.randi_range(3, 5)
+	for i in branches:
+		var angle := TAU * float(i) / float(branches) + rng.randf_range(-0.5, 0.5)
+		var y := trunk_height * rng.randf_range(0.5, 0.92)
+		var length := rng.randf_range(1.1, 2.1)
+		var dir := Vector3(cos(angle), rng.randf_range(0.35, 0.8), sin(angle)).normalized()
+		var rot := Vector3(rad_to_deg(dir.y), rad_to_deg(atan2(dir.z, dir.x)), 0.0)
+		parts.append(_cylinder(0.06, length,
+			_xform(dir * length * 0.5 + Vector3(0, y, 0), rot), trunk_color.lightened(0.08), 5))
+
+	return merge(parts)
+
+
+## 树桩：被砍断留下的断面与根部。
+static func make_stump(seed_value: int = 0) -> ArrayMesh:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value if seed_value != 0 else 3131
+
+	var bark := Color(0.31, 0.23, 0.16)
+	var parts: Array = []
+	var radius := rng.randf_range(0.34, 0.48)
+	var height := rng.randf_range(0.4, 0.68)
+
+	parts.append(_cylinder(radius, height, _xform(Vector3(0, height * 0.5, 0)), bark, 8))
+	# 浅色断面
+	parts.append(_cylinder(radius * 0.92, 0.06, _xform(Vector3(0, height - 0.01, 0)), Color(0.55, 0.45, 0.32), 8))
+	# 根部隆起
+	for i in 3:
+		var angle := TAU * float(i) / 3.0 + rng.randf_range(-0.4, 0.4)
+		parts.append(_cone(radius * 0.45, radius * 0.9,
+			_xform(Vector3(cos(angle) * radius * 0.8, 0.05, sin(angle) * radius * 0.8),
+				Vector3(0, 0, 0)), bark.darkened(0.08), 5))
+
 	return merge(parts)
 
 
@@ -331,14 +501,22 @@ static func make_woodpile() -> ArrayMesh:
 	return merge(parts)
 
 
-## 帐篷：三棱柱帆布 + 前方支柱。
+## 帐篷：三棱柱帆布 + 门帘 + 脊杆 + 前方支柱。
 static func make_tent() -> ArrayMesh:
-	var canvas := Color(0.34, 0.36, 0.28)
+	var canvas := Color(0.3, 0.33, 0.25)
 	var pole := Color(0.36, 0.27, 0.19)
 	var parts: Array = []
-	parts.append(_prism(Vector3(2.8, 1.8, 2.4), _xform(Vector3(0, 0.9, 0), Vector3(0, 90, 0)), canvas))
-	parts.append(_cylinder(0.05, 2.4, _xform(Vector3(0, 1.2, 1.05)), pole, 5))
-	parts.append(_box(Vector3(1.0, 0.06, 1.1), _xform(Vector3(0, 0.05, 1.5)), pole.darkened(0.1)))
+	parts.append(_prism(Vector3(2.4, 1.55, 2.2), _xform(Vector3(0, 0.78, 0), Vector3(0, 90, 0)), canvas))
+	# 门帘：深色三角面，贴在入口一侧
+	parts.append(_prism(Vector3(1.0, 1.2, 0.06), _xform(Vector3(0, 0.6, 1.22), Vector3(0, 90, 0)), Color(0.15, 0.15, 0.12)))
+	# 脊杆
+	parts.append(_cylinder(0.05, 2.3, _xform(Vector3(0, 1.53, 0), Vector3(0, 0, 90)), pole, 5))
+	# 前方支柱与地布
+	parts.append(_cylinder(0.05, 1.95, _xform(Vector3(0, 0.98, 1.16)), pole, 5))
+	parts.append(_box(Vector3(0.9, 0.05, 1.0), _xform(Vector3(0, 0.04, 1.45)), pole.darkened(0.12)))
+	# 两端的捆绳桩
+	parts.append(_cylinder(0.04, 0.5, _xform(Vector3(-1.15, 0.25, 1.3)), pole.darkened(0.05), 5))
+	parts.append(_cylinder(0.04, 0.5, _xform(Vector3(1.15, 0.25, 1.3)), pole.darkened(0.05), 5))
 	return merge(parts)
 
 
@@ -390,14 +568,26 @@ static func make_campfire_logs() -> ArrayMesh:
 	return merge(parts)
 
 
-## 倒木：横卧在松林入口。
-static func make_fallen_log() -> ArrayMesh:
+## 倒木：横卧在林地里的枯木。seed 变化时长度、断面与断枝位置随之变化。
+static func make_fallen_log(seed_value: int = 0) -> ArrayMesh:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value if seed_value != 0 else 6060
+
 	var bark := Color(0.29, 0.21, 0.15)
 	var parts: Array = []
-	parts.append(_cylinder(0.62, 6.5, _xform(Vector3(0, 0.6, 0), Vector3(0, 0, 90)), bark, 10))
-	parts.append(_cylinder(0.5, 0.12, _xform(Vector3(3.2, 0.6, 0), Vector3(0, 0, 90)), Color(0.55, 0.46, 0.33), 10))
+	var length := rng.randf_range(4.6, 7.2)
+	var radius := rng.randf_range(0.46, 0.66)
+
+	parts.append(_cylinder(radius, length, _xform(Vector3(0, radius, 0), Vector3(0, 0, 90)), bark, 10))
+	# 断面
+	parts.append(_cylinder(radius * 0.82, 0.12,
+		_xform(Vector3(length * 0.5, radius, 0), Vector3(0, 0, 90)), Color(0.55, 0.46, 0.33), 10))
 	# 断枝
-	parts.append(_cylinder(0.1, 1.1, _xform(Vector3(1.4, 1.0, 0.4), Vector3(60, 0, 0)), bark.darkened(0.12), 6))
+	for i in 2:
+		var offset := rng.randf_range(-length * 0.3, length * 0.3)
+		parts.append(_cylinder(0.09, rng.randf_range(0.8, 1.3),
+			_xform(Vector3(offset, radius + 0.3, 0.2), Vector3(rng.randf_range(40.0, 75.0), 0, 0)),
+			bark.darkened(0.12), 6))
 	return merge(parts)
 
 

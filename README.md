@@ -20,7 +20,7 @@
 | 模块 | 职责 |
 |---|---|
 | `scripts/world/proc_terrain.gd` | FastNoiseLite 高度场 + 营地平整区 + 溪谷下切；顶点色按高度/坡度/区域着色；凹多边形碰撞 |
-| `scripts/world/vegetation_scatter.gd` | MultiMesh 散布松林、岩石、灌木、地被草丛；噪声调密度，营地/溪流/主路径排除，陡坡不生长 |
+| `scripts/world/vegetation_scatter.gd` | MultiMesh 散布松林、桦树、枯立木、倒木、树桩、岩石、灌木、草丛；噪声调密度，营地/溪流/主路径排除，陡坡不生长 |
 | `scripts/world/camp_builder.gd` | 人工地标：木屋、物资棚、发电机、训练靶场、倒木、路牌、帐篷、灯柱、柴堆、木桶、溪流水面、远景山体 |
 | `scripts/world/prop_kit.gd` | 程序化网格与材质库（顶点色即反照率），正式美术资产到位后只替换这里 |
 | `scripts/world/camp_scene.gd` | 装配编排：地形 → 地标 → 贴地 → 植被 |
@@ -28,6 +28,13 @@
 > **同一个 seed 必得同一个场景**（`proc_terrain.terrain_seed` / `vegetation_scatter.scatter_seed` / `camp_builder.camp_seed`）。
 > 地形碰撞与渲染网格的三角形绕向必须一致（`(v00, v10, v01)` 朝上），
 > 写反了地形会被背面剔除、角色也会直接穿过地面。
+
+### 树木
+
+- 每棵树都是独立生成的形态：**5 个松树变体 + 2 个桦树变体**，层数、半径、层间偏移都随 seed 变化，森林里没有两棵完全一样的树
+- 混交林：桦树占乔木 22%，另有枯立木、倒木、树桩提供林下层次
+- 树冠用顶点着色器**随风轻摆**（`PropKit.swaying_material()`）：高度加权，越高摆得越多；每棵树的相位写在 MultiMesh 实例自定义数据里，整片林子不会齐刷刷一起晃
+- 被测层不投影：看不出来却要多走一遍阴影 pass，关掉后每帧三角形数从 1.5M 降到 0.9M
 
 ## 仓库结构
 
