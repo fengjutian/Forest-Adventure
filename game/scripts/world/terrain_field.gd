@@ -159,9 +159,13 @@ func color_at(x: float, z: float, height: float, slope: float) -> Color:
 	# 高处林线更深沉
 	var color := grass.lerp(deep_grass, clampf(height / (amplitude * 0.8), 0.0, 1.0))
 
-	# 溪谷河床常年被水冲刷，露土露砂
-	if height < -0.35:
-		color = color.lerp(gravel, clampf((-height - 0.35) / 0.8, 0.0, 1.0))
+	# 溪谷河床常年被水冲刷，露土露砂。
+	# 只对溪流附近生效：1 km 世界里大量低洼地是正常林地，不能一律染成河床。
+	var creek_distance := absf(x - creek_center_x)
+	var creek_mask := 1.0 - smoothstep(creek_half_width * 0.5, creek_half_width * 2.8, creek_distance)
+	if height < -0.35 and creek_mask > 0.0:
+		var gravel_amount := clampf((-height - 0.35) / 0.8, 0.0, 1.0) * creek_mask
+		color = color.lerp(gravel, gravel_amount)
 
 	# 高出林线后露岩
 	if height > macro_amplitude * 0.55:

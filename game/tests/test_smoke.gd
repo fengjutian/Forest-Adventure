@@ -42,6 +42,7 @@ func _ready() -> void:
 	_test_input_map()
 	_test_mouse_capture()
 	await _test_player_grounding()
+	await _test_chunked_world()
 	await _test_first_person_motion()
 	_test_hud_key_hints()
 	_test_quest_definition()
@@ -100,12 +101,81 @@ func _test_player_grounding() -> void:
 	_assert(is_equal_approx(_player.health, _player.tuning.max_health),
 		"出生没有跌落伤害（当前生命 %f）" % _player.health)
 
-	var terrain := get_tree().get_first_node_in_group(&"terrain") as ProcTerrain
+	var terrain := get_tree().get_first_node_in_group(&"terrain") as Node3D
 	_assert(terrain != null, "地形已注册到 terrain 分组")
 	if terrain != null:
-		var ground := terrain.height_at(_player.global_position.x, _player.global_position.z)
+		var ground := float(terrain.call("height_at", _player.global_position.x, _player.global_position.z))
 		_assert(absf(_player.global_position.y - ground) < 1.0,
 			"玩家高度贴近地面（y=%.2f 地面=%.2f）" % [_player.global_position.y, ground])
+
+
+## 分块世界：1 km 范围、跨块无缝、流式加载、可重复生成（docs/open-world-design.md §1）。
+func _test_chunked_world() -> void:
+	var world := _find_world()
+	_assert(world != null, "分块世界已加载")
+	if world == null:
+		return
+
+	_assert(is_equal_approx(world.world_size, 1024.0), "世界边长 1 km（实际 %.0f）" % world.world_size)
+	_assert(is_equal_approx(world.chunk_size, 64.0), "区块边长 64 m（实际 %.0f）" % world.chunk_size)
+	_assert(world.loaded_chunk_count() > 0, "启动即加载了出生点附近的区块")
+	var chunk_bound := (2 * world.terrain_radius_chunks + 1) * (2 * world.terrain_radius_chunks + 1)
+	_assert(world.loaded_chunk_count() <= chunk_bound,
+		"同时存在的区块数有上界（%d / %d）" % [world.loaded_chunk_count(), chunk_bound])
+
+	_assert(absf(world.height_at(0.0, 0.0)) < 0.05,
+		"营地中心被压平（高度 %.3f）" % world.height_at(0.0, 0.0))
+	_assert(world.height_at(11.0, 40.0) < -1.0,
+		"溪谷贯穿营地之外（河床 %.2f）" % world.height_at(11.0, 40.0))
+
+	# 跨块连续：边界两侧的场值必须几乎相等
+	var max_jump := 0.0
+	for z in [-200.0, -64.0, 0.0, 16.0, 64.0, 200.0]:
+		max_jump = maxf(max_jump, absf(world.height_at(-0.01, z) - world.height_at(0.01, z)))
+	_assert(max_jump < 0.1, "高度场跨区块边界连续（最大跳变 %.3f m）" % max_jump)
+
+	# 网格接缝：相邻两块在共享边界上的顶点高度必须完全一致
+	var camp_coord := world.world_to_chunk(Vector3(0.0, 0.0, 8.0))
+	_assert(camp_coord == Vector2i(8, 8), "营地所在区块为 (8,8)（实际 %s）" % camp_coord)
+	var camp := world.get_chunk(camp_coord)
+	var west := world.get_chunk(Vector2i(7, 8))
+	_assert(camp != null and west != null, "营地与西侧相邻区块都已加载")
+	if camp == null or west == null:
+		return
+
+	var camp_edge := _mesh_height(camp, 0.0, 16.0)
+	var west_edge := _mesh_height(west, world.chunk_size, 16.0)
+	_assert(absf(camp_edge - world.height_at(0.0, 16.0)) < 0.01,
+		"区块网格顶点取自同一高度场（%.3f）" % camp_edge)
+	_assert(is_equal_approx(camp_edge, west_edge),
+		"相邻区块共享边界高度一致（%.3f / %.3f）" % [camp_edge, west_edge])
+
+	# 确定性：同一块重建后植被逐实例一致
+	var signature := camp.signature()
+	_assert(not signature.is_empty(), "营地区块有植被")
+	world.rebuild_chunk(camp_coord)
+	var rebuilt := world.get_chunk(camp_coord)
+	_assert(rebuilt != null, "区块可以立即重建")
+	if rebuilt != null:
+		_assert(signature == rebuilt.signature(), "同一区块重建后植被逐实例一致")
+
+	# 流式加载：走远后营地卸载、脚下加载
+	var saved_position := _player.global_position
+	_player.set_physics_process(false)
+	_player.global_position = Vector3(400.0, world.height_at(400.0, 400.0) + 2.0, 400.0)
+	for i in 240:
+		await get_tree().process_frame
+
+	var far_coord := world.world_to_chunk(_player.global_position)
+	_assert(world.is_chunk_loaded(far_coord), "远处脚下的区块已流式加载")
+	_assert(not world.is_chunk_loaded(camp_coord), "离开后营地区块已卸载")
+	_assert(world.loaded_chunk_count() <= chunk_bound, "流式加载后区块数仍有界")
+
+	_player.global_position = saved_position
+	_player.set_physics_process(true)
+	for i in 240:
+		await get_tree().process_frame
+	_assert(world.is_chunk_loaded(camp_coord), "回到营地后区块重新加载")
 
 
 ## 第一人称表现：手、手臂、拉弦与走路起伏必须真的在动，而不是一把浮空的弓。
@@ -265,11 +335,24 @@ func _test_save_keys() -> void:
 		_assert(data.has(key), "存档含必需字段：%s" % key)
 	_assert(int(data.get("save_version", 0)) == SaveManager.SAVE_VERSION, "存档版本号正确")
 
+	# 分块世界：种子与改动区块必须进存档，否则换机器读档会生成另一张地图
+	var chunked: Dictionary = data.get("chunked_world", {})
+	_assert(not chunked.is_empty(), "存档含 chunked_world 字段")
+	var world := _find_world()
+	if world != null:
+		_assert(int(chunked.get("seed", 0)) == world.field.world_seed,
+			"存档记录世界种子（%d）" % int(chunked.get("seed", 0)))
+		_assert(chunked.get("modifications", null) is Dictionary, "存档记录区块改动表")
+
 
 func _test_save_load_round_trip() -> void:
 	# 存档后破坏状态，再读档验证恢复
 	_inventory.add_item(&"test_marker", 3)
 	GameState.set_flag(&"test_flag", true)
+	var world := _find_world()
+	var modified_coord := Vector2i(9, 9)
+	if world != null:
+		world.mark_chunk_modified(modified_coord, {"no_vegetation": true})
 	SaveManager.save_game(0)
 
 	_inventory.remove_item(&"test_marker", 3)
@@ -286,6 +369,14 @@ func _test_save_load_round_trip() -> void:
 	var crate := _find_interactable(&"supply_crate")
 	if crate != null:
 		_assert(not crate.can_interact(_player), "读档后已拾取的物资箱不可交互")
+
+	# 区块改动应恢复：存档里被清空植被的区块，读档后重建仍是空的
+	_assert(GameState.get_chunk_modification(modified_coord).get("no_vegetation", false),
+		"读档后区块改动已恢复")
+	if world != null:
+		var chunk := world.get_chunk(modified_coord)
+		_assert(chunk != null and chunk.instance_count() == 0,
+			"读档后被改动区块按存档重建（植被实例 %d）" % (chunk.instance_count() if chunk != null else -1))
 
 
 func _test_migration() -> void:
@@ -342,7 +433,7 @@ func _test_combat() -> void:
 	if bow != null:
 		var camera := _player.get_node_or_null("Head/Camera3D") as Camera3D
 		bow.spawn_arrow(1.0)
-		await get_tree().process_frame
+		# 生成后立刻取位置：箭速 42 m/s，等一帧就已经飞出去 0.7 m 了
 		var spawned := _find_arrow()
 		_assert(spawned != null, "弓能生成箭矢实体")
 		if spawned != null and camera != null:
@@ -432,6 +523,26 @@ func _test_enemy_perception() -> void:
 
 
 # ------------------------------------------------------------------ 工具
+
+func _find_world() -> ChunkedWorld:
+	return get_tree().get_first_node_in_group(&"chunked_world") as ChunkedWorld
+
+
+## 取区块网格上某个局部坐标处的顶点高度，用来验证接缝。
+func _mesh_height(chunk: WorldChunk, local_x: float, local_z: float) -> float:
+	var mesh_instance := chunk.get_node_or_null("TerrainMesh") as MeshInstance3D
+	if mesh_instance == null or mesh_instance.mesh == null:
+		return NAN
+	var cell := chunk.chunk_size / float(chunk.resolution)
+	var i := int(round(local_x / cell))
+	var j := int(round(local_z / cell))
+	var arrays := mesh_instance.mesh.surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var index := j * (chunk.resolution + 1) + i
+	if index < 0 or index >= vertices.size():
+		return NAN
+	return vertices[index].y
+
 
 func _find_interactable(object_id: StringName) -> Node:
 	for node in get_tree().get_nodes_in_group(&"interactable"):

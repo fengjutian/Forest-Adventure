@@ -5,7 +5,8 @@ extends Node
 ## 注意：必须使用带图形后端的 Godot（不能 --headless），否则拿到的是空帧。
 
 @export var output_path: String = "res://../build/screenshots/frame.png"
-@export var settle_frames: int = 12
+## 分块世界是逐帧流式加载的：等久一点，让远处区块和植被都到位再截。
+@export var settle_frames: int = 200
 
 
 func _ready() -> void:
@@ -13,6 +14,12 @@ func _ready() -> void:
 		await get_tree().process_frame
 
 	await RenderingServer.frame_post_draw
+
+	var world := get_tree().get_first_node_in_group(&"chunked_world")
+	print("PERF fps=%d chunks=%d" % [
+		Engine.get_frames_per_second(),
+		world.loaded_chunk_count() if world != null else -1,
+	])
 
 	var viewport := get_viewport()
 	var image := viewport.get_texture().get_image()

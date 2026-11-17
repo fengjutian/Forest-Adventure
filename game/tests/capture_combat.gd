@@ -112,10 +112,10 @@ func _place_for_wolf(player: Player, wolf: EnemyBase) -> void:
 
 
 func _ground_at(point: Vector3) -> float:
-	var terrain := get_tree().get_first_node_in_group(&"terrain") as ProcTerrain
-	if terrain == null:
+	var terrain := get_tree().get_first_node_in_group(&"terrain") as Node3D
+	if terrain == null or not terrain.has_method("height_at"):
 		return point.y
-	return terrain.height_at(point.x, point.z)
+	return float(terrain.call("height_at", point.x, point.z))
 
 
 func _settle(frames: int) -> void:

@@ -68,11 +68,15 @@ func _setup_environment() -> void:
 	_environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	_environment.ambient_light_energy = ambient_energy
 
-	# 空气透视：远景被雾压暗并偏蓝，层次才拉得开
+	# 空气透视：近处清晰、远处被雾压暗并偏蓝。
+	# 用「距离雾」而不是指数雾：近景不被糊白，1 km 世界的地形边缘又能被藏住。
 	_environment.fog_enabled = true
+	_environment.fog_mode = Environment.FOG_MODE_DEPTH
+	_environment.fog_depth_begin = 30.0
+	_environment.fog_depth_end = 380.0
+	_environment.fog_depth_curve = 1.4
 	_environment.fog_light_color = Color(0.62, 0.7, 0.74)
 	_environment.fog_light_energy = 0.9
-	_environment.fog_density = 0.0055
 	_environment.fog_sky_affect = 0.3
 	_environment.fog_aerial_perspective = 0.45
 

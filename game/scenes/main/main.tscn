@@ -22,7 +22,7 @@ region_id = &"region_00_camp"
 
 [node name="ChunkLoader" type="Node" parent="WorldManager"]
 script = ExtResource("3_chunk")
-initial_scene = "res://scenes/world/greybox_camp.tscn"
+initial_scene = "res://scenes/world/pine_valley.tscn"
 
 [node name="TimeOfDay" type="Node3D" parent="WorldManager"]
 script = ExtResource("4_time")

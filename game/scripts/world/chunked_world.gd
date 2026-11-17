@@ -22,10 +22,10 @@ const WORLD_GROUP := &"chunked_world"
 @export var chunk_size: float = 64.0
 ## 每个区块的网格分段数。32 段 / 64 m = 2 m 一格。
 @export var terrain_resolution: int = 32
-@export_range(0, 8) var terrain_radius_chunks: int = 5
+@export_range(0, 8) var terrain_radius_chunks: int = 6
 @export_range(0, 8) var collision_radius_chunks: int = 2
 @export_range(0, 8) var vegetation_radius_chunks: int = 2
-@export_range(0, 8) var sparse_vegetation_radius_chunks: int = 3
+@export_range(0, 8) var sparse_vegetation_radius_chunks: int = 4
 ## 每帧给区块生成的时间预算（毫秒），避免一次性加载时掉帧。
 @export var build_budget_ms: float = 6.0
 ## 启动时同步生成几圈区块，保证出生点附近立刻可站。
@@ -213,14 +213,16 @@ func _refresh(anchor_chunk: Vector2i) -> void:
 
 	# 1. 卸载走远的区块
 	var to_unload: Array[Vector2i] = []
-	for coord: Vector2i in _chunks.keys():
+	for key in _chunks.keys():
+		var coord: Vector2i = key
 		if _chebyshev(coord, anchor_chunk) > terrain_radius_chunks:
 			to_unload.append(coord)
 	for coord in to_unload:
 		_unload_chunk(coord)
 
 	# 2. 给已有区块更新碰撞与植被档位
-	for coord: Vector2i in _chunks.keys():
+	for key in _chunks.keys():
+		var coord: Vector2i = key
 		var chunk: WorldChunk = _chunks[coord]
 		var distance := _chebyshev(coord, anchor_chunk)
 		chunk.ensure_collision(distance <= collision_radius_chunks)
@@ -356,7 +358,10 @@ func _refresh_vegetation_for(chunk: WorldChunk) -> void:
 
 func _on_game_loaded(_slot: int) -> void:
 	var saved_seed := int(GameState.world_seed)
-	if saved_seed > 0 and saved_seed != field.world_seed:
+	if saved_seed <= 0:
+		# 旧存档没有种子：沿用当前世界，并把它写回存档
+		GameState.world_seed = field.world_seed
+	elif saved_seed != field.world_seed:
 		# 存档来自另一张地图：换种子并整世界重建
 		field.set_seed(saved_seed)
 		world_seed = saved_seed
@@ -367,15 +372,16 @@ func _on_game_loaded(_slot: int) -> void:
 		return
 
 	# 同一种子：把存档里记录过改动的区块重建一遍
-	for coord: Vector2i in _chunks.keys():
+	for key in _chunks.keys():
+		var coord: Vector2i = key
 		var override := GameState.get_chunk_modification(coord)
 		if not override.is_empty():
 			rebuild_chunk(coord)
 
 
 func _clear_chunks() -> void:
-	for coord: Vector2i in _chunks.keys():
-		var chunk: WorldChunk = _chunks[coord]
+	for key in _chunks.keys():
+		var chunk: WorldChunk = _chunks[key]
 		remove_child(chunk)
 		chunk.queue_free()
 	_chunks.clear()

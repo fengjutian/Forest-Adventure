@@ -437,24 +437,21 @@ static func make_arm_mesh(color: Color) -> ArrayMesh:
 	return merge([[mesh, _xform(Vector3(0, 0.5, 0)), color]])
 
 
-## 第一人称手部：握拳，手背朝向镜头，四指在 -Z 一侧包住握把。
+## 第一人称手部：连指手套风格的简化拳头。
 ##
-## 拇指压在握把靠近镜头的一侧——第一人称里能看见它，手才像在“握”，
-## 而不是一只悬空的方块。手腕朝下接前臂。
-##
-## 四指要拼成一整块：手指之间留缝的话，侧过来看会变成一把梳子。
+## 不做手指分节——低多边形下细长的指节会变成一叠纸片，
+## 比不画手指更怪。整只手收成一个略带棱角的拳套包住握把，
+## 只留一个拇指凸起和手腕。
 static func make_player_hand(skin: Color) -> ArrayMesh:
 	var parts: Array = []
-	# 手背
-	parts.append(_box(Vector3(0.082, 0.1, 0.062), _xform(Vector3.ZERO), skin))
-	# 四指：在 -Z 侧竖直叠成一整片，正好扣住竖直的弓把
-	parts.append(_box(Vector3(0.074, 0.086, 0.038), _xform(Vector3(0.0, 0.0, -0.046)), skin.darkened(0.12)))
-	# 指节：手背外沿
-	parts.append(_box(Vector3(0.072, 0.018, 0.024), _xform(Vector3(0.0, 0.044, -0.022)), skin.lightened(0.04)))
-	# 拇指：压在握把靠镜头一侧，从第一人称能直接看见
-	parts.append(_box(Vector3(0.032, 0.075, 0.042), _xform(Vector3(-0.026, 0.035, 0.028), Vector3(18, 0, -12)), skin))
+	# 拳套主体
+	parts.append(_box(Vector3(0.086, 0.108, 0.07), _xform(Vector3.ZERO), skin))
+	# 指节起伏：让轮廓不是死方块
+	parts.append(_box(Vector3(0.068, 0.022, 0.026), _xform(Vector3(0.0, 0.042, -0.036)), skin.lightened(0.05)))
+	# 拇指凸起
+	parts.append(_box(Vector3(0.032, 0.058, 0.042), _xform(Vector3(-0.028, 0.026, 0.016), Vector3(14, 0, -10)), skin))
 	# 手腕：朝下接前臂
-	parts.append(_box(Vector3(0.06, 0.05, 0.05), _xform(Vector3(0.0, -0.068, 0.0)), skin.darkened(0.18)))
+	parts.append(_box(Vector3(0.062, 0.05, 0.052), _xform(Vector3(0.0, -0.068, 0.0)), skin.darkened(0.16)))
 	return merge(parts)
 
 

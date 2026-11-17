@@ -9,10 +9,10 @@ signal props_built()
 
 @export var camp_seed: int = 90210
 
-var _height_provider: Node = null
+var _height_provider: Variant = null
 
 
-func build(height_provider: Node) -> void:
+func build(height_provider: Variant) -> void:
 	_height_provider = height_provider
 
 	_place_cabin()
@@ -63,9 +63,9 @@ func _add_prop(node_name: String, mesh: Mesh, position: Vector2, rotation_y: flo
 
 
 func _ground(x: float, z: float) -> float:
-	if _height_provider == null or not _height_provider.has_method("height_at"):
+	if _height_provider == null:
 		return 0.0
-	return float(_height_provider.call("height_at", x, z))
+	return float(_height_provider.height_at(x, z))
 
 
 # ------------------------------------------------------------------ 各建筑

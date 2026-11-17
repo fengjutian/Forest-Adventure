@@ -35,21 +35,21 @@ signal fire_failed(reason: String)
 ## 瞄准时的鼠标灵敏度倍率。
 @export var aim_sensitivity_scale: float = 0.45
 ## 垂下持弓时相对镜头的偏移与朝向。
-@export var view_offset: Vector3 = Vector3(0.24, -0.3, -0.62)
-@export var view_rotation_degrees: Vector3 = Vector3(6.0, 16.0, 12.0)
+@export var view_offset: Vector3 = Vector3(0.02, -0.36, -0.58)
+@export var view_rotation_degrees: Vector3 = Vector3(12.0, -25.0, 16.0)
 ## 举弓瞄准时相对镜头的偏移与朝向。
 ##
-## 弓弦心落在 x=0，所以弓的水平位置就是弦心的位置：
-## 偏移 x=0 时弓弦正压屏幕中心，箭也正对准星。
-## 只留一点点偏航：完全侧过去虽然能看清箭杆，箭也会明显偏到准星左边。
-@export var aim_view_offset: Vector3 = Vector3(0.0, -0.02, -0.64)
-@export var aim_view_rotation_degrees: Vector3 = Vector3(0.0, 0.0, 3.0)
+## 弓摆在画面左侧、偏航 20°，箭尖因此从弦心向右前方收拢到准星上——
+## 这正是经典第一人称弓箭的构图：弓在左边，箭指向屏幕中心。
+## 箭的实际飞行方向仍取自相机前方，与画面构图无关。
+@export var aim_view_offset: Vector3 = Vector3(-0.1, -0.04, -0.64)
+@export var aim_view_rotation_degrees: Vector3 = Vector3(0.0, -20.0, 0.0)
 ## 第一人称模型整体缩放。
 ##
-## 弓按真实尺寸（1.32 m）建模，这里缩一半再把距离调近，
-## 让弓高约占瞄准画面的八成——弓太大就会把整个屏幕糊住。
+## 弓按真实尺寸（1.32 m）建模，这里缩到四成：
+## 再大就会上下贯通整个屏幕，把视野劈成两半。
 ## 手挂在弓上跟着一起缩，手掌与握把的比例始终是对的。
-@export var view_scale: float = 0.5
+@export var view_scale: float = 0.4
 
 ## 弓本地坐标里的关键点。
 const GRIP_POINT := Vector3(-0.2, 0.0, 0.0)

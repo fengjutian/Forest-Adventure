@@ -13,12 +13,12 @@ signal weather_changed(new_weather: StringName)
 ## 指向主场景中的 WorldEnvironment 节点。
 @export var environment_path: NodePath = ^"../../WorldEnvironment"
 
-## 天气 → 能见度（雾密度）参数。
-const FOG_DENSITY := {
-	&"clear": 0.006,
-	&"cloudy": 0.012,
-	&"rain": 0.022,
-	&"fog": 0.055,
+## 天气 → 能见距离（米）。距离雾的远端越近，能见度越差。
+const FOG_END := {
+	&"clear": 380.0,
+	&"cloudy": 300.0,
+	&"rain": 220.0,
+	&"fog": 110.0,
 }
 
 var _environment: Environment
@@ -56,6 +56,9 @@ func _apply() -> void:
 		return
 
 	_environment.fog_enabled = true
-	_environment.fog_density = float(FOG_DENSITY.get(current_weather, 0.006))
+	_environment.fog_mode = Environment.FOG_MODE_DEPTH
+	_environment.fog_depth_begin = 30.0
+	_environment.fog_depth_end = float(FOG_END.get(current_weather, 380.0))
+	_environment.fog_depth_curve = 1.4
 	_environment.fog_light_color = Color(0.55, 0.60, 0.62)
 	_environment.fog_sun_scatter = 0.15
