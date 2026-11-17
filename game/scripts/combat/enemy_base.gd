@@ -64,6 +64,14 @@ const GRAVITY: float = 9.8
 @export var attack_windup: float = 0.45
 ## 弱点判定：命中点高于此高度算弱点。
 @export var weak_point_height: float = 0.85
+## 弱点需要先被「观察」到才生效。命中足够多次后自动解锁。
+## 守卫型敌人（异常守护者）靠这个机制把弱点变成一场观察题，
+## 而不是一根写在配置里的常量。
+@export var weak_point_requires_discovery: bool = false
+## 解锁弱点需要累计命中多少次（只在普通伤害命中时计数）。
+@export var weak_point_hits_to_unlock: int = 3
+## 弱点是否必须在敌人背面。相对敌人朝向判定：dot < -0.3 算背面。
+@export var weak_point_requires_behind: bool = false
 ## 受击硬直时长。
 @export var stagger_duration: float = 0.35
 
@@ -74,6 +82,9 @@ const GRAVITY: float = 9.8
 @export var patrol_radius: float = 9.0
 ## 受击后进入逃跑状态的阈值（生命比例）。
 @export var flee_health_ratio: float = 0.25
+## 是否会在血量过低时逃跑。
+## 守卫型敌人设为 false：它守着一个地方，不会被追着打几下就逃。
+@export var can_flee: bool = true
 
 var state: State = State.IDLE
 
@@ -91,6 +102,10 @@ var _rng := RandomNumberGenerator.new()
 var _terrain: Node3D = null
 var _flash_timer: float = 0.0
 var _base_scale: Vector3 = Vector3.ONE
+## 累计的普通命中次数，用于「观察后发现弱点」。
+var _hits_taken: int = 0
+## 弱点是否已被观察到。
+var _weak_point_unlocked: bool = false
 
 
 func _ready() -> void:
@@ -189,6 +204,13 @@ func _is_loud() -> bool:
 
 ## 子类覆盖具体行为。
 func _decide(delta: float) -> void:
+	# 脱战：离岗位太远就放弃追击，回到巡逻。
+	# 狼的岗位是出生点，leash_radius 较大；守卫型敌人的岗位就是它的活动边界。
+	if state == State.CHASE and global_position.distance_to(_home) > leash_radius:
+		_set_state(State.PATROL)
+		_has_patrol_target = false
+		return
+
 	match state:
 		State.IDLE:
 			if _state_timer > 2.0:
@@ -341,6 +363,13 @@ func apply_damage(amount: float, kind: DamageKind = DamageKind.NORMAL,
 	_flash_timer = 0.18
 	_stagger_timer = stagger_duration
 
+	# 累计普通命中次数：守卫型敌人的弱点要「观察」过才会暴露
+	if weak_point_requires_discovery and not _weak_point_unlocked:
+		if kind == DamageKind.NORMAL:
+			_hits_taken += 1
+			if _hits_taken >= weak_point_hits_to_unlock:
+				_unlock_weak_point()
+
 	# 受击会立刻暴露攻击者的位置
 	if _target != null:
 		_last_seen_position = _target.global_position
@@ -348,17 +377,50 @@ func apply_damage(amount: float, kind: DamageKind = DamageKind.NORMAL,
 	if _health <= 0.0:
 		_die()
 	else:
-		if _health / max_health <= flee_health_ratio and state != State.FLEE:
+		if can_flee and _health / max_health <= flee_health_ratio and state != State.FLEE:
 			_set_state(State.FLEE)
 		elif state != State.CHASE and state != State.ATTACK:
 			_set_state(State.CHASE)
 
 
 ## 命中点是否落在弱点。
+## 判定顺序：已解锁 → 高度 → 背面。
 func is_weak_point(hit_point: Vector3) -> bool:
 	if hit_point == Vector3.INF:
 		return false
-	return hit_point.y - global_position.y >= weak_point_height
+	# 还没被观察到的弱点不算弱点
+	if weak_point_requires_discovery and not _weak_point_unlocked:
+		return false
+	if hit_point.y - global_position.y < weak_point_height:
+		return false
+	if weak_point_requires_behind and not _is_behind(hit_point):
+		return false
+	return true
+
+
+## 弱点是否已经解锁。
+func is_weak_point_unlocked() -> bool:
+	return _weak_point_unlocked
+
+
+## 命中点是否在敌人背面。敌人朝向是 -basis.z。
+func _is_behind(hit_point: Vector3) -> bool:
+	var to_hit := hit_point - global_position
+	to_hit.y = 0.0
+	if to_hit.length() < 0.01:
+		return false
+	var forward := -global_transform.basis.z
+	forward.y = 0.0
+	if forward.length() < 0.001:
+		return false
+	return forward.normalized().dot(to_hit.normalized()) < -0.3
+
+
+## 解锁弱点。发一次事件，让 HUD 提示玩家「你注意到了什么」。
+func _unlock_weak_point() -> void:
+	_weak_point_unlocked = true
+	EventBus.weak_point_discovered.emit(display_name)
+	GameLog.info("弱点被发现", {"enemy": stable_id})
 
 
 func _die() -> void:
@@ -491,6 +553,7 @@ func get_persistent_state() -> Dictionary:
 	return {
 		"alive": is_alive(),
 		"health": _health,
+		"weak_point_unlocked": _weak_point_unlocked,
 	}
 
 
@@ -498,6 +561,7 @@ func apply_persistent_state(state_data: Dictionary) -> void:
 	if state_data.is_empty():
 		return
 	_health = float(state_data.get("health", _health))
+	_weak_point_unlocked = bool(state_data.get("weak_point_unlocked", false))
 	health_changed.emit(_health, max_health)
 	if not bool(state_data.get("alive", true)):
 		_set_state(State.DEAD)

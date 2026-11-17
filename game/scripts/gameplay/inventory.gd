@@ -18,6 +18,12 @@ var _slots: Array = []          # Array[Dictionary]: {id: StringName, amount: in
 var _quest_slots: Array = []    # Array[Dictionary]: {id: StringName, amount: int}
 
 
+func _ready() -> void:
+	# 背包挂在玩家下面，但隐藏地点发奖励、世界事件发物品都要找它。
+	# 注册分组后就不必硬编码 $Player/Inventory 这条路径。
+	add_to_group(&"inventory")
+
+
 ## 物品定义库。灰色盒阶段允许未注册物品，按 max_stack = 1 处理。
 var _definitions: Dictionary = {}
 

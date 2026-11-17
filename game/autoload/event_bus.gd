@@ -43,8 +43,18 @@ signal bow_charge_changed(charge: float)
 ## 命中反馈，weakpoint 为真表示打在弱点。
 signal hit_confirmed(weakpoint: bool)
 signal enemy_health_changed(enemy_name: String, current: float, maximum: float)
+## 弱点被观察到。守卫型敌人的弱点需要先看清才生效。
+signal weak_point_discovered(enemy_name: String)
 ## 威胁等级 0~1，用于 HUD 的敌人提示。
 signal enemy_threat_changed(threat_level: float)
+
+# ---------------------------------------------------------------- 世界事件
+signal world_event_started(event_id: StringName)
+signal world_event_ended(event_id: StringName, reason: StringName)
+
+# ---------------------------------------------------------------- 隐藏地点
+signal location_discovered(location_id: StringName, display_name: String)
+signal location_reward_claimed(location_id: StringName, item_id: StringName)
 
 # ---------------------------------------------------------------- 存档
 signal game_saved(slot: int)

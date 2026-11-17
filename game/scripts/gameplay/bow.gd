@@ -325,18 +325,43 @@ func _release_and_fire() -> void:
 	fired.emit(power)
 
 
-## 生成一支箭。
+## 生成一支箭，返回生成的投射物（测试与调试用；没生成则返回 null）。
+##
+## 出膛点默认就是「搭在弦上那支箭的箭尾」：扣扳机时，弦上那支箭接着飞出去，
+## 而不是从屏幕中央凭空刷出一支新的。目标比弦还近（贴脸、贴着墙）时退回
+## 相机前方的枪口位置——否则箭会生在目标后面，从目标背后飞走。
 ##
 ## 暴露为公开方法，方便测试直接走真实发射路径。
-func spawn_arrow(power: float) -> void:
+func spawn_arrow(power: float) -> ArrowProjectile:
 	if _camera == null or not _camera.is_inside_tree():
-		return
+		return null
+	var forward := -_camera.global_transform.basis.z
+	# 兜底出膛点：比相机低 15 cm（持弓手的高度）、向前 0.6 m
+	var muzzle := _camera.global_position + forward * 0.6 - _camera.global_transform.basis.y * 0.15
+
+	# 出膛方向指向「准星真正打到的那个点」，而不是简单地和视线平行。
+	# 出膛点在准星下方，速度若平行于视线，整支箭就会一直低一截：
+	# 5 m 处正好从狼头上擦过去，玩家会觉得「准星明明压住了却没中」。
+	# 从出膛点连线到命中点，近处自动补偿这个落差，远处仍然要自己抬枪补弹道。
+	var aim_point := _crosshair_point()
+	var aim_distance := _camera.global_position.distance_to(aim_point)
+
+	var spawn := muzzle
+	if _nocked_arrow != null and _nocked_arrow.is_inside_tree():
+		var nock := _nocked_arrow.global_position
+		# 目标必须明显在弦前面，箭才从弦上发
+		if aim_distance > _camera.global_position.distance_to(nock) + 0.25:
+			spawn = nock
+
+	var direction := (aim_point - spawn).normalized()
+	if direction.dot(forward) < 0.2:
+		direction = forward
+
 	var arrow := ArrowProjectile.new()
 	arrow.name = "Arrow"
 	arrow.damage = damage
 	arrow.hit.connect(_on_arrow_hit)
-	var forward := -_camera.global_transform.basis.z
-	arrow.launch(forward, power)
+	arrow.launch(direction, power)
 
 	# 必须先入树再设 global_position：节点不在场景树里时 Godot 会忽略
 	# 这个赋值，箭会落在父节点原点上（也就是世界原点），而不是射手手里。
@@ -344,10 +369,33 @@ func spawn_arrow(power: float) -> void:
 	if parent == null:
 		parent = get_tree().current_scene
 	parent.add_child(arrow)
-	arrow.global_position = _camera.global_position + forward * 0.6 - _camera.global_transform.basis.y * 0.15
+	# 往前让 6 cm，避免和还挂在弦上的那支箭共面闪烁
+	arrow.global_position = spawn + direction * 0.06
+	# 入树后立刻摆正朝向，否则第一帧的箭是横着的
+	arrow.face(direction)
 
 	# 弓响会暴露位置
 	_player.notify_noise(1.2)
+	return arrow
+
+
+## 准星指向的世界坐标：从相机沿视线打一条射线，取第一个命中点。
+##
+## 没打到东西就返回 200 m 外的远点——那支箭的初速方向几乎等同于视线，
+## 弹道下坠仍然要玩家自己估。
+func _crosshair_point() -> Vector3:
+	var forward := -_camera.global_transform.basis.z
+	var from := _camera.global_position
+	var to := from + forward * 200.0
+	var space := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(from, to)
+	# 世界层 + 敌人层，和箭矢的射线一致；玩家自己不在这些层上，不会挡住射线
+	query.collision_mask = 1 | 8
+	query.collide_with_areas = false
+	var result := space.intersect_ray(query)
+	if result.is_empty():
+		return to
+	return result["position"]
 
 
 func _on_arrow_hit(_target: Node, _damage: float, weakpoint: bool) -> void:

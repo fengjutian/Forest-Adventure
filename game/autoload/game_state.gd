@@ -10,6 +10,14 @@ var world_flags: Dictionary = {}
 ## 稳定 ID → 状态字典。记录已改变对象的持久化状态（已拾取、已修复等）。
 var changed_objects: Dictionary = {}
 
+## 隐藏地点是否已发现。location_id → bool。
+## 与 changed_objects 分开：「发现了地点」和「捡走了那里的东西」是两种状态。
+var discovered_locations: Dictionary = {}
+
+## 世界事件状态。event_id → {state, active_since, cooldown_until, completed}。
+## 见 docs/vertical-slice-completion.md §4。
+var world_events: Dictionary = {}
+
 var current_scene_id: StringName = &""
 var current_region_id: StringName = &""
 
@@ -53,6 +61,30 @@ func mark_changed(object_id: StringName, state: Dictionary) -> void:
 	changed_objects[object_id] = state.duplicate(true)
 
 
+## 标记一个隐藏地点已被发现。
+func mark_location_discovered(location_id: StringName) -> void:
+	if location_id == &"":
+		return
+	discovered_locations[location_id] = true
+
+
+## 隐藏地点是否已被发现。
+func is_location_discovered(location_id: StringName) -> bool:
+	return bool(discovered_locations.get(location_id, false))
+
+
+## 读取世界事件的状态快照。没有记录时返回空字典。
+func get_world_event_state(event_id: StringName) -> Dictionary:
+	return world_events.get(event_id, {})
+
+
+## 写入世界事件的状态快照。
+func set_world_event_state(event_id: StringName, state: Dictionary) -> void:
+	if event_id == &"":
+		return
+	world_events[event_id] = state.duplicate(true)
+
+
 ## 记录某个区块的永久改动（例如整块植被被清空、地形被挖开）。
 func mark_chunk_modified(coord: Vector2i, state: Dictionary) -> void:
 	chunk_modifications[chunk_key(coord)] = state.duplicate(true)
@@ -87,6 +119,8 @@ func to_dict() -> Dictionary:
 	return {
 		"world_flags": world_flags.duplicate(true),
 		"changed_objects": changed_objects.duplicate(true),
+		"discovered_locations": discovered_locations.duplicate(true),
+		"world_events": world_events.duplicate(true),
 		"chunked_world": {
 			"seed": world_seed,
 			"modifications": chunk_modifications.duplicate(true),
@@ -103,6 +137,9 @@ func to_dict() -> Dictionary:
 func from_dict(data: Dictionary) -> void:
 	world_flags = (data.get("world_flags", {}) as Dictionary).duplicate(true)
 	changed_objects = (data.get("changed_objects", {}) as Dictionary).duplicate(true)
+	# 这两段是后加的，旧存档里没有：缺字段按空处理，不能让读档失败
+	discovered_locations = (data.get("discovered_locations", {}) as Dictionary).duplicate(true)
+	world_events = (data.get("world_events", {}) as Dictionary).duplicate(true)
 
 	# 缺字段的旧存档按默认值处理：种子 0 = 跟随场景，区块改动为空
 	var chunked: Dictionary = data.get("chunked_world", {})

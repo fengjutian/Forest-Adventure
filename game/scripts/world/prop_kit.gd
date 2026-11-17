@@ -623,18 +623,13 @@ static func make_player_body() -> ArrayMesh:
 
 ## 箭矢：细杆 + 箭头 + 尾羽。
 ##
-## 箭头朝 -Z（Godot 的「前方」），投射物可以直接用 look_at 对齐飞行方向。
+## 和搭在弦上的箭共用同一份零件（_bow_arrow_parts）：
+## 玩家看到的那支箭和射出去的那支必须是同一个东西，
+## 两套各画各的，射击瞬间就会「换了一支箭」。
+##
+## 箭尾在原点、箭头朝 -Z（Godot 的「前方」），投射物可以直接用 look_at 对齐飞行方向。
 static func make_arrow() -> ArrayMesh:
-	var shaft := Color(0.45, 0.35, 0.22)
-	var head := Color(0.55, 0.56, 0.58)
-	var feather := Color(0.72, 0.68, 0.6)
-	var parts: Array = []
-	parts.append(_cylinder(0.012, 0.72, _xform(Vector3(0, 0, 0), Vector3(90, 0, 0)), shaft, 5))
-	parts.append(_cone(0.022, 0.09, _xform(Vector3(0, 0, -0.4), Vector3(-90, 0, 0)), head, 5))
-	# 尾羽
-	parts.append(_box(Vector3(0.05, 0.002, 0.12), _xform(Vector3(0.03, 0, 0.33)), feather))
-	parts.append(_box(Vector3(0.05, 0.002, 0.12), _xform(Vector3(-0.03, 0, 0.33)), feather))
-	return merge(parts)
+	return merge(_bow_arrow_parts())
 
 
 ## 林狼的躯干（不含四肢，便于单独摆动）。
@@ -995,3 +990,51 @@ static func make_prop(prop_name: StringName) -> Mesh:
 		&"grass_tuft":
 			return make_grass_tuft(Color(0.26, 0.36, 0.16))
 	return null
+
+
+# ------------------------------------------------------------------ 异常守护者
+
+## 异常守护者的躯干：高瘦的人形，轮廓与林狼完全不同。
+##
+## 配色一律用乘系数，不用 Color.lightened()：lightened() 是往白色混，
+## 混完饱和度被冲掉，深灰绿立刻变成一块灰砖。
+static func make_guardian_body(body_color: Color) -> ArrayMesh:
+	var parts: Array = []
+	var dark := body_color * 0.85
+	var limb := body_color * 0.92
+
+	# 躯干：上窄下宽的反锥
+	parts.append(_taper(0.30, 0.44, 1.45, _xform(Vector3(0.0, 1.42, 0.0)), body_color, 8))
+	# 肩
+	parts.append(_box(Vector3(0.94, 0.20, 0.32), _xform(Vector3(0.0, 2.04, 0.0)), limb))
+	# 头：略微前倾，像在盯着什么东西
+	parts.append(_box(Vector3(0.34, 0.40, 0.32),
+		_xform(Vector3(0.0, 2.38, -0.04), Vector3(8, 0, 0)), body_color * 0.88))
+	# 手臂：贴身下垂
+	parts.append(_cylinder(0.085, 1.20, _xform(Vector3(-0.52, 1.44, 0.0)), limb, 6))
+	parts.append(_cylinder(0.085, 1.20, _xform(Vector3(0.52, 1.44, 0.0)), limb, 6))
+	# 腿
+	parts.append(_cylinder(0.125, 1.18, _xform(Vector3(-0.19, 0.59, 0.0)), dark, 6))
+	parts.append(_cylinder(0.125, 1.18, _xform(Vector3(0.19, 0.59, 0.0)), dark, 6))
+	return merge(parts)
+
+
+## 异常守护者背上的结晶簇。弱点就在这里，用自发光材质单独渲染。
+##
+## Godot 的前方是 -Z，背面是 +Z，所以结晶挂在 +Z 一侧。
+## 结晶根部在 y ≈ 1.62，高于 weak_point_height，保证弱点判定落在它身上。
+static func make_guardian_crystal() -> ArrayMesh:
+	var parts: Array = []
+	var c := Color(0.40, 0.76, 0.82)
+	var c_dark := c * 0.72
+
+	# 三根长短不一的棱柱，斜插在背上
+	parts.append(_prism(Vector3(0.13, 0.52, 0.11),
+		_xform(Vector3(-0.13, 1.82, 0.30), Vector3(-16, 0, 10)), c))
+	parts.append(_prism(Vector3(0.15, 0.70, 0.12),
+		_xform(Vector3(0.02, 1.88, 0.33), Vector3(-12, 0, -3)), c))
+	parts.append(_prism(Vector3(0.10, 0.38, 0.09),
+		_xform(Vector3(0.15, 1.72, 0.28), Vector3(-20, 0, 14)), c_dark))
+	# 根部一圈暗色结晶座，把棱柱和躯干连起来
+	parts.append(_sphere(0.19, _xform(Vector3(0.0, 1.62, 0.26)), c_dark, 6))
+	return merge(parts)

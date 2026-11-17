@@ -40,6 +40,18 @@ func launch(direction: Vector3, power: float) -> void:
 	velocity = direction.normalized() * lerpf(min_speed, max_speed, clampf(power, 0.0, 1.0))
 
 
+## 让箭身对准一个世界方向（箭尖是 -Z）。
+##
+## 不能直接 look_at(..., Vector3.UP)：方向和 UP 平行时（箭垂直扎进地面、
+## 或者被射上天）look_at 会退化，Godot 会报错并留下一个乱转的朝向。
+func face(direction: Vector3) -> void:
+	var dir := direction.normalized()
+	if dir.length_squared() < 0.000001:
+		return
+	var up := Vector3.UP if absf(dir.dot(Vector3.UP)) < 0.999 else Vector3.RIGHT
+	look_at(global_position + dir, up)
+
+
 func _physics_process(delta: float) -> void:
 	if _stuck:
 		_stuck_timer -= delta
@@ -71,8 +83,7 @@ func _physics_process(delta: float) -> void:
 
 	# 让箭矢始终指向飞行方向
 	if velocity.length_squared() > 0.01:
-		var direction := velocity.normalized()
-		look_at(global_position + direction, Vector3.UP)
+		face(velocity)
 
 
 func _apply_hit(result: Dictionary) -> void:
@@ -95,12 +106,15 @@ func _apply_hit(result: Dictionary) -> void:
 
 
 func _stick(point: Vector3, normal: Vector3) -> void:
-	global_position = point + normal * 0.05
 	_stuck = true
 	_stuck_timer = stuck_duration
 	velocity = Vector3.ZERO
-	# 沿法线方向斜插进去
-	var align := global_transform.basis.z
-	if normal.length_squared() > 0.01:
-		align = -normal.normalized()
-	look_at(global_position + align, Vector3.UP)
+	if normal.length_squared() < 0.01:
+		global_position = point
+		return
+	var outward := normal.normalized()
+	# 箭尾在网格原点，箭身朝 -Z 伸出 0.59 m（PropKit._bow_arrow_parts）。
+	# 钉住时把箭尾留在表面外 0.30 m：约一半插进去、一半露在外面，
+	# 不然以原点定位会把整支箭埋进墙里，只剩一个看不见的点。
+	global_position = point + outward * 0.30
+	face(-outward)

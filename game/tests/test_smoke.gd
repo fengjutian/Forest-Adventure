@@ -460,15 +460,23 @@ func _test_combat() -> void:
 	_assert(bow != null, "玩家身上挂着弓节点")
 	if bow != null:
 		var camera := _player.get_node_or_null("Head/Camera3D") as Camera3D
-		bow.spawn_arrow(1.0)
+		var fired := bow.spawn_arrow(1.0)
 		# 生成后立刻取位置：箭速 42 m/s，等一帧就已经飞出去 0.7 m 了
-		var spawned := _find_arrow()
+		var spawned := fired if fired != null else _find_arrow()
 		_assert(spawned != null, "弓能生成箭矢实体")
 		if spawned != null and camera != null:
 			var forward := -camera.global_transform.basis.z
-			var muzzle := camera.global_position + forward * 0.6 - camera.global_transform.basis.y * 0.15
-			var offset := spawned.global_position.distance_to(muzzle)
-			_assert(offset < 0.2, "箭矢按世界坐标落在射手手边（偏差 %.2f m）" % offset)
+			var to_arrow := spawned.global_position - camera.global_position
+			# 出膛点是弦心（约 1.2 m 外），不是屏幕中央；主场景横移 5 m 后
+			# 如果这里算出来还是 5 m 左右，说明箭是按父节点局部坐标定位的。
+			_assert(to_arrow.length() < 1.8,
+				"箭矢出膛点在射手手边（离相机 %.2f m）" % to_arrow.length())
+			_assert(to_arrow.dot(forward) > 0.5,
+				"箭矢出膛点在射手前方（前方投影 %.2f m）" % to_arrow.dot(forward))
+			var nocked := camera.get_node_or_null("BowViewModel/NockedArrow") as Node3D
+			if nocked != null:
+				var nock_gap := spawned.global_position.distance_to(nocked.global_position)
+				_assert(nock_gap < 0.3, "箭从弦上射出（距弦心 %.2f m）" % nock_gap)
 			_assert(spawned.velocity.length() > 0.0, "箭矢带有飞行速度")
 
 			# 箭矢网格的箭头必须朝 -Z，才能用 look_at 对齐飞行方向
@@ -700,5 +708,4 @@ func _teardown() -> void:
 	if _main != null and is_instance_valid(_main):
 		_main.queue_free()
 		_main = null
-	await get_tree().process_frame
-	await get_tree().process_frame
+	await get_tree().proces
