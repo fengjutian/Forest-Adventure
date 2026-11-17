@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Forest Adventure — 项目分析报告</title>
+<title>Forest Adventure — 项目分析报告（代码快照 a7d5304）</title>
 <link href="https://fonts.loli.net/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -74,7 +74,7 @@ section{padding:48px 0 0}
 .sec-sub{color:var(--muted);font-size:13.5px;margin-top:4px;max-width:72ch}
 
 /* ---------- cards / grid ---------- */
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:0_2px 8px rgba(0,0,0,.035)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.035)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 @media(max-width:860px){.grid2,.grid3{grid-template-columns:1fr}}
@@ -104,6 +104,12 @@ ul.list.plain li::before{background:var(--muted)}
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tbl td code{font-size:11.5px}
 
+/* ---------- status pills ---------- */
+.st{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:5px;white-space:nowrap;border:1px solid;font-weight:500}
+.st.ok{color:var(--primary);background:var(--primary-soft);border-color:var(--primary-line)}
+.st.part{color:var(--warn);background:var(--warn-soft);border-color:rgba(201,123,63,.3)}
+.st.no{color:var(--crit);background:var(--crit-soft);border-color:rgba(176,99,103,.3)}
+
 /* ---------- bench bars ---------- */
 .bench{display:grid;grid-template-columns:148px 1fr 54px;gap:12px;align-items:center;padding:5px 0}
 .bench-label{font-size:13px;color:var(--ink)}
@@ -112,33 +118,9 @@ ul.list.plain li::before{background:var(--muted)}
 .bench-val{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:right}
 @media(max-width:560px){.bench{grid-template-columns:104px 1fr 46px;gap:8px}}
 
-/* ---------- layer stack ---------- */
-.stack{display:flex;flex-direction:column;gap:9px}
-.layer{display:grid;grid-template-columns:118px 1fr;gap:16px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px;box-shadow:0_2px 8px rgba(0,0,0,.03)}
-.layer-tag{font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--primary);background:var(--primary-soft);border-radius:6px;padding:4px 8px;text-align:center;font-weight:500}
-.layer-doc{font-size:13.5px;color:var(--ink);font-weight:500}
-.layer-desc{font-size:12.5px;color:var(--muted);margin-top:2px}
-.layer-n{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
-@media(max-width:700px){.layer{grid-template-columns:1fr;gap:8px}.layer-n{text-align:left}}
-
-/* ---------- dual-track flow ---------- */
-.tracks{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:860px){.tracks{grid-template-columns:1fr}}
-.track{border-radius:14px;padding:16px 18px;border:1px solid var(--line);background:#fff}
-.track.a{border-top:3px solid var(--primary)}
-.track.b{border-top:3px solid var(--warn)}
-.track-h{display:flex;align-items:center;gap:9px;margin-bottom:4px}
-.track-h b{font-size:14px;color:var(--ink)}
-.track-src{font-family:var(--mono);font-size:11px;color:var(--muted)}
-.track p.note{font-size:13px;color:var(--muted);margin-bottom:12px}
-.flow{list-style:none;counter-reset:f}
-.flow li{counter-increment:f;position:relative;padding:8px 0 8px 30px;font-size:13.5px;border-bottom:1px dashed var(--line-soft);line-height:1.5}
-.flow li:last-child{border-bottom:none}
-.flow li::before{content:counter(f);position:absolute;left:0;top:9px;width:19px;height:19px;border-radius:50%;background:var(--primary-soft);color:var(--primary);font-family:var(--mono);font-size:10.5px;display:flex;align-items:center;justify-content:center;font-weight:500}
-.track.b .flow li::before{background:var(--warn-soft);color:var(--warn)}
-.flow li em{font-style:normal;color:var(--muted);font-size:12px;display:block;margin-top:1px}
-.clash{background:var(--crit-soft);border:1px solid rgba(176,99,103,.25);border-radius:12px;padding:14px 18px;margin-top:16px;font-size:13.5px;color:var(--ink)}
-.clash b{color:var(--crit)}
+/* ---------- evidence ---------- */
+.ev{font-family:var(--mono);font-size:11.5px;color:var(--body);background:#fbf9f5;border:1px solid var(--line);border-left:3px solid var(--primary-line);border-radius:6px;padding:8px 12px;margin-top:9px;white-space:pre-wrap;line-height:1.55}
+.quote{border-left:3px solid var(--primary-line);padding:2px 0 2px 14px;color:var(--body);font-size:13.5px;margin:10px 0}
 
 /* ---------- timeline ---------- */
 .timeline{list-style:none;padding:0;margin:0;position:relative}
@@ -147,6 +129,7 @@ ul.list.plain li::before{background:var(--muted)}
 .timeline li::before{content:"";position:absolute;left:3px;top:5px;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--primary)}
 .timeline li.risk::before{border-color:var(--warn);background:var(--warn-soft)}
 .timeline li.crit::before{border-color:var(--crit);background:var(--crit-soft)}
+.timeline li.done::before{background:var(--primary);border-color:var(--primary)}
 .timeline .th{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
 .timeline .th b{font-size:14.5px;color:var(--ink)}
 .timeline .th .tag{font-family:var(--mono);font-size:10.5px;padding:1px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);background:#fff}
@@ -165,7 +148,7 @@ ul.list.plain li::before{background:var(--muted)}
 
 /* ---------- actions ---------- */
 .actions{display:flex;flex-direction:column;gap:10px}
-.act{display:grid;grid-template-columns:30px 1fr;gap:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;align-items:start;box-shadow:0_2px 8px rgba(0,0,0,.03)}
+.act{display:grid;grid-template-columns:30px 1fr;gap:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;align-items:start;box-shadow:0 2px 8px rgba(0,0,0,.03)}
 .act .n{font-family:var(--mono);font-size:12px;color:#fff;background:var(--primary);border-radius:7px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex:none;font-weight:500}
 .act.q .n{background:var(--warn)}
 .act.o .n{background:var(--muted)}
@@ -175,35 +158,37 @@ ul.list.plain li::before{background:var(--muted)}
 
 footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 
-@media print{.act,.card,.track,.cmp-col{break-inside:avoid}}
+@media print{.act,.card,.layer,.cmp-col,.tbl{break-inside:avoid}}
 </style>
 </head>
 <body>
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">Project Review · 2026-11-17</div>
+  <div class="eyebrow">Project Review · 代码快照 a7d5304 · 2026-11-17 21:30</div>
   <h1>Forest Adventure</h1>
-  <p class="lede" style="margin-top:10px">第一人称开放世界深林冒险 · Godot 4.x · 单人开发 · 当前处于纯文档阶段</p>
+  <p class="lede" style="margin-top:10px">第一人称开放世界深林冒险 · Godot 4.6 · 单人开发 · 已从「纯文档」推进到「可运行灰盒」</p>
 
   <div class="hero-meta">
     <span class="chip">D:\GitHub\Forest-Adventure</span>
     <span class="chip">branch: main</span>
-    <span class="chip">3 commits · 2026-11-17 · fengjutian</span>
-    <span class="chip">0 代码 / 0 构建</span>
+    <span class="chip">12 commits · 2026-11-17</span>
+    <span class="chip">43 个 .gd / 12 个 .tscn</span>
+    <span class="chip">105 项冒烟断言全过</span>
   </div>
 
   <div class="statrow">
-    <div class="stat"><b>7</b><span>设计文档</span></div>
-    <div class="stat"><b>1,285</b><span>文档行数</span></div>
-    <div class="stat"><b>10</b><span>跨文档矛盾</span></div>
-    <div class="stat"><b>2</b><span>会改变实现方向的 P0</span></div>
+    <div class="stat"><b>5,972</b><span>GDScript 行数</span></div>
+    <div class="stat"><b>105</b><span>冒烟断言（0 失败）</span></div>
+    <div class="stat"><b>1 / 4</b><span>已实现区域</span></div>
+    <div class="stat"><b>~90 秒</b><span>当前可玩内容长度</span></div>
   </div>
 
   <div class="concl">
     <span class="eyebrow">核心结论</span>
-    <p>文档质量在独立开发项目中属于<strong>上乘水平</strong>——分层清晰、有明确的垂直切片验收标准、并且已经预见了「AI 生成不可控」「两条高风险工作线互相阻塞」这两个真正的坑。但当前最大的风险不是文档质量，而是<strong>文档内部的矛盾已经开始决定实现方向</strong>：主线任务的保险丝与信号装置存在两条互斥读法，分别写在四份文档里，M1 的退出条件因此无法执行。</p>
-    <p style="margin-top:12px">同时，<strong>M2 垂直切片的范围对单人来说过大</strong>（1 km² 开放世界 + 流式加载 + 弓箭战斗 + 2 类敌人 AI + 天气昼夜 + 音频），而真正决定切片成败的 5 个区域里<strong>只有 1 个写了场景设计</strong>。建议顺序是：先花半天把 4 个矛盾点定死 → 把 M2 砍掉约 40% → 把 AI→Blender 管线整体推迟到切片验证之后。</p>
+    <p>代码已经<strong>跑到文档前面</strong>。上一版报告提出的 10 处跨文档矛盾里，代码用 4 个明确决策回答了 4 个（保险丝修营地无线电、只做弓、只保留生命与体力、切片先做营地），但<strong>7 篇文档一处未改</strong>——文档正在从「设计依据」退化成「历史记录」。现在最大的风险不是文档质量，而是两套事实同时存在。</p>
+    <p style="margin-top:12px">M1 是<strong>真实完成</strong>的：不是「看起来能跑」，而是 105 项断言覆盖了自动加载、输入映射、贴地、三阶段任务链、真实弓箭发射路径、蓄力/命中/弱点、敌人感知、存档写读、版本迁移与备份轮转，整轮约 2 秒。这个测试底座比多数独立项目的第一版都硬。</p>
+    <p style="margin-top:12px">下一阶段的瓶颈因此<strong>不是技术，而是内容与接线</strong>：文档要求 20～30 分钟的切片，当前内容约 90 秒；天气、音频、设置、地图、指南针都是「有接口、无接线」；敌人追击逻辑与死亡流程还会在最基础的地方断掉（详见第 04 节）。</p>
   </div>
 </header>
 
@@ -211,74 +196,87 @@ footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-si
   <div class="sec-head">
     <span class="num">01</span>
     <div>
-      <h2>现状快照与文档体系</h2>
-      <p class="sec-sub">仓库目前只有 <code>docs/</code> 与 <code>.git/</code>，没有 <code>.gitignore</code>、<code>LICENSE</code> 或根 <code>README.md</code>。文档本身自成体系，但技术设计文档里的目录结构图停留在三篇文档的时代，已经过期。</p>
+      <h2>现状快照：现在究竟能跑什么</h2>
+      <p class="sec-sub">下面每一项都能在仓库里找到实现，并已在本机 Godot 4.6 上实际运行验证（无头测试 + 渲染截图 + 帧率采样）。</p>
     </div>
   </div>
 
-  <div class="grid2" style="margin-bottom:18px">
+  <div class="grid3" style="margin-bottom:16px">
     <div class="card">
-      <h4>已经扎实</h4>
+      <h4>世界生成</h4>
       <ul class="list">
-        <li>七篇文档分层合理，产品 / 架构 / 规范 / 生产 / 计划各归其位</li>
-        <li>垂直切片有<strong>可证伪的验收标准</strong>，不是愿望清单</li>
-        <li>「先灰盒、再接管线」的执行顺序正确识别了两条高风险线的依赖</li>
-        <li>存档稳定 ID 纪律、生成层 / 人工层分离、AI 输出视为不可信——这三条判断都正确</li>
-        <li>开放世界密度基线（<code>open-world-design.md:33-42</code>）附带「不应机械铺设」的免责，认知成熟</li>
+        <li>140×140 m 地形，112 段网格（113×113 顶点），双 FastNoiseLite（基础 + 细节），固定 seed <code>20261117</code></li>
+        <li>溪谷下切（x≈11 m）与营地圆形平整区（半径 15 m）由显式剖面控制</li>
+        <li>植被：164 乔木（5 松树变体 + 2 桦树变体 + 枯立木）、120 岩石、218 灌木、1,887 草丛，全部 MultiMesh</li>
+        <li>排除区：营地半径、溪流带、营地→森林主路径；陡坡不生长</li>
+        <li>同 seed 必得同一场景；树冠顶点着色器风摆，相位按实例自定义数据错开</li>
       </ul>
     </div>
-    <div class="card">
-      <h4>结构性缺失</h4>
-      <ul class="list warn">
-        <li>松木深林 / 溪谷 / 守林站 / 山脊 <strong>四个区域没有任何场景设计</strong></li>
-        <li>两个世界事件、隐藏地点只有一句话，无落地规范</li>
-        <li>敌人「林狼」「异常守护者」各只有一段文字，无感知半径 / 攻击窗口 / 仇恨参数</li>
-        <li>天气、昼夜只有概念，没有实现规范（触发、插值、优先级）</li>
-        <li>没有术语表：稳定 ID / 区域 ID / Chunk / SceneSpec / manifest 跨文档反复使用却无统一定义</li>
-        <li>7 篇文档中 <strong>5 篇没有版本号</strong>，无 changelog、无状态标记</li>
-      </ul>
-    </div>
-  </div>
 
-  <div class="card" style="margin-bottom:16px">
-    <h4>文档体系分层</h4>
-    <div class="stack">
-      <div class="layer">
-        <span class="layer-tag">产品层</span>
-        <div><div class="layer-doc">game-design.md</div><div class="layer-desc">概念、循环、世界结构、系统边界、切片范围</div></div>
-        <span class="layer-n">144 行</span>
-      </div>
-      <div class="layer">
-        <span class="layer-tag">规范层</span>
-        <div><div class="layer-doc">open-world-design.md · combat-and-progression.md · first-scene-design.md</div><div class="layer-desc">探索密度 / 地标分级 / 流式加载 · 战斗与成长 · 营地场景落地</div></div>
-        <span class="layer-n">430 行</span>
-      </div>
-      <div class="layer">
-        <span class="layer-tag">架构层</span>
-        <div><div class="layer-doc">technical-design.md</div><div class="layer-desc">Godot 运行时架构、世界性能、AI→Blender 管线、安全边界、测试策略</div></div>
-        <span class="layer-n">407 行</span>
-      </div>
-      <div class="layer">
-        <span class="layer-tag">生产层</span>
-        <div><div class="layer-doc">content-pipeline.md</div><div class="layer-desc">资产分层、命名规范、Chunk 输出、关卡设计保护、自动检查</div></div>
-        <span class="layer-n">148 行</span>
-      </div>
-      <div class="layer">
-        <span class="layer-tag">计划层</span>
-        <div><div class="layer-doc">development-plan.md</div><div class="layer-desc">M0–M5 里程碑、P0/P1/P2 优先级、完成定义、缺陷等级、风险清单</div></div>
-        <span class="layer-n">132 行</span>
-      </div>
+    <div class="card">
+      <h4>第一人称与生存</h4>
+      <ul class="list">
+        <li>走 4.5 / 跑 7.0 / 蹲 2.2 m/s，加速度 14，空中控制 0.25</li>
+        <li>体力 100：冲刺 18/s 消耗、12/s 恢复、0.8 s 延迟</li>
+        <li>跳跃 4.2 m/s；落差 &gt;3 m 起算伤害，12 HP/m</li>
+        <li>手电 100 电量、1.5/s 消耗，耗尽自动关闭</li>
+        <li>蹲下切换胶囊体并压低视点；鼠标需点击画面才捕获，Esc 归还</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>交互与任务</h4>
+      <ul class="list">
+        <li>摄像机中心 3 m 射线，统一 <code>Interactable</code> 契约（can_interact / get_prompt / interact）</li>
+        <li>领域事件驱动任务：<code>item.collected</code> → <code>device.repaired</code> → <code>camp.returned</code></li>
+        <li>三阶段主任务 <code>camp_comm_radio</code>：拾取保险丝 → 修无线电 → 回营火</li>
+        <li>任务状态、对象状态（已拾取/已修复）按稳定 ID 入档</li>
+        <li>营火治疗 + 补满体力，并作为「回到营地」事件源</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>战斗（刚开工）</h4>
+      <ul class="list">
+        <li>弓：蓄力 1.1 s、基础伤害 32、16–42 m/s、箭矢重力 9.8、存活 25 s</li>
+        <li>命中判定走逐帧射线而非刚体，避免高速穿透；弱点按命中高度 ×2</li>
+        <li>林狼：55 生命、视距 24 m、听觉 22 m、伤害 9、掉 2 支箭；场景里 3 只</li>
+        <li>敌人分层状态机：感知 / 决策 / 动作 / 状态，子类只覆盖钩子</li>
+        <li>狼群示警、侧翼包抄、畏惧火光（排斥力场）</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>存档</h4>
+      <ul class="list">
+        <li>3 个槽位、版本 1、JSON，<code>provider / loader</code> 注册制</li>
+        <li>写入流程：临时文件 → 原子替换 → 保留一份 <code>.bak</code></li>
+        <li>加载时逐级迁移（v0 → v1），迁移后回写升级</li>
+        <li>迁移测试覆盖「旧存档缺字段」路径</li>
+        <li>设置独立存 <code>user://settings.cfg</code>，不随存档版本迁移</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h4>观测与工具链</h4>
+      <ul class="list">
+        <li>结构化日志：stdout + <code>user://logs/game.log</code>，2 MB 轮转保留 2 份</li>
+        <li>HUD 调试行：FPS / 坐标 / 速度 / 时间 / 天气</li>
+        <li>无头冒烟测试 105 项；截图工具 <code>capture_combat</code> / <code>capture_screenshot</code></li>
+        <li><code>tools/run.ps1</code> 自动定位 Godot 并在首次运行时补导入</li>
+        <li><code>tools/build_windows.ps1</code>：导入 → 测试 → 导出</li>
+      </ul>
     </div>
   </div>
 
   <div class="card">
-    <h4>仓库基础设施缺口（进入 M0 前必须补）</h4>
+    <h4>实测运行记录</h4>
     <dl class="kv">
-      <dt><code>.gitignore</code></dt><dd>缺失。Godot 的 <code>.godot/</code>、Blender 的 <code>*.blend1</code>、<code>__pycache__/</code>、生成器 <code>output/</code>、Python venv 全部会被误提交。这是 2 分钟能修、但拖到后面代价很大的事。</dd>
-      <dt>根 <code>README.md</code></dt><dd>缺失。<code>technical-design.md:121</code> 的结构图里写了它，但从未创建。</dd>
-      <dt><code>LICENSE</code></dt><dd>缺失。若打算开源资产或使用第三方素材，许可条款需要尽早确定。</dd>
-      <dt>分支策略</dt><dd>只有 <code>main</code>，无 <code>dev</code>、无 tag。文档尚未冻结，主干直改尚可接受，但一旦开始写代码建议立刻 <code>main</code> / <code>dev</code> 分离。</dd>
-      <dt>CI</dt><dd>缺失。<code>development-plan.md:23</code> 把「自动构建基础」放进 M0，但没有 CI 意味着每次构建都靠本机。</dd>
+      <dt>冒烟测试</dt><dd>105 项断言 / 0 失败 / 整轮约 2 秒（无头）。覆盖自动加载、输入映射、鼠标捕获、贴地、任务链、背包、敌人感知、弓箭发射、命中与弱点、掉落拾取、存档写读、迁移、备份轮转。</dd>
+      <dt>场景装配</dt><dd>地形 + 十几处人工地标 + 贴地 + 植被散布在同一帧内完成（日志时间戳同秒），无加载卡顿。</dd>
+      <dt>帧率</dt><dd>1080p、垂直同步开启时 <code>--print-fps</code> 连续采样 11 次均为 60 FPS（RTX 4060）。<strong>只能证明打到垂直同步上限，没有余量数据</strong>。</dd>
+      <dt>渲染</dt><dd>Forward+、MSAA 4×、方向光软阴影；截图 1920×1080。</dd>
+      <dt>日志目录</dt><dd><code>user://logs/game.log</code>（Windows 下位于 <code>%APPDATA%\Godot\app_userdata\Forest Adventure\</code>）。</dd>
     </dl>
   </div>
 </section>
@@ -287,76 +285,208 @@ footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-si
   <div class="sec-head">
     <span class="num">02</span>
     <div>
-      <h2>跨文档矛盾矩阵</h2>
-      <p class="sec-sub">这是本次分析的核心产出。10 处矛盾按严重度排序；P0 指会直接改变实现方向、必须立即定死的分歧，P1 指会导致返工或范围蔓延，P2 指文档卫生问题。</p>
+      <h2>上一版报告的十个矛盾，代码只回答了四个</h2>
+      <p class="sec-sub">这一节是两版报告的对照。上一版（纯文档阶段）列出的 10 处冲突里，代码在实现时被迫做了选择——但只有代码做了选择，文档没有。</p>
     </div>
   </div>
 
   <div class="tbl-wrap">
   <table class="tbl">
     <thead>
-      <tr><th style="width:46px">级别</th><th style="width:22%">问题</th><th>冲突点</th><th style="width:26%">影响</th></tr>
+      <tr><th style="width:42px">级别</th><th style="width:24%">矛盾</th><th>代码给出的实际答案</th><th style="width:22%">文档是否同步</th></tr>
     </thead>
     <tbody>
       <tr>
         <td><span class="sev p0">P0</span></td>
-        <td><strong>主线物品流互斥</strong><br>保险丝到底修哪台设备</td>
-        <td><code>game-design.md:158,203</code> 要求在<b>山脊信号装置</b>修复并收到回应；<code>first-scene-design.md:100,151-160</code> 要求在<b>营地无线电</b>装保险丝得到信号；<code>development-plan.md:43</code> 的 M1 退出条件照抄了后者</td>
-        <td>决定整个切片主线、M1 退出条件、营地场景的无线电段落是否成立</td>
+        <td><strong>主线物品流</strong><br>保险丝修哪台设备</td>
+        <td>选了<strong>营地闭环</strong>：<code>camp_comm_radio.tres</code> 三阶段即「拾取保险丝 → 装进营地无线电 → 回营火」，冒烟测试端到端跑通。<code>game-design.md:158,203</code> 的「山脊信号装置」在代码里不存在。</td>
+        <td><span class="st no">未同步</span><br><span class="muted">文档仍写两条互斥读法</span></td>
       </tr>
       <tr>
         <td><span class="sev p0">P0</span></td>
-        <td><strong>切片区域数 4 vs 5</strong><br>山脊是否在范围内</td>
-        <td><code>game-design.md:182</code> 列「营地、松木林、溪谷和守林站<b>四个</b>区域」；<code>open-world-design.md:31</code> 与 <code>game-design.md:203</code> 均为五区域（含山脊），且山脊是 <code>first-scene-design.md:26</code> 的开门构图远景地标</td>
-        <td>范围、场景设计工作量、验收场景三者对不上</td>
+        <td><strong>切片区域数 4 vs 5</strong></td>
+        <td>问题被<strong>绕过</strong>：只实现 1 个区域（140 m 见方的营地场景，含林缘与溪流切片）。山脊、守林站、溪谷都没有独立场景。</td>
+        <td><span class="st no">未同步</span></td>
       </tr>
       <tr>
         <td><span class="sev p1">P1</span></td>
-        <td><strong>状态资源表冲突</strong><br>体温 vs 专注</td>
-        <td><code>game-design.md:101-104</code> 定义体力 / <b>体温</b> / 受伤；<code>combat-and-progression.md:19-24</code> 定义生命 / 体力 / <b>专注</b> / 弹药（无体温）；<code>first-scene-design.md:144</code> 营火「恢复生命与体温」；而 <code>game-design.md:184</code> 的切片范围<b>两者都不含</b></td>
-        <td>HUD、数值平衡、营火功能定义；体温若不做，营火教学段落要重写</td>
+        <td><strong>状态资源表</strong><br>体温 / 专注</td>
+        <td>只实现<strong>生命 + 体力 + 手电电量</strong>。<code>game-design.md</code> 的体温、<code>combat-and-progression.md</code> 的专注都没有出现。</td>
+        <td><span class="st no">未同步</span></td>
       </tr>
       <tr>
         <td><span class="sev p1">P1</span></td>
-        <td><strong>主武器未定</strong><br>近战 or 弓箭</td>
-        <td><code>game-design.md:186</code>「近战<b>或</b>弓箭」；<code>combat-and-progression.md:15</code> 推荐弓；<code>first-scene-design.md:128-135</code> 靶场按弓箭写教学（附石块兜底）；<code>development-plan.md:183</code> 写「加入弓箭」</td>
-        <td>靶场教学、瞄准系统、敌人受击反馈三处实现会分叉</td>
+        <td><strong>主武器未定</strong></td>
+        <td>锁定<strong>弓</strong>：完整蓄力 / 瞄准 / 弹道 / 弹药消耗 / 弱点命中。近战分支未实现。</td>
+        <td><span class="st no">未同步</span><br><span class="muted">:186 仍写「近战或弓箭」</span></td>
       </tr>
       <tr>
         <td><span class="sev p1">P1</span></td>
-        <td><strong>AI 接入阶段矛盾</strong></td>
-        <td><code>technical-design.md:31</code> 把「AI 把自然语言转为 SceneSpec」列为<b>技术目标</b>，<code>:372</code> 把「解析自然语言」列为生成步骤 1；但 <code>content-pipeline.md:191</code>「首个里程碑先不接大语言模型」、<code>development-plan.md:133</code> 把它列为 <b>P2</b></td>
-        <td>读者会以为管线第一步就要接 LLM，与「AI 接入晚于确定性生成器」的策略冲突</td>
+        <td><strong>AI 接入阶段</strong></td>
+        <td>仍未接。代码与「先确定性生成器、后接 LLM」的策略一致，但与技术设计把「自然语言转 SceneSpec」列为技术目标冲突。</td>
+        <td><span class="st no">未同步</span></td>
       </tr>
       <tr>
         <td><span class="sev p2">P2</span></td>
         <td><strong>Chunk 尺寸不一致</strong></td>
-        <td><code>technical-design.md:363</code> 的 SceneSpec 示例写 <code>chunk_size_m: 50</code>；<code>technical-design.md:279</code> 与 <code>content-pipeline.md:187</code> 都说 64 或 128 m</td>
-        <td>1 km ÷ 64 = 15.6、÷ 128 = 7.8，均非整数，网格取整规则没定义</td>
+        <td>尚未涉及。<code>ChunkLoader</code> 目前只是「加载一个区域场景」的包装，没有分块、没有流式预算。</td>
+        <td><span class="st part">无需同步</span></td>
       </tr>
       <tr>
         <td><span class="sev p2">P2</span></td>
         <td><strong>探索工具孤儿化</strong></td>
-        <td><code>game-design.md:64-68</code> 列出 5 件探索工具（地图 / 指南针 / 手电筒 / <b>望远镜 / 相机</b>），但后两者在全部 7 篇文档中再无一次出现，切片范围清单 <code>:178-189</code> 也未列</td>
-        <td>要么是漏做的功能，要么是虚高的内容预算</td>
+        <td>更明确了：<code>map.tres</code> / <code>compass.tres</code> 有定义、输入动作也有，但<strong>没有任何系统响应</strong>，初始装备也不发放这两件。</td>
+        <td><span class="st no">未同步</span></td>
       </tr>
       <tr>
         <td><span class="sev p2">P2</span></td>
         <td><strong>文档元数据缺失</strong></td>
-        <td>仅 <code>game-design.md:3</code> 与 <code>technical-design.md:3</code> 有「文档版本 V1.0」；<code>combat-and-progression.md</code>、<code>content-pipeline.md</code>、<code>development-plan.md</code>、<code>first-scene-design.md</code>、<code>open-world-design.md</code> 均无版本、无状态、无最后更新</td>
-        <td><code>development-plan.md:149</code> 把「文档已同步更新」写进完成定义，却没有机制判断哪一版是权威</td>
+        <td>代码里每份脚本都标注了「对应 docs 哪一节」，而 5 篇文档仍无版本号——注释指向的文档无法判断是否为当前版本。</td>
+        <td><span class="st no">未同步</span></td>
       </tr>
       <tr>
         <td><span class="sev p2">P2</span></td>
         <td><strong>目录结构图过期</strong></td>
-        <td><code>technical-design.md:67-121</code> 仍显示 <code>docs/</code> 只有 3 个文件，实际已有 7 篇；图中列出的根 <code>README.md</code> 不存在</td>
-        <td>新人按图建目录会漏掉一半文档</td>
+        <td>根 <code>README.md</code> 已补写且与仓库一致；<code>technical-design.md:67-121</code> 的结构图仍是三篇文档时代的版本。</td>
+        <td><span class="st part">部分</span></td>
       </tr>
       <tr>
         <td><span class="sev p2">P2</span></td>
         <td><strong>性能基准无硬件基线</strong></td>
-        <td><code>technical-design.md:306-317</code> 给出 1080p/60 FPS/30 FPS 最低值，并自陈「需在确定最低硬件配置后固化」但全文未给 CPU/GPU/RAM；<code>combat-and-progression.md:136</code> 又要求「30、60 和高刷新率下战斗速度一致」（隐含定长物理 tick）</td>
-        <td>「60 FPS」当前不可证伪；定长 tick 也未在技术设计中落实</td>
+        <td>仍无硬件基线。第一次实测只有「垂直同步 60 FPS」，无法证明 1080p 下有余量，也没有帧时间/三角面/tick 预算。</td>
+        <td><span class="st part">部分</span><br><span class="muted">有了第一条实测数据</span></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="card" style="margin-top:16px;border-left:3px solid var(--crit)">
+    <h4>这一节的判断</h4>
+    <p style="font-size:13.5px;line-height:1.65">代码替文档做了决定，这在单人项目里是<strong>正常且高效</strong>的——卡在文档上不动才是问题。但代价是：现在任何人（包括三个月后的你自己）按 <code>docs/</code> 去实现，都会做出与现有一致的<strong>错误</strong>。文档需要的不是重写，而是<strong>半天时间的一次回写</strong>：把 4 个已裁决项改成代码事实，把 6 个未决项标注「M2 未决」。</p>
+    <p style="font-size:13.5px;line-height:1.65;margin-top:8px">根 <code>README.md</code> 是唯一跟上了的文档，但也已经落后：它写「冒烟测试 88 项」（实际 105）、「M2 战斗尚未开始」（实际弓与林狼已可玩）。</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="num">03</span>
+    <div>
+      <h2>切片清单逐项核对：文档要的，代码给了多少</h2>
+      <p class="sec-sub">按 <code>game-design.md §9.1</code>「必须完成」的 10 项逐条核对，另加一条文档在多处强调、但不在清单里的音频。</p>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+  <table class="tbl">
+    <thead>
+      <tr><th style="width:36px">#</th><th style="width:30%">文档要求</th><th>代码现状</th><th style="width:78px">判定</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="id">1</td><td>第一人称控制器</td><td>移动 / 冲刺 / 下蹲 / 跳跃 / 视角 / 体力 / 跌落伤害 / 手电电量全部实现，有贴地回归测试。</td><td><span class="st ok">完成</span></td></tr>
+      <tr><td class="id">2</td><td>约 1 km² 开放区域 + 流式加载</td><td>140×140 m（约 0.02 km²，差 50 倍）。<code>ChunkLoader</code> 一次性加载单个区域场景，没有分块、没有距离卸载。</td><td><span class="st no">未开始</span></td></tr>
+      <tr><td class="id">3</td><td>营地 / 松木林 / 溪谷 / 守林站四个区域</td><td>1 个区域。溪谷以「地形下切 + 水面」形式存在于营地场景内，不是独立区域；松木林只是营地外围的植被；守林站不存在。</td><td><span class="st no">1 / 4</span></td></tr>
+      <tr><td class="id">4</td><td>拾取、调查、背包和任务</td><td>三类可交互物 + 12 槽背包（任务物品独立 4 槽）+ 事件驱动任务链，全部入档。</td><td><span class="st ok">完成</span></td></tr>
+      <tr><td class="id">5</td><td>体力、手电筒、基础受伤</td><td>三项都有；文档 §6.1 同时要求的「体温」没有实现。</td><td><span class="st part">2 / 3</span></td></tr>
+      <tr><td class="id">6</td><td>三步主任务 + 两个世界事件 + 一个隐藏地点</td><td>主任务三阶段 ✅；世界事件 0 / 2；隐藏地点 0 / 1。代码里没有任何事件或地点触发器（<code>location_trigger</code> 只有一个「营地」判定）。</td><td><span class="st part">1 / 3</span></td></tr>
+      <tr><td class="id">7</td><td>基础战斗、两类敌人、简单掉落</td><td>弓完整；敌人 1 / 2（异常守护者未实现）；掉落已实现并接入存档（尸体掉落可拾取）。</td><td><span class="st part">2 / 3</span></td></tr>
+      <tr><td class="id">8</td><td>一种天气变化 + 昼夜切换</td><td>昼夜完整（600 秒一天，太阳角度/颜色/环境光/雾色联动）。天气只有 API 与雾密度表，<code>set_weather()</code> <strong>没有任何调用方</strong>，永远停在 clear。</td><td><span class="st part">1 / 2</span></td></tr>
+      <tr><td class="id">9</td><td>保存与读取</td><td>版本化、原子写、备份、迁移、多槽位，并有测试覆盖。</td><td><span class="st ok">完成</span></td></tr>
+      <tr><td class="id">10</td><td>Windows 构建与基础设置菜单</td><td>导出预设 + <code>build_windows.ps1</code> 已有；设置只有 <code>SettingsManager</code> 的 API，没有菜单，且 FOV / 音量读进来后<strong>从未应用</strong>。</td><td><span class="st part">1 / 2</span></td></tr>
+      <tr><td class="id">11</td><td>空间音频导航 <span class="muted">（§8.2 / §9.2）</span></td><td><code>WorldAudio</code> 就绪日志为 <code>zones: 0</code>——主场景里根本没有 <code>AudioStreamPlayer</code> 节点。游戏目前<strong>没有任何声音</strong>。</td><td><span class="st no">未开始</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h4>可玩内容长度</h4>
+      <div style="margin-top:6px">
+        <div class="bench"><span class="bench-label">当前 M1 链路</span><div class="bench-track"><div class="bench-fill" style="width:6%;background:var(--primary)"></div></div><span class="bench-val">~90 s</span></div>
+        <div class="bench"><span class="bench-label">首场景设计目标</span><div class="bench-track"><div class="bench-fill" style="width:30%;background:var(--warn)"></div></div><span class="bench-val">5–8 min</span></div>
+        <div class="bench"><span class="bench-label">M2 退出条件</span><div class="bench-track"><div class="bench-fill" style="width:100%;background:var(--crit)"></div></div><span class="bench-val">20–30 min</span></div>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.55">玩家出生点、物资箱、无线电、营火全部在 10 m 半径内，三次交互即可通关。差距不是打磨，而是<strong>内容量</strong>：从 90 秒到 20 分钟，需要的是另外三个区域和它们承载的事件。</p>
+    </div>
+    <div class="card">
+      <h4>首场景设计的落差</h4>
+      <p style="font-size:13px;line-height:1.6"><code>first-scene-design.md</code>（334 行）描述的是：木屋内醒来 → 拾取地图/指南针/手电/日志 → 检查发电机与无线电 → 溪边取保险丝 → 靶场弓箭教学 → 营火存档 → 修好无线电收到求救信号 → 雾散、地图标记、主线转向守林站。</p>
+      <p style="font-size:13px;line-height:1.6;margin-top:8px">代码实现的是其中<strong>第三步到第五步</strong>：没有开场演出、没有木屋内部、没有地图/指南针/日志、没有信号事件、没有雾散与地图标记，主线在营火处直接结束。靶场三个靶子存在，但没有教学流程与判定。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="num">04</span>
+    <div>
+      <h2>实现层缺陷：会在最基础的地方断掉</h2>
+      <p class="sec-sub">只列能在代码或运行日志里直接指认的问题，按「会不会让玩家卡住」排序。P0 = 会让流程中断或状态丢失，P1 = 核心行为与设计不符，P2 = 卫生问题。</p>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+  <table class="tbl">
+    <thead>
+      <tr><th style="width:42px">级别</th><th style="width:24%">问题</th><th>证据与影响</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="sev p0">P0</span></td>
+        <td><strong>敌人状态不入档</strong></td>
+        <td><code>EnemyBase.get_persistent_state()</code> / <code>apply_persistent_state()</code> 写好了，但<strong>没有任何调用方</strong>：主场景只注册了 current_scene / player / inventory / world 四个存档提供者，<code>changed_objects</code> 回放也只遍历 <code>interactable</code> 分组。结果：读档后被打死的 3 只狼全部复活，而它们掉落的箭矢还带着「已拾取」状态——存档里出现孤儿键。
+        <div class="ev">冒烟日志：对象状态已恢复 {"object":"wolf_01_drop_arrow"}    ← 掉落物恢复了，狼本体没有</div>
+        直接违反 <code>combat-and-progression.md §9</code>「存档加载后已击败的关键敌人状态正确」与 M2 退出条件「Chunk 切换不丢失任务和敌人状态」。</td>
+      </tr>
+      <tr>
+        <td><span class="sev p0">P0</span></td>
+        <td><strong>玩家死亡没有出口</strong></td>
+        <td><code>player._on_died()</code> 只做两件事：禁用控制、显示鼠标。没有任何死亡 UI、重生、读档或结算。<code>player_died</code> 信号只有一个监听者（玩家自己）。血量归零后游戏进入<strong>不可操作、不可恢复的软锁</strong>——只有 F9 快速读档能救。而跌落伤害是真实生效的。</td>
+      </tr>
+      <tr>
+        <td><span class="sev p1">P1</span></td>
+        <td><strong>林狼实际上不会追人</strong></td>
+        <td>三处叠加：① <code>SUSPICIOUS → CHASE</code> 要求距离 ≤ <code>attack_range</code>（1.7 m），也就是说看见玩家 24 m 外只会「走过去看看」，走到 1.7 m 才开打；② 放弃追击的条件写成 <code>distance &gt; sight_range + chase_memory</code>，26 m 与 6 s <strong>量纲相加</strong>（=32），既不是视觉距离也不是记忆时长；③ 场景里 <code>leash_radius = 34</code> 声明后<strong>从未被读取</strong>，离家再远也不会返回。
+        <div class="ev">_decide(): if distance &lt;= attack_range: _set_state(CHASE)      # 1.7 m 才开始追
+          elif distance &gt; sight_range + chase_memory: ...             # m + s
+          leash_radius = 34.0                                          # 全文无引用</div>
+        实际体验：玩家慢慢走进狼的视野，狼会走过来、贴到 1.7 m 内才开始攻击；玩家只要持续移动，狼 3 秒后放弃。目前「能打起来」主要靠听觉分支（冲刺或弓响时直接进 CHASE）。</td>
+      </tr>
+      <tr>
+        <td><span class="sev p1">P1</span></td>
+        <td><strong>音频与天气是空壳</strong></td>
+        <td><code>WorldAudio</code> 已就绪但 <code>zones: 0</code>——主场景没有挂任何 <code>AudioStreamPlayer</code>；<code>WeatherController.set_weather()</code> 无调用方。这两项恰恰是文档里承载「用声音和天气引导探索」的核心手段（§8.2、§6.4），现在完全不存在。</td>
+      </tr>
+      <tr>
+        <td><span class="sev p1">P1</span></td>
+        <td><strong>设置读了但不生效</strong></td>
+        <td><code>SettingsManager.field_of_view</code> 与 <code>master_volume</code> 从 <code>settings.cfg</code> 读入后，<strong>全工程没有一处使用</strong>：相机 FOV 固定 75，音量只在调用 setter 的那一刻生效，启动时不应用。玩家改完重启会静默丢失效果。</td>
+      </tr>
+      <tr>
+        <td><span class="sev p1">P1</span></td>
+        <td><strong>探索工具只有道具没有系统</strong></td>
+        <td>地图（M）、指南针（C）、背包（Tab）三个输入动作已绑定，但全工程<strong>没有任何 <code>is_action_pressed</code> 处理</strong>；<code>map.tres</code> / <code>compass.tres</code> 定义了却不在初始装备里。核心体验是「靠地标和声音找路」，而复述地图的工具链一环都没接。</td>
+      </tr>
+      <tr>
+        <td><span class="sev p2">P2</span></td>
+        <td><strong>每次开火产生一条引擎错误</strong></td>
+        <td><code>spawn_arrow()</code> 在节点入树前设置 <code>global_position</code>，Godot 报 <code>Condition "!is_inside_tree()" is true</code>。当前因为父节点是单位变换，箭的实际位置<strong>侥幸正确</strong>——一旦父节点带偏移（分块、区域根节点），箭就会从错误位置飞出。已在 21:17 的提交里改为「先入树、后设位置」，并补了真实发射路径的断言。
+        <div class="ev">ERROR: Condition "!is_inside_tree()" is true. Returning: Transform3D()
+    [0] spawn_arrow (res://scripts/gameplay/bow.gd:166)</div></td>
+      </tr>
+      <tr>
+        <td><span class="sev p2">P2</span></td>
+        <td><strong>测试是「一条龙」且顺序耦合</strong></td>
+        <td>105 项断言跑在同一个场景、同一个进程里：前一个用例把箭矢从 12 加到 15，战斗用例再断言「≥10 支」；战斗用例真的把狼杀了，随后「存档/读档」用例把「狼已死、箭已捡」写进 slot 0。用例之间无法独立运行，失败定位成本会随覆盖增长而上升。</td>
+      </tr>
+      <tr>
+        <td><span class="sev p2">P2</span></td>
+        <td><strong>场景装配硬编码</strong></td>
+        <td><code>camp_scene.gd</code> 用 <code>ground_snap_paths</code> 写死节点名（含 Wolf01–03）；营地中心在 <code>ProcTerrain.camp_center</code> 与 <code>VegetationScatter</code> 的 <code>Vector2.ZERO</code> 两处各写一份；<code>_clamp_to_home()</code> 名字是「限制回家」，实际只做贴地。向多区域扩展时这些都是绊脚点。</td>
+      </tr>
+      <tr>
+        <td><span class="sev p2">P2</span></td>
+        <td><strong>死信号与空钩子</strong></td>
+        <td><code>EventBus.enemy_threat_changed</code> 声明后从未 emit；<code>HUD._on_enemy_health_changed</code> 是空函数；<code>EnemyBase._stop()</code> 用硬编码 <code>0.016</code> 代替 <code>delta</code>。<span class="muted">不影响当前体验，但会让「信号驱动」的架构承诺逐渐失真。</span></td>
       </tr>
     </tbody>
   </table>
@@ -365,140 +495,35 @@ footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-si
 
 <section>
   <div class="sec-head">
-    <span class="num">03</span>
-    <div>
-      <h2>P0 深挖：主线流程的两条互斥读法</h2>
-      <p class="sec-sub">这不是措辞问题。四份文档各自写出了自洽的流程，但它们要求玩家做不同的事、在不同地点使用同一枚保险丝。按现在的文档去实现，两条路都会漏掉关键内容。</p>
-    </div>
-  </div>
-
-  <div class="tracks">
-    <div class="track a">
-      <div class="track-h"><b>读法 A · 营地闭环</b><span class="track-src">first-scene-design.md</span></div>
-      <p class="note">来自 <code>:100</code>、<code>:151-160</code>、<code>:259-267</code>，并被 <code>development-plan.md:43</code> 的 M1 退出条件采用。</p>
-      <ol class="flow">
-        <li>营地溪边物资箱拾取保险丝<em>保险丝位于 120×120 m 营地场景内，紧邻玩家</em></li>
-        <li>在营地安装保险丝 → 无线电恢复<em><code>:149-153</code></em></li>
-        <li>收到求救信号「……守林站……别走主路……」</li>
-        <li>松木深林入口的雾散开，地图标记守林站搜索区域</li>
-        <li>主任务切换为「调查失联的守林站」<em>保险丝在此消耗完毕</em></li>
-        <li>玩家离开营地进森林 → 守林站 → 山脊 → 回合营<em>山脊信号装置无人修理</em></li>
-      </ol>
-    </div>
-    <div class="track b">
-      <div class="track-h"><b>读法 B · 山脊终点</b><span class="track-src">game-design.md</span></div>
-      <p class="note">来自 <code>:158</code>（第一版结尾）与 <code>:203</code>（验收场景）。</p>
-      <ol class="flow">
-        <li>离开营地进入松木林，途经溪流与山脊地标</li>
-        <li>在森林中<b>收集保险丝、燃料、无线电频率记录</b><em>三样都在路上，不在营地</em></li>
-        <li>找到废弃守林站</li>
-        <li>修复<b>山脊信号装置</b><em><code>:203</code> 明确写「修复山脊信号装置」</em></li>
-        <li>收到来自禁区内部的回应<em><code>:158</code> 解锁通往雾林的道路</em></li>
-        <li>安全返回营地结束切片</li>
-      </ol>
-    </div>
-  </div>
-
-  <div class="clash">
-    <b>冲突点：</b>同一枚保险丝在读法 A 里于营地消耗，读法 B 里在森林获取；而 <code>first-scene-design.md</code> 的整段无线电教学（<code>:92-109</code>、<code>:149-162</code>）只在读法 A 下成立——若采纳读法 B，这两节要整段重写。反过来，若采纳读法 A，则 <code>game-design.md:203</code> 的验收场景和 <code>:158</code> 的第一版结尾都要重写。<br><br>
-    <b>建议裁决：</b>采用读法 A，但把「山脊信号装置」从切片结局中移除或降级为 M3+ 的内容。理由是读法 A 与已经写得最细的营地场景、与 M1 的退出条件天然吻合，且「营地里收到一声求救」比「走到山腰修一台大机器」更贴合这个游戏的核心体验——<strong>森林是主角</strong>。同时保留 <code>:158</code> 的「禁区回应」作为切片结尾的<strong>钩子</strong>而非修复结果：由无线电杂音的片段暗示，而不是由玩家修好一台装置换来。
-  </div>
-</section>
-
-<section>
-  <div class="sec-head">
-    <span class="num">04</span>
-    <div>
-      <h2>覆盖度分析：切片真正需要的，设计了多少</h2>
-      <p class="sec-sub">按 <code>game-design.md:178-189</code> 与 <code>development-plan.md:47-62</code> 逐项核对切片的五个区域。结论是：写得最细的是不承载玩法的那一个。</p>
-    </div>
-  </div>
-
-  <div class="grid2">
-    <div class="card">
-      <h4>五个区域的设计文档覆盖</h4>
-      <div style="margin-top:10px">
-        <div class="bench"><span class="bench-label">林间营地</span><div class="bench-track"><div class="bench-fill" style="width:100%;background:var(--primary)"></div></div><span class="bench-val">完整</span></div>
-        <div class="bench"><span class="bench-label">溪谷</span><div class="bench-track"><div class="bench-fill" style="width:18%;background:var(--warn)"></div></div><span class="bench-val">~18%</span></div>
-        <div class="bench"><span class="bench-label">松木深林</span><div class="bench-track"><div class="bench-fill" style="width:6%;background:var(--warn)"></div></div><span class="bench-val">~6%</span></div>
-        <div class="bench"><span class="bench-label">废弃守林站</span><div class="bench-track"><div class="bench-fill" style="width:8%;background:var(--warn)"></div></div><span class="bench-val">~8%</span></div>
-        <div class="bench"><span class="bench-label">山脊</span><div class="bench-track"><div class="bench-fill" style="width:10%;background:var(--warn)"></div></div><span class="bench-val">~10%</span></div>
-      </div>
-      <p style="font-size:12.5px;color:var(--muted);margin-top:14px;line-height:1.55">溪谷只在营地布局图 <code>first-scene-design.md:38</code> 出现过一次；松木深林只有一句「倒木形成天然入口」<code>:31</code>；守林站与山脊在全部文档中从未获得任何空间设计——而它们恰恰是切片里<strong>承载战斗、敌人、任务与世界事件</strong>的地方。</p>
-    </div>
-
-    <div class="card">
-      <h4>文档篇幅分布（按主题）</h4>
-      <div style="margin-top:10px">
-        <div class="bench"><span class="bench-label">technical-design</span><div class="bench-track"><div class="bench-fill" style="width:100%;background:var(--primary)"></div></div><span class="bench-val">407</span></div>
-        <div class="bench"><span class="bench-label">first-scene-design</span><div class="bench-track"><div class="bench-fill" style="width:60%;background:var(--primary)"></div></div><span class="bench-val">246</span></div>
-        <div class="bench"><span class="bench-label">content-pipeline</span><div class="bench-track"><div class="bench-fill" style="width:36%;background:var(--warn)"></div></div><span class="bench-val">148</span></div>
-        <div class="bench"><span class="bench-label">game-design</span><div class="bench-track"><div class="bench-fill" style="width:35%;background:var(--primary)"></div></div><span class="bench-val">144</span></div>
-        <div class="bench"><span class="bench-label">development-plan</span><div class="bench-track"><div class="bench-fill" style="width:32%;background:var(--primary)"></div></div><span class="bench-val">132</span></div>
-        <div class="bench"><span class="bench-label">combat-progression</span><div class="bench-track"><div class="bench-fill" style="width:24%;background:var(--primary)"></div></div><span class="bench-val">96</span></div>
-        <div class="bench"><span class="bench-label">open-world-design</span><div class="bench-track"><div class="bench-fill" style="width:22%;background:var(--primary)"></div></div><span class="bench-val">88</span></div>
-        <div class="bench"><span class="bench-label">README</span><div class="bench-track"><div class="bench-fill" style="width:6%;background:var(--muted)"></div></div><span class="bench-val">24</span></div>
-      </div>
-      <p style="font-size:12.5px;color:var(--muted);margin-top:14px;line-height:1.55">橙色为「生产管线」主题，合计 148 行独占一份整文档——而该管线要到 <strong>M3</strong> 才启动。</p>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="sec-head">
     <span class="num">05</span>
     <div>
-      <h2>战略取舍：两处值得重新考虑的方向</h2>
-      <p class="sec-sub">文档本身已经把执行顺序排对了（M0 游戏 → M1 灰盒 → M2 切片 → M3 管线）。但两个前提假设值得挑战，因为它们决定了一个人能不能做完。</p>
+      <h2>架构评价：哪些做法值得守住，哪些会长成债</h2>
+      <p class="sec-sub">5,972 行能撑起这些系统，说明结构是对的。真正的问题不在写法，而在几个会随规模放大的结构性选择。</p>
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:16px">
-    <h3 style="margin-bottom:10px">取舍一：AI→Blender 生成器，值不值得为切片投入</h3>
-    <div class="grid2" style="margin-top:6px">
-      <div>
-        <p style="font-size:13.5px;margin-bottom:10px">管线（<code>technical-design.md:319-447</code> + <code>content-pipeline.md</code>）要交付：SceneSpec schema、校验器、AI 规划器、7 个 Blender 生成模块、GLB 分块导出、manifest、导入检查器、确定性测试、快照测试、局部重生成。</p>
-        <p style="font-size:13.5px;margin-bottom:10px">它的产出物是<strong>地形、植被、岩石、河流</strong>——而这四样恰好是 Godot 原生就能做的：<code>FastNoiseLite</code> + <code>GridMap</code> + <code>MultiMeshInstance3D</code> 可以在切片规模（1 km²）内零导出、零 manifest、零跨磁盘工具链版本地完成同样效果。</p>
-        <p style="font-size:13.5px">管线真正开始产生回报的时点是 <strong>M5</strong>（<code>development-plan.md:96-109</code>：第二生态区、复用生产管线），也就是切片验证之后。</p>
-      </div>
-      <div>
-        <ul class="list">
-          <li><strong>建议</strong>：切片阶段用 Godot 原生程序化地形 + 手工地标，把 Blender 保留给它真正擅长且不可替代的部分——木屋、发电机、物资棚、守林站这些需要美术造型的 authored 资产。</li>
-          <li>把 <code>development-plan.md</code> 的 <strong>M3 整体后移到 M2 之后</strong>，并在 <code>technical-design.md:511-517</code> 已有的判断上再加一句：<em>若切片验证通过且世界规模确认为 4–6 个区域，M3 可直接降级为「Blender 手工地形 + Godot 程序化散布」</em>。</li>
-          <li>不要让 <code>technical-design.md:319-447</code> 继续扩充。管线文档目前已经 129 行且在切片阶段无法验证任何东西——每写一行都在推迟能跑起来的灰盒。</li>
-        </ul>
-      </div>
+  <div class="cmp">
+    <div class="cmp-col keep">
+      <h4>值得守住</h4>
+      <ul class="list">
+        <li><strong>EventBus + 领域事件</strong>：交互物只发事件，任务系统只订阅事件，两边不互相引用。加新任务不需要改交互代码。</li>
+        <li><strong>provider / loader 存档注册制</strong>：模块自己声明状态片段，SaveManager 只负责组装与分发，迁移逻辑集中在一处。</li>
+        <li><strong>确定性的生成链</strong>：地形 / 植被 / 营地三个 seed 分开，同 seed 同结果，截图可复现。</li>
+        <li><strong>PropKit 可替换层</strong>：灰盒资产全部走程序化网格 + 顶点色材质，正式美术到位后只替换这一个文件。</li>
+        <li><strong>敌人分层状态机</strong>：感知 / 决策 / 动作 / 状态四层分开，子类只覆盖 <code>_perceive</code> / <code>_decide</code> / <code>_steer_direction</code>。加第二种敌人成本很低——前提是先把现有逻辑的阈值修对。</li>
+        <li><strong>测试先行的习惯</strong>：贴地、任务链、存档迁移、弓箭真实发射路径都有断言；这一条在独立开发里最难得。</li>
+      </ul>
     </div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin-bottom:10px">取舍二：M2 的范围，对单人是否过大</h3>
-    <p style="font-size:13.5px;margin-bottom:14px">M2 退出条件要求：1080p 接近稳定 60 FPS + Chunk 流式加载 + 弓箭战斗 + 两类敌人 AI + 主任务 + 两个世界事件 + 一个隐藏地点 + 昼夜 + 天气 + 环境音频，首通 20–30 分钟。这是一张<strong>完整游戏的功能矩阵</strong>，而垂直切片的职责是验证「这个循环好不好玩」，不是预建功能清单。</p>
-    <div class="cmp">
-      <div class="cmp-col cut">
-        <h4>建议削减</h4>
-        <ul class="list crit">
-          <li>敌人 <b>2 类 → 1 类</b>（林狼群即可，守护者后置）</li>
-          <li><b>天气</b>从切片移除，只保留昼夜</li>
-          <li>1 km² 开放区域 → <b>~400 m 走廊</b> + 单场景</li>
-          <li>流式加载 <b>延后</b>，先用单场景 + 子场景分块</li>
-          <li>两个世界事件 → <b>一个</b></li>
-        </ul>
-      </div>
-      <div class="cmp-col keep">
-        <h4>必须保留</h4>
-        <ul class="list">
-          <li>第一人称移动 / 视角 / 冲刺 / 跳跃（教学依赖）</li>
-          <li>弓箭完整链路：瞄准 → 蓄力 → 命中 → 资源消耗</li>
-          <li>一类敌人 + 完整感知 / 状态机 / 脱战复位</li>
-          <li>主任务 + 一个世界事件 + 一个隐藏地点</li>
-          <li>存档 / 读档 + 稳定 ID</li>
-          <li>昼夜（它同时是美术展示窗口）</li>
-          <li>一个地标能被不看地图地认出来（核心体验验证）</li>
-        </ul>
-      </div>
+    <div class="cmp-col cut">
+      <h4>会长成债</h4>
+      <ul class="list crit">
+        <li><strong>两套事实</strong>：脚本注释逐条引用 <code>docs/*.md</code> 的节号，文档却已落后。注释越多，指涉越假。</li>
+        <li><strong>单场景装配</strong>：<code>camp_scene.gd</code> 负责建地形、摆地标、贴地、撒植被、找水面，还持有狼的节点路径。第二个区域会复制这一整套。</li>
+        <li><strong>「有接口没接线」的系统</strong>：天气、音频、设置、地图、指南针都是半成品。它们各自看起来只差一点，合起来是切片范围的一半。</li>
+        <li><strong>集成式测试</strong>：整个游戏场景 + 105 项断言跑一轮 2 秒，现在很划算；等内容翻倍，启动成本会先于覆盖率成为负担。</li>
+        <li><strong>缺少性能预算</strong>：只有「垂直同步 60」，没有帧时间、三角面、实例数上限，也没有自动测量。等 M2 塞进 1 km² 时，没有基线就没有判断依据。</li>
+      </ul>
     </div>
-    <p style="font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.6">依据是文档自己的原则：<code>development-plan.md:174</code>「单人开发工作量过大 → 锁定 P0，减少敌人和系统种类」，以及 <code>game-design.md:26</code>「避免繁琐的重度生存数值」。削减后的 M2 仍然能证伪文档里最关键的那个假设——<em>玩家能否只靠地标和声音在森林里找到守林站</em>。</p>
   </div>
 </section>
 
@@ -506,50 +531,103 @@ footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-si
   <div class="sec-head">
     <span class="num">06</span>
     <div>
-      <h2>里程碑时间线与风险落点</h2>
-      <p class="sec-sub">按 <code>development-plan.md</code> 原始范围重建的顺序，标出风险最集中的位置。注意 M2 与 M3 的顺序是对的，但 M2 自身过重、M3 自身过重，两处叠加才是真正的单人开发风险。</p>
+      <h2>完成度与下一步</h2>
+      <p class="sec-sub">里程碑按 <code>development-plan.md</code> 原定义评估。M0、M1 可以判定为完成；M2 大约走了三分之一，且缺口集中在内容而非系统。</p>
     </div>
   </div>
 
   <ol class="timeline">
-    <li>
-      <div class="th"><b>M0 · 工程基础</b><span class="tag">低风险</span></div>
-      <p>Godot 工程、输入映射、设置与日志、第一人称原型、自动构建基础、文档规范。<span class="muted">这是全项目风险最低、价值最确定的一段。</span></p>
-      <div class="exit">退出：Windows 开发构建在全新环境可启动；键鼠移动 / 暂停 / 退出正常；严重错误写日志。</div>
+    <li class="done">
+      <div class="th"><b>M0 · 工程基础</b><span class="tag">已完成</span></div>
+      <p>Godot 4.6 工程、输入映射、结构日志、第一人称原型、一键启动与构建脚本、目录规范。<span class="muted">退出条件逐条满足，首次运行自动导入的坑也在 <code>run.ps1</code> 里补上了。</span></p>
+      <div class="exit">退出：开发构建可启动；键鼠移动 / 暂停 / 退出正常；错误写入 <code>user://logs/game.log</code>。</div>
+    </li>
+    <li class="done">
+      <div class="th"><b>M1 · 灰盒可玩链路</b><span class="tag">已完成</span><span class="tag">有自动化验证</span></div>
+      <p>营地灰盒、交互、物品、背包、任务、存档全部打通，并且是端到端断言过的，不是「手动点过一遍」。<span class="muted">唯一遗留是敌人状态不入档——它不影响 M1 的三步链路，但会阻塞 M2。</span></p>
+      <div class="exit">退出：营地出发—拾取保险丝—修复无线电—返回营火可完整游玩；读档恢复关键状态；无阻断问题。</div>
+    </li>
+    <li class="risk">
+      <div class="th"><b>M2 · 探索与战斗垂直切片</b><span class="tag">约 30%</span></div>
+      <p>已做：弓箭完整链路、一类敌人、昼夜、世界生成（1 个区域规模）。<span class="muted">未做：1 km² 与分块加载、第二类敌人、两个世界事件、隐藏地点、天气切换、音频、设置菜单、20–30 分钟内容量。</span></p>
+      <div class="exit">差距主要是内容：3 个区域、2 个事件、1 个隐藏点、1 类敌人、1 套音频。</div>
     </li>
     <li>
-      <div class="th"><b>M1 · 灰盒可玩链路</b><span class="tag">P0 阻塞点</span></div>
-      <p>营地 / 树林 / 守林站灰盒、交互、物品、背包、任务、基础存档。<span class="muted">这一步是整份计划的地基，但它的退出条件直接依赖第 03 节那条未裁决的物品流——</span><b>保险丝修哪台设备不定死，M1 无法验收。</b></p>
-      <div class="exit">退出：「营地出发—拾取保险丝—修复设备—返回」完整可玩；存读档恢复关键状态；无阻断问题。</div>
-    </li>
-    <li>
-      <div class="th"><b>M2 · 探索与战斗垂直切片</b><span class="tag risk">风险最高</span></div>
-      <p>1 km²、Chunk 加载、弓箭 + 两类敌人、主任务 + 两事件 + 隐藏地点、昼夜 + 天气 + 音频。<span class="muted">这是风险最集中的一段，同时压着「范围过大」和「四个区域无设计」两个问题。第 05 节的削减建议主要针对这里。</span></p>
-      <div class="exit">退出：首次玩家 20–30 分钟完成主线；1080p 接近稳定 60 FPS；Chunk 切换不丢状态。</div>
-    </li>
-    <li>
-      <div class="th"><b>M3 · 程序化森林管线</b><span class="tag risk">价值待验证</span></div>
-      <p>SceneSpec / Schema、地形河流植被岩石生成、GLB 分块 + manifest + 预览、导入检查器、局部重生成。<span class="muted">排期上已经正确地排在 M2 之后，但它的价值要到 M5 才兑现——见第 05 节取舍一。</span></p>
-      <div class="exit">退出：同版本同 seed 同输入产生相同清单；重生成植被不覆盖人工对象；通过几何与预算检查。</div>
-    </li>
-    <li>
-      <div class="th"><b>M4 · 内容替换与打磨</b></div>
-      <p>灰盒换正式资产、地标与任务整合、UI / 音频 / 可访问性 / 设置、性能与稳定性优化。</p>
-      <div class="exit">退出：切片通过内部测试；无 P0/P1 缺陷；连续运行 60 分钟无崩溃或严重内存增长。</div>
-    </li>
-    <li>
-      <div class="th"><b>M5 · 开放世界扩展</b></div>
-      <p>第二生态区、区域间旅行与进度门槛、完整成长 / 制作 / 敌人体系、动态事件工具。<span class="muted">管线在此才真正开始回本，届时再决定完整地图规模是合理的。</span></p>
-      <div class="exit">退出：新区域可复用生产管线；跨区域存档 / 任务 / 快速旅行稳定。</div>
+      <div class="th"><b>M3 · 程序化森林管线</b><span class="tag">未启动</span></div>
+      <p>SceneSpec / Blender / GLB / manifest 全部空白。<span class="muted">上一版的建议仍然成立：切片阶段用 Godot 原生程序化（现在已验证可行）就够，管线等 M2 之后再说。</span></p>
     </li>
   </ol>
 
-  <div class="card" style="margin-top:10px">
-    <h4>两个未被列入风险清单的真实风险</h4>
-    <ul class="list warn">
-      <li><strong>「视觉可读性」风险</strong>：这个游戏的核心机制是「靠地标和声音辨认方向」。写实植被很容易摧毁地标轮廓——<code>game-design.md:167</code> 自己写下了「保持地标轮廓清晰，不能因写实植被破坏可读性」，但没有对应的验证方法。建议在 M2 之前就做一次<strong>剪影测试</strong>：纯黑剪影图能否指认守林站与信号塔。</li>
-      <li><strong>「导航型玩家」风险</strong>：整个设计依赖玩家主动阅读地标、具备空间记忆，且愿意在没有 GPS 的世界里自己找路。首次玩家很可能做不到。<code>open-world-design.md:92</code> 提到「辅助模式」但只作为兜底。建议把它做成一等公民：一开始就允许开启「罗盘高亮地标 / 更明显的路面痕迹 / 任务范围提示」，作为<strong>可访问性选项</strong>而非失败补偿。</li>
-    </ul>
+  <div class="card" style="margin:14px 0 18px">
+    <h4>一句话判断</h4>
+    <p style="font-size:13.5px;line-height:1.65">M1 之后最危险的下一步是<strong>继续加系统</strong>。当前最划算的投入是：把「90 秒」变成「8 分钟」——也就是把 <code>first-scene-design.md</code> 里被跳过的开场、装备拾取、信号事件补上，同时把敌人状态与死亡流程这两个会断掉的地方修掉。这两件事都不需要新系统。</p>
+  </div>
+
+  <div class="actions">
+    <div class="act">
+      <span class="n">1</span>
+      <div>
+        <b>把代码的 4 个裁决回写文档（半天，最高优先级）</b>
+        <p>主线改为营地闭环；主武器改为弓；状态表只保留生命/体力/电量；切片区域清单标为「M2 目标 4 区，当前 1 区」。同时给 7 篇文档补上版本号与「最后更新」，并把根 README 的 88 项、M2 状态更新掉。</p>
+        <span class="where">game-design.md · first-scene-design.md · combat-and-progression.md · development-plan.md · README.md</span>
+      </div>
+    </div>
+    <div class="act">
+      <span class="n">2</span>
+      <div>
+        <b>敌人状态入档</b>
+        <p>在 <code>main.gd</code> 注册 enemystates 提供者与加载器，按稳定 ID 收集 <code>EnemyBase.get_persistent_state()</code>；读档时对每只敌人 <code>apply_persistent_state()</code>。这是 <code>combat-and-progression.md §9</code> 的硬性验收项，也是 M2 退出条件之一。</p>
+        <span class="where">main.gd · enemy_base.gd · save_manager.gd</span>
+      </div>
+    </div>
+    <div class="act">
+      <span class="n">3</span>
+      <div>
+        <b>修敌人 AI 的三处阈值</b>
+        <p><code>SUSPICIOUS → CHASE</code> 改为「仍在视野内 + 距离 ≤ sight_range」；放弃追击改为「离开视野持续 <code>chase_memory</code> 秒」；读取 <code>leash_radius</code>，越界后进入返回状态并恢复生命。修完再加一条断言：玩家在 10 m 外静止站立，狼必须主动进入 CHASE。</p>
+        <span class="where">enemy_base.gd · wolf_enemy.gd · test_smoke.gd</span>
+      </div>
+    </div>
+    <div class="act">
+      <span class="n">4</span>
+      <div>
+        <b>补死亡闭环</b>
+        <p>最小实现：死亡 → 黑屏 → 回到营火出生点并恢复半血，或读最近存档。哪怕只是一个「你倒下了 / 按任意键回到营地」的全屏提示，也远好过现在的软锁。</p>
+        <span class="where">player.gd · spawn_manager.gd · hud.tscn</span>
+      </div>
+    </div>
+    <div class="act q">
+      <span class="n">5</span>
+      <div>
+        <b>处理四个「有接口没接线」的系统</b>
+        <p>天气、音频、设置、地图/指南针：要么各花半天接线（天气定时切换 + 营火显示；3 个环境声层 + 溪流 3D 音源；FOV/音量启动应用 + 一个最简设置面板；地图/指南针的极简 UI），要么把它们从 M2 范围里正式删掉，别留在清单里假装已做。</p>
+        <span class="where">weather_controller.gd · world_audio.gd · settings_manager.gd · hud.tscn</span>
+      </div>
+    </div>
+    <div class="act q">
+      <span class="n">6</span>
+      <div>
+        <b>把营地从 90 秒补到 8 分钟</b>
+        <p>按 <code>first-scene-design.md</code> 补：木屋内部与开场、地图/指南针/日志拾取、发电机调查、靶场弓箭教学判定、修好无线电后的信号事件（雾散 + 任务转向守林站）。这是把「可玩」变成「像个游戏」的最低成本路径，且全部是内容与触发器，不需要新系统。</p>
+        <span class="where">greybox_camp.tscn · camp_builder.gd · camp_comm_radio.tres</span>
+      </div>
+    </div>
+    <div class="act o">
+      <span class="n">7</span>
+      <div>
+        <b>建立性能与内容预算</b>
+        <p>固定最低/推荐两套硬件；给地形网格、植被实例数、敌人同屏数、帧时间各定一条上限，并在 <code>build_windows.ps1</code> 里加一次自动采样。没有基线，「1080p 接近 60 FPS」永远不可证伪。</p>
+        <span class="where">technical-design.md · tools/build_windows.ps1</span>
+      </div>
+    </div>
+    <div class="act o">
+      <span class="n">8</span>
+      <div>
+        <b>拆分测试用例</b>
+        <p>把 105 项断言拆成「纯逻辑（背包/任务状态机/存档迁移）」与「场景集成（贴地/交互/战斗）」两套；前者不加载世界，后者按需实例化。现在这轮 2 秒很便宜，但会随内容线性变贵。</p>
+        <span class="where">game/tests/</span>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -557,100 +635,45 @@ footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);font-si
   <div class="sec-head">
     <span class="num">07</span>
     <div>
-      <h2>行动清单</h2>
-      <p class="sec-sub">按「代价 / 收益」排序。前两档是文档工作，第三档是代码工作。全部加起来约一到两天，可以把这份文档集从「看起来完备」变成「可以照着做」。</p>
+      <h2>方法与证据</h2>
+      <p class="sec-sub">本报告基于代码快照 <code>a7d5304</code>（12 次提交）与本机实际运行结果，所有结论都可复现。</p>
     </div>
   </div>
 
-  <div class="actions">
-    <div class="act">
-      <span class="n">1</span>
-      <div>
-        <b>裁决主线物品流（唯一必须今天做的决定）</b>
-        <p>在「营地闭环」与「山脊终点」之间二选一，并同步修改 <code>game-design.md:158,203</code>、<code>first-scene-design.md:92-109,149-162</code>、<code>development-plan.md:43</code>。建议采纳营地闭环（理由见第 03 节）。</p>
-        <span class="where">涉及 game-design.md · first-scene-design.md · development-plan.md</span>
-      </div>
+  <div class="grid2">
+    <div class="card">
+      <h4>复现命令</h4>
+      <div class="ev"># 无头冒烟测试（105 项）
+godot --headless --path game res://tests/test_smoke.tscn
+
+# 渲染截图（林狼 / 举弓 / 营地俯视）
+godot --path game res://tests/capture_combat.tscn
+
+# 帧率采样（15 秒）
+godot --path game --print-fps --quit-after 900
+
+# 日志
+user://logs/game.log</div>
     </div>
-    <div class="act">
-      <span class="n">2</span>
-      <div>
-        <b>统一切片区域清单为 5 个</b>
-        <p>把 <code>game-design.md:182</code> 的「四个区域」改为含山脊的五个，或反之改掉验收场景。现在两处直接冲突。</p>
-        <span class="where">game-design.md:182 ↔ game-design.md:203 ↔ open-world-design.md:31</span>
-      </div>
-    </div>
-    <div class="act">
-      <span class="n">3</span>
-      <div>
-        <b>发布一份唯一的「状态资源表」</b>
-        <p>明确生命 / 体力 / 专注 / 体温 各自是否在切片内，由哪份文档负责数值，并让 <code>first-scene-design.md:144</code> 的营火恢复效果与之对齐。推荐切片内只保留<strong>生命 + 体力</strong>，专注与体温推到 M2 之后。</p>
-        <span class="where">game-design.md:101-104,184 · combat-and-progression.md:19-24 · first-scene-design.md:144</span>
-      </div>
-    </div>
-    <div class="act">
-      <span class="n">4</span>
-      <div>
-        <b>主武器锁定为弓</b>
-        <p>三份文档已经默认弓了。把 <code>game-design.md:186</code> 的「近战或弓箭」改成「弓箭」，并删掉 <code>first-scene-design.md:135</code> 的石块兜底分支——一个兜底方案会变成两套实现。</p>
-        <span class="where">game-design.md:186 · first-scene-design.md:135</span>
-      </div>
-    </div>
-    <div class="act q">
-      <span class="n">5</span>
-      <div>
-        <b>把 AI 接入在技术设计文档中降级为 P2 可选项</b>
-        <p>修改 <code>technical-design.md:31</code> 的技术目标 4，把 <code>:372</code> 的生成步骤 1 标注为「固定 spec 模式下跳过」。否则读者会以为管线第一步就要接大模型。</p>
-        <span class="where">technical-design.md:31,373 ↔ content-pipeline.md:191 ↔ development-plan.md:133</span>
-      </div>
-    </div>
-    <div class="act q">
-      <span class="n">6</span>
-      <div>
-        <b>更新过期结构图并补齐仓库基础设施</b>
-        <p><code>technical-design.md:67-121</code> 的目录结构图改成当前 7 篇文档；补 <code>.gitignore</code>（<code>.godot/</code>、<code>*.blend1</code>、<code>__pycache__/</code>、<code>output/</code>、venv）；补根 <code>README.md</code>。这一步必须在第一个 Godot commit 之前完成。</p>
-        <span class="where">technical-design.md:67-121 · 仓库根目录</span>
-      </div>
-    </div>
-    <div class="act q">
-      <span class="n">7</span>
-      <div>
-        <b>统一文档元数据模板</b>
-        <p>为 5 篇无版本文档补「文档版本 / 状态 / 最后更新」三行，并在 <code>docs/README.md</code> 记录版本约定。<code>development-plan.md:149</code> 要求「文档已同步更新」，但当前无法判断哪一版权威。</p>
-        <span class="where">全部 7 篇文档头部</span>
-      </div>
-    </div>
-    <div class="act o">
-      <span class="n">8</span>
-      <div>
-        <b>削减 M2 范围，写进 <code>development-plan.md</code></b>
-        <p>按第 05 节取舍二改写 M2 的交付与退出条件。一类敌人、只做昼夜、单场景 400 m 走廊、一个世界事件。修改 <code>development-plan.md:47-62</code> 与 <code>game-design.md:178-189</code>。</p>
-        <span class="where">development-plan.md:47-62 · game-design.md:178-189</span>
-      </div>
-    </div>
-    <div class="act o">
-      <span class="n">9</span>
-      <div>
-        <b>补「松木深林 → 守林站」场景设计文档</b>
-        <p>这是切片的真正主体，目前完全空白。至少覆盖：空间布局、探索路径、敌人遭遇点、世界事件位置、隐藏地点、以及守林站内部的任务空间。可直接照搬 <code>first-scene-design.md</code> 的结构模板。</p>
-        <span class="where">新增 docs/forest-station-scene-design.md</span>
-      </div>
-    </div>
-    <div class="act o">
-      <span class="n">10</span>
-      <div>
-        <b>固化性能基线与定长物理 tick</b>
-        <p>给出最低 / 推荐两套 CPU + GPU + 内存配置，让「60 FPS」可证伪；在技术设计中明确使用 <code>_physics_process</code> 定长步长以满足 <code>combat-and-progression.md:136</code> 的帧率一致性要求；顺带定下 Chunk 尺寸取值与 1 km 网格取整规则。</p>
-        <span class="where">technical-design.md:279,306-317,363 · combat-and-progression.md:136</span>
-      </div>
+    <div class="card">
+      <h4>快照与口径</h4>
+      <dl class="kv" style="grid-template-columns:88px 1fr">
+        <dt>代码快照</dt><dd><code>a7d5304</code>（2026-11-17 21:17）</dd>
+        <dt>代码规模</dt><dd>43 个 <code>.gd</code>、12 个 <code>.tscn</code>、5,972 行 GDScript（含空行）</dd>
+        <dt>文档规模</dt><dd>7 篇 + README，非空 1,285 行（与上一版报告同口径）</dd>
+        <dt>测试结果</dt><dd>105 项 / 0 失败 / 退出码 0</dd>
+      </dl>
+      <p style="font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.55">分析过程中仓库仍在被另一条工作线推进（21:04 → 21:17 之间有 6 次提交），因此结论锁定在上述快照；快照之后修复的问题已在正文中标注。</p>
     </div>
   </div>
 </section>
 
 <footer>
-  <span>Forest Adventure · 项目分析报告 · 基于 docs/ 全量 7 篇文档与 git 历史</span>
-  <span>生成于 2026-11-17 · 未纳入版本控制</span>
+  <span>Forest Adventure · 项目分析报告 v2 · 基于 43 个脚本、7 篇设计文档、实际运行日志与截图</span>
+  <span>快照 a7d5304 · 2026-11-17 · 未纳入版本控制说明</span>
 </footer>
 
 </div>
 </body>
 </html>
+
