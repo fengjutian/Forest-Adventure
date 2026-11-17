@@ -349,12 +349,37 @@ static func make_arrow_bundle() -> ArrayMesh:
 ## 弓弦是一条竖直线并落在弦心 x=0，举弓瞄准时弦正好压在屏幕中心，
 ## 弓身向左侧张开。弓臂上下各四段，倾角沿曲线切线递增。
 static func make_bow() -> ArrayMesh:
+	var parts: Array = _bow_frame_parts()
+	parts.append(_box(Vector3(0.009, 1.32, 0.009), _xform(Vector3.ZERO), Color(0.8, 0.78, 0.72)))
+	parts.append_array(_bow_arrow_parts())
+	return merge(parts)
+
+
+## 弓身：握把 + 上下弓臂，不含弓弦和箭。
+##
+## 第一人称持弓时，弓弦和箭要随蓄力单独移动，
+## 所以把「静态的弓」拆成一张网格，弦和箭各自成节点。
+static func make_bow_frame() -> ArrayMesh:
+	return merge(_bow_frame_parts())
+
+
+## 弓弦：一段沿 +Y 的细方柱，运行时按「弓臂尖端 → 弦心」摆位。
+##
+## 上下两段各自摆位，拉弦时折成 V 形，静止时接成一条直线。
+static func make_bow_string() -> ArrayMesh:
+	return make_limb_mesh(Color(0.8, 0.78, 0.72))
+
+
+## 搭在弦上的箭：箭杆朝 -Z，尾羽留在弦心附近。
+##
+## 单独成件，蓄力时整体沿 +Z 后移，箭尾始终贴在弦上。
+static func make_bow_nocked_arrow() -> ArrayMesh:
+	return merge(_bow_arrow_parts())
+
+
+static func _bow_frame_parts() -> Array:
 	var wood := Color(0.33, 0.23, 0.14)
 	var grip := Color(0.22, 0.16, 0.11)
-	var string := Color(0.8, 0.78, 0.72)
-	var shaft := Color(0.45, 0.35, 0.22)
-	var head := Color(0.55, 0.56, 0.58)
-	var feather := Color(0.72, 0.68, 0.6)
 
 	var parts: Array = []
 
@@ -373,15 +398,46 @@ static func make_bow() -> ArrayMesh:
 		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, y, 0), Vector3(0, 0, -tilt)), wood))
 		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, -y, 0), Vector3(0, 0, tilt)), wood))
 
-	# 弓弦：竖直一条，连接上下弓臂尖端
-	parts.append(_box(Vector3(0.009, 1.32, 0.009), _xform(Vector3(0, 0, 0)), string))
+	return parts
 
+
+static func _bow_arrow_parts() -> Array:
+	var shaft := Color(0.45, 0.35, 0.22)
+	var head := Color(0.55, 0.56, 0.58)
+	var feather := Color(0.72, 0.68, 0.6)
+
+	var parts: Array = []
 	# 搭在弦上的箭，沿视线方向（-Z）
 	parts.append(_cylinder(0.016, 0.62, _xform(Vector3(0, 0.02, -0.28), Vector3(90, 0, 0)), shaft, 6))
 	parts.append(_cone(0.026, 0.1, _xform(Vector3(0, 0.02, -0.64), Vector3(-90, 0, 0)), head, 6))
 	parts.append(_box(Vector3(0.13, 0.005, 0.05), _xform(Vector3(0, 0.02, 0.04)), feather))
 	parts.append(_box(Vector3(0.13, 0.005, 0.05), _xform(Vector3(0, 0.02, 0.04), Vector3(0, 45, 0)), feather))
+	return parts
 
+
+## 肢体段：沿 +Y 从 0 长到 1 的方柱。
+##
+## 运行时用两点摆位：原点放在起点、+Y 对准终点、Y 轴缩放到两点距离，
+## 手指、手臂、弓弦这类需要随姿势变形的部件都用它。
+static func make_limb_mesh(color: Color) -> ArrayMesh:
+	return merge([_box(Vector3(1, 1, 1), _xform(Vector3(0, 0.5, 0)), color)])
+
+
+## 第一人称手部：握拳，四指在 -Z 一侧（包住握把），拇指在 +X 一侧。
+##
+## 以掌心为原点，方便直接摆到握把或弓弦上。
+static func make_player_hand(skin: Color, glove: Color) -> ArrayMesh:
+	var parts: Array = []
+	# 手背与手掌
+	parts.append(_box(Vector3(0.085, 0.1, 0.075), _xform(Vector3.ZERO), glove))
+	# 四指：竖直叠起来，正好扣住竖直的弓把
+	for i in 4:
+		var y := 0.033 - float(i) * 0.023
+		parts.append(_box(Vector3(0.08, 0.02, 0.055), _xform(Vector3(0, y, -0.048)), glove.darkened(0.08)))
+	# 拇指：从侧面压住握把
+	parts.append(_box(Vector3(0.03, 0.055, 0.07), _xform(Vector3(0.052, 0.02, -0.02), Vector3(0, 0, -20)), glove.lightened(0.06)))
+	# 手腕
+	parts.append(_box(Vector3(0.072, 0.09, 0.06), _xform(Vector3(0, 0, 0.052)), skin.darkened(0.1)))
 	return merge(parts)
 
 

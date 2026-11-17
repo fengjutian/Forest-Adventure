@@ -41,6 +41,7 @@ func _ready() -> void:
 	_test_input_map()
 	_test_mouse_capture()
 	await _test_player_grounding()
+	await _test_first_person_motion()
 	_test_quest_definition()
 	_test_quest_chain()
 	_test_inventory()
@@ -103,6 +104,59 @@ func _test_player_grounding() -> void:
 		var ground := terrain.height_at(_player.global_position.x, _player.global_position.z)
 		_assert(absf(_player.global_position.y - ground) < 1.0,
 			"玩家高度贴近地面（y=%.2f 地面=%.2f）" % [_player.global_position.y, ground])
+
+
+## 第一人称表现：手、手臂、拉弦与走路起伏必须真的在动，而不是一把浮空的弓。
+func _test_first_person_motion() -> void:
+	var bow := _player.get_node_or_null("Bow") as Bow
+	_assert(bow != null, "玩家身上挂着弓节点（第一人称表现）")
+	if bow == null:
+		return
+
+	var view := bow.get_node_or_null("BowViewModel") as Node3D
+	_assert(view != null, "第一人称持弓挂在相机下")
+	if view == null:
+		return
+	_assert(view.get_node_or_null("BowPivot") != null, "弓有单独的抬放枢轴")
+	_assert(view.get_node_or_null("LeftHand") != null, "有左手")
+	_assert(view.get_node_or_null("RightHand") != null, "有右手")
+	_assert(view.get_node_or_null("UpperArmLeft") != null and view.get_node_or_null("ForearmLeft") != null,
+		"左臂由肩到腕的两段组成")
+	_assert(view.get_node_or_null("UpperArmRight") != null and view.get_node_or_null("ForearmRight") != null,
+		"右臂由肩到腕的两段组成")
+	_assert(view.get_node_or_null("BowPivot/StringTop") != null
+		and view.get_node_or_null("BowPivot/StringBottom") != null, "弓弦是两段可拉开的折线")
+
+	var right_hand := view.get_node_or_null("RightHand") as Node3D
+	var camera := _player.camera
+	if right_hand == null or camera == null:
+		return
+
+	# 蓄力时右手必须把弦往后拉（而不是一只静态的手）
+	_player.capture_mouse()
+	Input.action_press("aim")
+	for i in 3:
+		await get_tree().process_frame
+	var rest := right_hand.position
+	Input.action_press("fire")
+	for i in 20:
+		await get_tree().process_frame
+	var drawn := right_hand.position
+	Input.action_release("fire")
+	Input.action_release("aim")
+	_player.release_mouse()
+	_assert(drawn.distance_to(rest) > 0.02,
+		"蓄力时右手把弦拉开（位移 %.3f m）" % drawn.distance_to(rest))
+	_assert(drawn.z > rest.z, "拉弦方向朝向后（弦心后移）")
+
+	# 走起来镜头要有起伏；站定时回到静止位置
+	Input.action_press("move_forward")
+	var max_offset := 0.0
+	for i in 40:
+		await get_tree().process_frame
+		max_offset = maxf(max_offset, camera.position.length())
+	Input.action_release("move_forward")
+	_assert(max_offset > 0.002, "走路时镜头有起伏（峰值 %.3f m）" % max_offset)
 
 
 func _test_quest_definition() -> void:
@@ -399,9 +453,25 @@ func _finish() -> void:
 	print("检查项：%d    失败：%d" % [_checks, _failures.size()])
 	if _failures.is_empty():
 		print("结果：全部通过")
+		await _teardown()
 		get_tree().quit(0)
 	else:
 		for failure in _failures:
 			print("  - %s" % failure)
 		print("结果：存在失败项")
+		await _teardown()
 		get_tree().quit(1)
+
+
+## 退出前主动拆掉场景树。
+##
+## Godot 关闭阶段的资源释放顺序不稳定：任务系统里绑定了 Callable 的存档提供者
+## 会让 quest_state.gd 的脚本资源在退出时仍未释放，偶尔触发访问冲突，
+## 表现为测试明明全部通过、退出码却是 0xC0000005。
+## 先把场景清干净再退出，可以避开这段不确定的清理过程。
+func _teardown() -> void:
+	if _main != null and is_instance_valid(_main):
+		_main.queue_free()
+		_main = null
+	await get_tree().process_frame
+	await get_tree().process_frame

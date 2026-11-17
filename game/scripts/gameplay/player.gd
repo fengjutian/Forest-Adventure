@@ -43,6 +43,14 @@ var look_sensitivity_scale: float = 1.0
 ## 噪声计时：受击、射箭等会短暂暴露位置。
 var _noise_timer: float = 0.0
 
+## 第一人称走路的镜头运动。相机初始位置（通常是 0，但不要假设）。
+var _camera_rest_position: Vector3 = Vector3.ZERO
+var _bob_phase: float = 0.0
+var _bob_weight: float = 0.0
+var _land_dip: float = 0.0
+var _was_airborne: bool = false
+var _prev_velocity_y: float = 0.0
+
 
 func _ready() -> void:
 	if tuning == null:
@@ -66,6 +74,9 @@ func _ready() -> void:
 	# 启动时不捕获鼠标：玩家主动点击画面后才进入视角控制，
 	# 否则一启动就夺走鼠标（尤其多屏时非常难受）。
 	release_mouse()
+
+	# 记录相机初始局部位置：走路起伏都叠加在它上面，不重置蹲伏改的高度。
+	_camera_rest_position = camera.position
 
 
 ## 捕获鼠标，进入第一人称视角控制。
@@ -96,10 +107,12 @@ func _notification(what: int) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_prev_velocity_y = velocity.y
 	if not _control_enabled:
 		velocity.x = move_toward(velocity.x, 0.0, tuning.acceleration * delta)
 		velocity.z = move_toward(velocity.z, 0.0, tuning.acceleration * delta)
 		move_and_slide()
+		_update_landing()
 		return
 
 	_update_crouch()
@@ -110,7 +123,47 @@ func _physics_process(delta: float) -> void:
 	_apply_gravity(delta)
 	_update_movement(delta)
 	move_and_slide()
+	_update_landing()
 	_update_state()
+
+
+## 第一人称镜头的呼吸感：只在视角层动，物理与碰撞体不受影响。
+func _process(delta: float) -> void:
+	_update_camera_motion(delta)
+
+
+# ------------------------------------------------------------------ 第一人称运动
+
+## 走路的镜头起伏：上下、左右、轻微侧倾，落地时补一记下沉。
+##
+## 只动 Camera3D 的局部变换，不动 Head——蹲伏改的是 Head 高度，
+## 两者叠在一起才是「身体蹲下、头还在动」。
+func _update_camera_motion(delta: float) -> void:
+	if camera == null:
+		return
+	var speed := Vector2(velocity.x, velocity.z).length()
+	var grounded := is_on_floor()
+	var moving := clampf(speed / maxf(tuning.walk_speed, 0.01), 0.0, 1.6)
+	var target_weight := moving if grounded and _control_enabled else 0.0
+	_bob_weight = lerpf(_bob_weight, target_weight, minf(1.0, 7.0 * delta))
+	_bob_phase += delta * TAU * (0.75 + speed * 0.13)
+
+	var amplitude := tuning.head_bob_amplitude * _bob_weight
+	var side := sin(_bob_phase) * amplitude * 0.55
+	var up := sin(_bob_phase * 2.0) * amplitude
+	var roll := deg_to_rad(tuning.head_bob_roll_degrees) * sin(_bob_phase) * _bob_weight
+
+	_land_dip = lerpf(_land_dip, 0.0, minf(1.0, 9.0 * delta))
+	camera.position = _camera_rest_position + Vector3(side, up - _land_dip, 0.0)
+	camera.rotation.z = roll
+
+
+## 落地检测：用落地前一帧的竖直速度决定下沉幅度。
+func _update_landing() -> void:
+	var grounded := is_on_floor()
+	if grounded and _was_airborne:
+		_land_dip = clampf(absf(_prev_velocity_y) * 0.011, 0.0, tuning.head_bob_landing_dip)
+	_was_airborne = not grounded
 
 
 func _unhandled_input(event: InputEvent) -> void:

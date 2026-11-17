@@ -44,6 +44,18 @@ func _ready() -> void:
 	})
 
 
+## 离树时注销存档回调。
+##
+## SaveManager 是常驻 autoload，它持有的 Callable 指向本节点。
+## 不注销的话，本节点先被释放、autoload 后释放，Godot 关闭阶段
+## 解析这些悬空 Callable 会触发访问冲突（测试退出码偶发 0xC0000005）。
+func _exit_tree() -> void:
+	if SaveManager == null:
+		return
+	for key in ["current_scene", "player", "inventory", "world"]:
+		SaveManager.unregister(key)
+
+
 ## 发放初始装备。读档时会用存档里的背包覆盖，不重复发放。
 func _grant_starting_gear() -> void:
 	if inventory == null:

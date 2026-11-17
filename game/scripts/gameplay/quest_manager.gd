@@ -28,6 +28,16 @@ func _ready() -> void:
 	GameLog.info("QuestManager 就绪")
 
 
+## 离树时注销存档回调。
+##
+## SaveManager 是常驻 autoload，它持有的 Callable 指向本节点。
+## 不注销的话，本节点先被释放、autoload 后释放，Godot 关闭阶段
+## 解析这些悬空 Callable 会触发访问冲突（测试退出码偶发 0xC0000005）。
+func _exit_tree() -> void:
+	if SaveManager != null:
+		SaveManager.unregister("quest_states")
+
+
 # ------------------------------------------------------------------ 注册与开始
 
 func register_quest(definition: QuestDefinition) -> void:

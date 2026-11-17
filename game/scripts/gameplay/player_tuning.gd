@@ -16,6 +16,12 @@ extends Resource
 @export_group("视角")
 @export var mouse_sensitivity := 0.002
 @export var max_pitch_degrees := 89.0
+## 走路时镜头的上下起伏（米）。设为 0 可关闭。
+@export var head_bob_amplitude := 0.02
+## 走路时镜头的左右倾斜（度）。
+@export var head_bob_roll_degrees := 0.55
+## 落地时镜头下沉的最大幅度（米）。
+@export var head_bob_landing_dip := 0.05
 
 @export_group("体力")
 @export var max_stamina := 100.0
