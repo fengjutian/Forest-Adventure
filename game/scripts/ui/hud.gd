@@ -30,6 +30,19 @@ func _ready() -> void:
 	interaction_prompt.text = ""
 	resume_hint.visible = false
 
+	# Player 的 _ready 可能早于 HUD，首帧不会收到 health/stamina 广播，这里主动同步一次
+	_sync_from_player()
+
+
+func _sync_from_player() -> void:
+	if _player == null:
+		return
+	health_bar.max_value = _player.tuning.max_health
+	health_bar.value = _player.health
+	stamina_bar.max_value = _player.tuning.max_stamina
+	stamina_bar.value = _player.stamina
+	status_label.text = "状态：%s" % _player.state_machine.state_name(_player.state_machine.current_state)
+
 
 func _process(_delta: float) -> void:
 	_update_quest_line()

@@ -26,6 +26,7 @@ func load_settings() -> void:
 	var config := ConfigFile.new()
 	if config.load(SETTINGS_PATH) != OK:
 		GameLog.warn("设置文件不存在，使用默认值", {"path": SETTINGS_PATH})
+		save_settings()
 		return
 
 	mouse_sensitivity = float(config.get_value(SECTION, "mouse_sensitivity", DEFAULT_MOUSE_SENSITIVITY))

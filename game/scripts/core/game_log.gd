@@ -39,7 +39,13 @@ static func _write(level: String, message: String, context: Dictionary) -> void:
 	_ensure_dir()
 	_rotate_if_needed()
 
-	var file := FileAccess.open("%s/%s" % [LOG_DIR, LOG_FILE], FileAccess.READ_WRITE)
+	var path := "%s/%s" % [LOG_DIR, LOG_FILE]
+	# READ_WRITE 不会创建缺失的文件，首次写入必须用 WRITE
+	var mode := FileAccess.WRITE
+	if FileAccess.file_exists(path):
+		mode = FileAccess.READ_WRITE
+
+	var file := FileAccess.open(path, mode)
 	if file == null:
 		return
 	file.seek_end()

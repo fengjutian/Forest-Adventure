@@ -178,7 +178,8 @@ func _migrate_0_to_1(data: Dictionary) -> void:
 	data["current_scene"] = data.get("current_scene", "")
 	data["player_transform"] = data.get("player_transform", {})
 	data["player_state"] = data.get("player_state", {})
-	data["inventory"] = data.get("inventory", [])
+	# inventory 在 v1 起是字典 {capacity, slots, quest_slots}
+	data["inventory"] = data.get("inventory", {})
 	data["quest_states"] = data.get("quest_states", {})
 	data["world_flags"] = data.get("world_flags", {})
 	data["changed_objects"] = data.get("changed_objects", {})

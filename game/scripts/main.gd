@@ -6,6 +6,17 @@ extends Node3D
 
 const QUEST_CAMP_COMM := "res://resources/quests/camp_comm_radio.tres"
 
+## 物品定义（docs/game-design.md §6.2：工具 / 消耗品 / 资源 / 线索）。
+const ITEM_DEFINITIONS := [
+	"res://resources/items/map.tres",
+	"res://resources/items/compass.tres",
+	"res://resources/items/flashlight.tres",
+	"res://resources/items/fuse.tres",
+	"res://resources/items/arrow.tres",
+	"res://resources/items/first_aid.tres",
+	"res://resources/items/ration.tres",
+]
+
 @onready var player: Player = $Player as Player
 @onready var inventory: Inventory = $Player/Inventory as Inventory
 @onready var quest_manager: QuestManager = $QuestManager as QuestManager
@@ -15,6 +26,7 @@ const QUEST_CAMP_COMM := "res://resources/quests/camp_comm_radio.tres"
 
 func _ready() -> void:
 	_register_save_handlers()
+	_load_items()
 	_load_quests()
 	GameLog.info("Main 就绪", {
 		"scene": get_tree().current_scene.scene_file_path if get_tree().current_scene else "",
@@ -74,8 +86,14 @@ func _load_player(data: Dictionary) -> void:
 func _load_inventory(data: Dictionary) -> void:
 	if inventory == null:
 		return
-	var payload: Dictionary = data.get("inventory", {})
-	inventory.from_dict(payload)
+	var payload: Variant = data.get("inventory", {})
+	if payload is Dictionary:
+		inventory.from_dict(payload)
+	elif payload is Array:
+		# 兼容早期把槽位直接写成数组的存档
+		inventory.from_dict({"slots": payload})
+	else:
+		GameLog.warn("存档中的背包数据格式无法识别", {"type": typeof(payload)})
 
 
 func _load_world(data: Dictionary) -> void:
@@ -95,6 +113,25 @@ func _apply_changed_objects(changed: Dictionary) -> void:
 		if object_id != &"" and changed.has(object_id):
 			interactable.apply_persistent_state(changed[object_id])
 			GameLog.info("对象状态已恢复", {"object": object_id})
+
+
+# ------------------------------------------------------------------ 物品
+
+func _load_items() -> void:
+	if inventory == null:
+		return
+	var loaded := 0
+	for path in ITEM_DEFINITIONS:
+		if not ResourceLoader.exists(path):
+			GameLog.warn("物品资源不存在", {"path": path})
+			continue
+		var definition := load(path) as ItemDefinition
+		if definition == null:
+			GameLog.error("物品资源类型不正确", {"path": path})
+			continue
+		inventory.register_definition(definition)
+		loaded += 1
+	GameLog.info("物品定义已加载", {"count": loaded})
 
 
 # ------------------------------------------------------------------ 任务

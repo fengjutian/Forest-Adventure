@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"map"
+display_name = "纸质地图"
+description = "不显示实时位置，需要通过地标定位。"
+max_stack = 1
+tags = Array[StringName]([&"tool"])
