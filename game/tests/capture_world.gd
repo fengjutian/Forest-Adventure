@@ -16,6 +16,7 @@ var _shots: Array = [
 	# 俯瞰关掉雾，才看得清地形接缝与区块边缘
 	{"name": "world_aerial", "position": Vector3(0.0, 70.0, 110.0), "yaw": 0.0, "pitch": -18.0, "frames": 240, "no_fog": true},
 	{"name": "world_path", "position": Vector3(1.5, 0.0, -24.0), "yaw": 0.0, "pitch": 0.0, "frames": 180},
+	{"name": "world_ridge", "position": Vector3(1.5, 0.0, -26.0), "yaw": 0.0, "pitch": 5.0, "frames": 200},
 ]
 
 

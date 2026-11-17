@@ -6,7 +6,7 @@ extends Node
 
 @export var output_path: String = "res://../build/screenshots/frame.png"
 ## 分块世界是逐帧流式加载的：等久一点，让远处区块和植被都到位再截。
-@export var settle_frames: int = 200
+@export var settle_frames: int = 280
 
 
 func _ready() -> void:

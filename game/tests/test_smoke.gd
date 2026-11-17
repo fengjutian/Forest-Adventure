@@ -159,11 +159,19 @@ func _test_chunked_world() -> void:
 	if rebuilt != null:
 		_assert(signature == rebuilt.signature(), "同一区块重建后植被逐实例一致")
 
-	# 流式加载：走远后营地卸载、脚下加载。
+	# 流式加载：走远后远端区块卸载、脚下加载。
 	# 先把敌人冻住，免得它们追着瞬移的玩家跑出营地，影响后续感知测试。
 	var enemies := get_tree().get_nodes_in_group(&"enemy")
 	for enemy in enemies:
 		(enemy as Node).set_physics_process(false)
+
+	var remote_coord := Vector2i(1, 1)
+	# 流式加载是逐帧铺开的：等远端区块被队列轮到
+	for i in 300:
+		if world.is_chunk_loaded(remote_coord):
+			break
+		await get_tree().process_frame
+	_assert(world.is_chunk_loaded(remote_coord), "远端区块在出生点的流式半径内已加载")
 
 	var saved_position := _player.global_position
 	_player.set_physics_process(false)
@@ -173,7 +181,7 @@ func _test_chunked_world() -> void:
 
 	var far_coord := world.world_to_chunk(_player.global_position)
 	_assert(world.is_chunk_loaded(far_coord), "远处脚下的区块已流式加载")
-	_assert(not world.is_chunk_loaded(camp_coord), "离开后营地区块已卸载")
+	_assert(not world.is_chunk_loaded(remote_coord), "远离后远端区块已卸载")
 	_assert(world.loaded_chunk_count() <= chunk_bound, "流式加载后区块数仍有界")
 
 	_player.global_position = saved_position

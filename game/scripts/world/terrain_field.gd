@@ -28,9 +28,9 @@ var macro_amplitude: float = 26.0
 var detail_amplitude: float = 1.4
 
 ## 主山脊：z = ridge_center_z 附近的一条东西向长脊。
-var ridge_center_z: float = -390.0
-var ridge_width: float = 150.0
-var ridge_height: float = 52.0
+var ridge_center_z: float = -340.0
+var ridge_width: float = 140.0
+var ridge_height: float = 50.0
 ## 西侧次峰，用来打破东南西北的单调。
 var hill_center: Vector2 = Vector2(-330.0, -140.0)
 var hill_height: float = 34.0
@@ -154,7 +154,7 @@ func color_at(x: float, z: float, height: float, slope: float) -> Color:
 	var deep_grass := Color(0.12, 0.2, 0.11)
 	var dirt := Color(0.34, 0.27, 0.18)
 	var gravel := Color(0.4, 0.38, 0.34)
-	var rock := Color(0.38, 0.38, 0.36)
+	var rock := Color(0.3, 0.3, 0.28)
 
 	# 高处林线更深沉
 	var color := grass.lerp(deep_grass, clampf(height / (amplitude * 0.8), 0.0, 1.0))
@@ -168,8 +168,8 @@ func color_at(x: float, z: float, height: float, slope: float) -> Color:
 		color = color.lerp(gravel, gravel_amount)
 
 	# 高出林线后露岩
-	if height > macro_amplitude * 0.55:
-		color = color.lerp(rock, clampf((height - macro_amplitude * 0.55) / (macro_amplitude * 0.6), 0.0, 1.0))
+	if height > macro_amplitude * 0.85:
+		color = color.lerp(rock, clampf((height - macro_amplitude * 0.85) / (macro_amplitude * 0.7), 0.0, 1.0))
 
 	# 营地是被踩实的空地
 	var camp_distance := Vector2(x, z).length()

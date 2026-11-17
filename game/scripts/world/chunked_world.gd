@@ -22,14 +22,14 @@ const WORLD_GROUP := &"chunked_world"
 @export var chunk_size: float = 64.0
 ## 每个区块的网格分段数。32 段 / 64 m = 2 m 一格。
 @export var terrain_resolution: int = 32
-@export_range(0, 8) var terrain_radius_chunks: int = 6
+@export_range(0, 8) var terrain_radius_chunks: int = 7
 @export_range(0, 8) var collision_radius_chunks: int = 2
 @export_range(0, 8) var vegetation_radius_chunks: int = 2
-@export_range(0, 8) var sparse_vegetation_radius_chunks: int = 4
+@export_range(0, 8) var sparse_vegetation_radius_chunks: int = 5
 ## 每帧给区块生成的时间预算（毫秒），避免一次性加载时掉帧。
 @export var build_budget_ms: float = 6.0
 ## 启动时同步生成几圈区块，保证出生点附近立刻可站。
-@export var initial_radius_chunks: int = 2
+@export var initial_radius_chunks: int = 3
 
 var field: TerrainField
 
@@ -241,7 +241,7 @@ func _pump() -> void:
 	if not _queue.is_empty():
 		var start := Time.get_ticks_usec()
 		var built := 0
-		while not _queue.is_empty() and built < 2:
+		while not _queue.is_empty() and built < 3:
 			var coord: Vector2i = _queue.pop_front()
 			if _chunks.has(coord) or not in_bounds(coord):
 				continue
@@ -253,7 +253,7 @@ func _pump() -> void:
 	if not _veg_queue.is_empty():
 		var veg_start := Time.get_ticks_usec()
 		var veg_built := 0
-		while not _veg_queue.is_empty() and veg_built < 1:
+		while not _veg_queue.is_empty() and veg_built < 2:
 			var job: Dictionary = _veg_queue.pop_front()
 			var coord: Vector2i = job["coord"]
 			if not _chunks.has(coord):

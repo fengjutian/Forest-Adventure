@@ -15,10 +15,10 @@ signal weather_changed(new_weather: StringName)
 
 ## 天气 → 能见距离（米）。距离雾的远端越近，能见度越差。
 const FOG_END := {
-	&"clear": 380.0,
-	&"cloudy": 300.0,
-	&"rain": 220.0,
-	&"fog": 110.0,
+	&"clear": 420.0,
+	&"cloudy": 330.0,
+	&"rain": 240.0,
+	&"fog": 120.0,
 }
 
 var _environment: Environment
