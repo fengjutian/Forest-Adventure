@@ -439,6 +439,26 @@ func get_health() -> float:
 	return _health
 
 
+## 状态的文本形式，用于日志与调试。
+func state_name_text() -> String:
+	match state:
+		State.IDLE:
+			return "IDLE"
+		State.PATROL:
+			return "PATROL"
+		State.SUSPICIOUS:
+			return "SUSPICIOUS"
+		State.CHASE:
+			return "CHASE"
+		State.ATTACK:
+			return "ATTACK"
+		State.FLEE:
+			return "FLEE"
+		State.DEAD:
+			return "DEAD"
+	return "UNKNOWN"
+
+
 func is_alive() -> bool:
 	return state != State.DEAD
 

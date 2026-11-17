@@ -44,6 +44,8 @@ func _ready() -> void:
 	_test_quest_definition()
 	_test_quest_chain()
 	_test_inventory()
+	await _test_enemy_perception()
+	await _test_combat()
 	_test_save_keys()
 	_test_save_load_round_trip()
 	_test_migration()
@@ -228,6 +230,77 @@ func _test_backup() -> void:
 	_assert(not FileAccess.file_exists("user://saves/slot_0.json.tmp"), "临时文件已清理")
 
 
+## 战斗闭环：装备 → 射箭 → 命中 → 敌人受伤死亡 → 掉落 → 拾取。
+func _test_combat() -> void:
+	_assert(_inventory.has_item(&"bow"), "出发时带着弓")
+	_assert(_inventory.count_item(&"arrow") >= 10, "出发时带着箭矢（实际 %d）" % _inventory.count_item(&"arrow"))
+
+	var wolf := _find_enemy(&"wolf_01")
+	_assert(wolf != null, "场景里有林狼")
+	if wolf == null:
+		return
+
+	# 冻结林狼，保证命中判定可复现
+	wolf.set_physics_process(false)
+	var health_before := wolf.get_health()
+
+	# 从林狼正前方射一支箭
+	var target_point: Vector3 = wolf.global_position + Vector3(0.0, 0.45, 0.0)
+	var start_point: Vector3 = target_point + Vector3(0.0, 0.0, -4.0)
+	var arrow := ArrowProjectile.new()
+	add_child(arrow)
+	arrow.global_position = start_point
+	arrow.launch((target_point - start_point).normalized(), 1.0)
+
+	for i in 40:
+		await get_tree().physics_frame
+
+	_assert(wolf.get_health() < health_before,
+		"箭矢命中林狼造成伤害（%.0f → %.0f）" % [health_before, wolf.get_health()])
+	_assert(is_equal_approx(wolf.get_health(), health_before - arrow.damage),
+		"普通伤害按弓的基础伤害结算")
+
+	# 弱点判定：命中点高于阈值算弱点，伤害翻倍
+	var weak_point: Vector3 = wolf.global_position + Vector3(0.0, wolf.weak_point_height + 0.1, 0.0)
+	_assert(wolf.is_weak_point(weak_point), "头部高度判定为弱点")
+	_assert(not wolf.is_weak_point(wolf.global_position + Vector3(0.0, 0.2, 0.0)),
+		"腿部高度不算弱点")
+
+	# 击杀并检查掉落
+	var health_now := wolf.get_health()
+	wolf.apply_damage(health_now + 10.0)
+	_assert(not wolf.is_alive(), "林狼被击杀")
+	await get_tree().process_frame
+
+	var drop := _find_drop(&"arrow")
+	_assert(drop != null, "林狼死亡掉落箭矢")
+	if drop != null:
+		var arrows_before := _inventory.count_item(&"arrow")
+		drop.interact(_player)
+		_assert(_inventory.count_item(&"arrow") > arrows_before, "掉落物可以被拾取")
+		_assert(not drop.can_interact(_player), "拾取后掉落物不再可交互")
+
+
+## 敌人感知：玩家靠近后，林狼应从巡逻转入警戒或追逐。
+func _test_enemy_perception() -> void:
+	var wolf := _find_enemy(&"wolf_01")
+	if wolf == null:
+		return
+
+	wolf.set_physics_process(true)
+	var start_state := wolf.state
+
+	# 把玩家挪到林狼面前
+	_player.global_position = wolf.global_position + Vector3(0.0, 0.0, -3.0)
+	for i in 30:
+		await get_tree().physics_frame
+
+	_assert(wolf.state != start_state or wolf.is_threatening(),
+		"林狼发现靠近的玩家（状态 %s）" % wolf.state_name_text())
+	_player.global_position = Vector3(0.0, 0.05, 7.5)
+	_player.heal(_player.tuning.max_health)
+
+
 # ------------------------------------------------------------------ 工具
 
 func _find_interactable(object_id: StringName) -> Node:
@@ -235,6 +308,24 @@ func _find_interactable(object_id: StringName) -> Node:
 		var interactable := node as Interactable
 		if interactable != null and interactable.stable_id == object_id:
 			return interactable
+	return null
+
+
+## 按稳定 ID 找敌人。
+func _find_enemy(enemy_id: StringName) -> EnemyBase:
+	for node in get_tree().get_nodes_in_group(&"enemy"):
+		var enemy := node as EnemyBase
+		if enemy != null and enemy.stable_id == enemy_id:
+			return enemy
+	return null
+
+
+## 找掉落物。
+func _find_drop(item_id: StringName) -> PickupInteractable:
+	for node in get_tree().get_nodes_in_group(&"interactable"):
+		var pickup := node as PickupInteractable
+		if pickup != null and pickup.item_id == item_id:
+			return pickup
 	return null
 
 
