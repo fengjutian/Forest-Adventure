@@ -1,0 +1,32 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/wolf_enemy.gd" id="1_wolf"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wolf"]
+radius = 0.36
+height = 1.15
+
+[node name="Wolf" type="CharacterBody3D" groups=["enemy"]]
+collision_layer = 8
+collision_mask = 1
+script = ExtResource("1_wolf")
+stable_id = &"wolf_01"
+display_name = "林狼"
+max_health = 55.0
+sight_range = 24.0
+sight_angle_deg = 75.0
+hearing_range = 22.0
+move_speed = 2.8
+chase_speed = 5.8
+attack_range = 1.7
+attack_damage = 9.0
+attack_interval = 1.5
+attack_windup = 0.4
+weak_point_height = 0.72
+leash_radius = 34.0
+patrol_radius = 10.0
+drops = Array[Dictionary]([{"id": &"arrow", "amount": 2}])
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.58, 0)
+shape = SubResource("CapsuleShape3D_wolf")

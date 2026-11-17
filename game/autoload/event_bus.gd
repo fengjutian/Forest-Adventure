@@ -36,6 +36,16 @@ signal stamina_changed(current: float, maximum: float)
 signal flashlight_toggled(is_on: bool)
 signal player_died()
 
+# ---------------------------------------------------------------- 战斗
+signal ammo_changed(item_id: StringName, count: int)
+## 蓄力进度 0~1，0 表示未在蓄力。
+signal bow_charge_changed(charge: float)
+## 命中反馈，weakpoint 为真表示打在弱点。
+signal hit_confirmed(weakpoint: bool)
+signal enemy_health_changed(enemy_name: String, current: float, maximum: float)
+## 威胁等级 0~1，用于 HUD 的敌人提示。
+signal enemy_threat_changed(threat_level: float)
+
 # ---------------------------------------------------------------- 存档
 signal game_saved(slot: int)
 signal game_loaded(slot: int)

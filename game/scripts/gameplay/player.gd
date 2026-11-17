@@ -38,6 +38,10 @@ var _last_stamina_broadcast: float = -1.0
 var _last_health_broadcast: float = -1.0
 var _stamina_regen_blocked: bool = false
 var _stamina_regen_timer: float = 0.0
+## 视角灵敏度倍率。瞄准时由弓调低。
+var look_sensitivity_scale: float = 1.0
+## 噪声计时：受击、射箭等会短暂暴露位置。
+var _noise_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -101,6 +105,7 @@ func _physics_process(delta: float) -> void:
 	_update_crouch()
 	_update_stamina(delta)
 	_update_flashlight(delta)
+	_update_noise(delta)
 	_update_fall()
 	_apply_gravity(delta)
 	_update_movement(delta)
@@ -136,6 +141,7 @@ func _handle_look(event: InputEventMouseMotion) -> void:
 	var sensitivity: float = SettingsManager.mouse_sensitivity
 	if sensitivity <= 0.0:
 		sensitivity = tuning.mouse_sensitivity
+	sensitivity *= look_sensitivity_scale
 
 	rotate_y(-event.relative.x * sensitivity)
 
@@ -212,6 +218,11 @@ func _apply_body_size(crouching: bool) -> void:
 	head.position.y = tuning.eye_offset_crouch if crouching else tuning.eye_offset_stand
 
 
+func _update_noise(delta: float) -> void:
+	if _noise_timer > 0.0:
+		_noise_timer = maxf(0.0, _noise_timer - delta)
+
+
 func _update_stamina(delta: float) -> void:
 	if _wants_sprint():
 		stamina = maxf(0.0, stamina - tuning.stamina_drain_per_second * delta)
@@ -264,6 +275,28 @@ func heal(amount: float) -> void:
 		return
 	health = minf(tuning.max_health, health + amount)
 	_broadcast_health()
+
+
+## 消耗体力。蓄力、重击等动作用。
+func spend_stamina(amount: float) -> void:
+	if amount <= 0.0:
+		return
+	stamina = maxf(0.0, stamina - amount)
+	_broadcast_stamina()
+
+
+## 制造噪声，持续一段时间内敌人容易听见（docs/combat-and-progression.md §4）。
+func notify_noise(duration: float) -> void:
+	_noise_timer = maxf(_noise_timer, duration)
+
+
+## 当前是否在制造噪声。
+func is_making_noise() -> bool:
+	if _noise_timer > 0.0:
+		return true
+	if not _control_enabled:
+		return false
+	return state_machine.current_state == PlayerStateMachine.State.SPRINTING
 
 
 func _on_died() -> void:

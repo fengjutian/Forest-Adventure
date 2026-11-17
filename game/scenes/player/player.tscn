@@ -1,10 +1,11 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/gameplay/player_state_machine.gd" id="2_state"]
 [ext_resource type="Script" path="res://scripts/gameplay/player_tuning.gd" id="3_tuning"]
 [ext_resource type="Script" path="res://scripts/interaction/interaction_system.gd" id="4_interaction"]
 [ext_resource type="Script" path="res://scripts/gameplay/inventory.gd" id="5_inventory"]
+[ext_resource type="Script" path="res://scripts/gameplay/bow.gd" id="6_bow"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.35
@@ -58,3 +59,6 @@ script = ExtResource("4_interaction")
 
 [node name="Inventory" type="Node" parent="."]
 script = ExtResource("5_inventory")
+
+[node name="Bow" type="Node3D" parent="."]
+script = ExtResource("6_bow")

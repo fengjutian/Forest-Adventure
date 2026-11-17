@@ -89,12 +89,21 @@ quick_load={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"physical_keycode":4194340)]
 }
+fire={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"button_index":1)]
+}
+aim={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"button_index":2)]
+}
 
 [layer_names]
 
 3d_physics/layer_1="world"
 3d_physics/layer_2="player"
 3d_physics/layer_3="interactable"
+3d_physics/layer_4="enemy"
 
 [physics]
 

@@ -9,9 +9,10 @@ extends Node3D
 @onready var vegetation: VegetationScatter = $Vegetation
 @onready var props: CampBuilder = $AuthoredProps
 
-## 需要贴地的节点（可交互物与出生点）。
+## 需要贴地的节点（可交互物、出生点与敌人）。
 @export var ground_snap_paths: Array[NodePath] = [
 	^"SupplyCrate", ^"CampRadio", ^"Campfire", ^"SpawnPoint",
+	^"Wolf01", ^"Wolf02", ^"Wolf03",
 ]
 
 var _water: MeshInstance3D

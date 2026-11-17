@@ -331,6 +331,84 @@ static func make_stump(seed_value: int = 0) -> ArrayMesh:
 	return merge(parts)
 
 
+## 一捆箭：掉落物外观。
+static func make_arrow_bundle() -> ArrayMesh:
+	var shaft := Color(0.45, 0.35, 0.22)
+	var feather := Color(0.72, 0.68, 0.6)
+	var parts: Array = []
+	for i in 4:
+		var offset := Vector3((float(i) - 1.5) * 0.05, 0.02, (float(i % 2) - 0.5) * 0.07)
+		parts.append(_cylinder(0.011, 0.6, _xform(offset + Vector3(0, 0.02, 0), Vector3(90, 0, 0)), shaft, 5))
+		parts.append(_box(Vector3(0.01, 0.1, 0.045), _xform(offset + Vector3(0, 0.06, 0.27)), feather))
+	return merge(parts)
+
+
+## 猎弓：上下弓臂 + 握把 + 弓弦。弓臂分段折线，接近真实弓的弧度。
+static func make_bow() -> ArrayMesh:
+	var wood := Color(0.33, 0.23, 0.14)
+	var grip := Color(0.22, 0.16, 0.11)
+	var string := Color(0.8, 0.78, 0.72)
+	var parts: Array = []
+
+	parts.append(_box(Vector3(0.05, 0.24, 0.06), _xform(Vector3(0, 0, 0)), grip))
+
+	# 上下各四段弓臂
+	for i in 4:
+		var t := (float(i) + 0.5) / 4.0
+		var angle := lerpf(-40.0, -10.0, t)
+		var y := 0.13 + float(i) * 0.16
+		var x := sin(deg_to_rad(angle)) * 0.15
+		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, y, 0), Vector3(0, 0, angle)), wood))
+		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(-x, y, 0), Vector3(0, 0, -angle)), wood))
+
+	# 弓弦
+	parts.append(_box(Vector3(0.008, 0.72, 0.008), _xform(Vector3(0.03, 0.4, 0)), string))
+
+	return merge(parts)
+
+
+## 箭矢：细杆 + 箭头 + 尾羽。
+static func make_arrow() -> ArrayMesh:
+	var shaft := Color(0.45, 0.35, 0.22)
+	var head := Color(0.55, 0.56, 0.58)
+	var feather := Color(0.72, 0.68, 0.6)
+	var parts: Array = []
+	parts.append(_cylinder(0.012, 0.72, _xform(Vector3(0, 0, 0), Vector3(0, 0, 90)), shaft, 5))
+	parts.append(_cone(0.022, 0.09, _xform(Vector3(0.4, 0, 0), Vector3(0, 0, -90)), head, 5))
+	# 尾羽
+	parts.append(_box(Vector3(0.12, 0.002, 0.05), _xform(Vector3(-0.33, 0, 0.03)), feather))
+	parts.append(_box(Vector3(0.12, 0.002, 0.05), _xform(Vector3(-0.33, 0, -0.03)), feather))
+	return merge(parts)
+
+
+## 狼的躯干（不含四肢，便于单独摆动）。
+static func make_wolf_body(fur: Color, belly: Color) -> ArrayMesh:
+	var parts: Array = []
+	# 躯干
+	parts.append(_box(Vector3(0.42, 0.42, 1.05), _xform(Vector3(0, 0.62, 0)), fur))
+	# 胸腹略浅
+	parts.append(_box(Vector3(0.36, 0.18, 0.9), _xform(Vector3(0, 0.5, 0)), belly))
+	# 颈与头
+	parts.append(_box(Vector3(0.26, 0.26, 0.34), _xform(Vector3(0, 0.7, -0.6)), fur))
+	parts.append(_box(Vector3(0.28, 0.26, 0.4), _xform(Vector3(0, 0.74, -0.86)), fur))
+	# 吻部
+	parts.append(_box(Vector3(0.16, 0.14, 0.26), _xform(Vector3(0, 0.68, -1.12)), fur.lightened(0.08)))
+	# 耳
+	parts.append(_cone(0.08, 0.16, _xform(Vector3(0.1, 0.92, -0.76)), fur.darkened(0.1), 4))
+	parts.append(_cone(0.08, 0.16, _xform(Vector3(-0.1, 0.92, -0.76)), fur.darkened(0.1), 4))
+	# 尾
+	parts.append(_box(Vector3(0.12, 0.12, 0.45), _xform(Vector3(0, 0.66, 0.66), Vector3(-18, 0, 0)), fur.darkened(0.06)))
+	return merge(parts)
+
+
+## 狼的腿（单独一件，便于运行时摆动）。
+static func make_wolf_leg(fur: Color) -> ArrayMesh:
+	var parts: Array = []
+	parts.append(_box(Vector3(0.11, 0.52, 0.11), _xform(Vector3(0, 0.26, 0)), fur))
+	parts.append(_box(Vector3(0.13, 0.08, 0.16), _xform(Vector3(0, 0.04, -0.02)), fur.darkened(0.12)))
+	return merge(parts)
+
+
 ## 草丛：几片细长锥形叶片，低多边形风格，用作地被层。
 static func make_grass_tuft(tint: Color) -> ArrayMesh:
 	var parts: Array = []

@@ -16,6 +16,9 @@ var _base_energy: float = 3.4
 
 
 func _build_visual() -> void:
+	# 火源分组：野兽会绕开火光
+	add_to_group(&"fire_source")
+
 	for prop_name: StringName in [&"campfire_stones", &"campfire_logs"]:
 		var mesh := PropKit.make_prop(prop_name)
 		if mesh == null:

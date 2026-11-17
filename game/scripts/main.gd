@@ -11,11 +11,19 @@ const ITEM_DEFINITIONS := [
 	"res://resources/items/map.tres",
 	"res://resources/items/compass.tres",
 	"res://resources/items/flashlight.tres",
+	"res://resources/items/bow.tres",
 	"res://resources/items/fuse.tres",
 	"res://resources/items/arrow.tres",
 	"res://resources/items/first_aid.tres",
 	"res://resources/items/ration.tres",
 ]
+
+## 出发时携带的装备：一张弓和若干箭矢。
+const STARTING_GEAR := {
+	&"bow": 1,
+	&"arrow": 12,
+	&"flashlight": 1,
+}
 
 @onready var player: Player = $Player as Player
 @onready var inventory: Inventory = $Player/Inventory as Inventory
@@ -27,12 +35,23 @@ const ITEM_DEFINITIONS := [
 func _ready() -> void:
 	_register_save_handlers()
 	_load_items()
+	_grant_starting_gear()
 	_load_quests()
 	_place_player_at_spawn()
 	GameLog.info("Main 就绪", {
 		"scene": get_tree().current_scene.scene_file_path if get_tree().current_scene else "",
 		"player": player.global_position if player else Vector3.ZERO,
 	})
+
+
+## 发放初始装备。读档时会用存档里的背包覆盖，不重复发放。
+func _grant_starting_gear() -> void:
+	if inventory == null:
+		return
+	for item_id: StringName in STARTING_GEAR:
+		var amount: int = STARTING_GEAR[item_id]
+		if amount > 0:
+			inventory.add_item(item_id, amount)
 
 
 ## 把玩家放到世界出生点并贴到地面，避免出生时悬空坠落。
