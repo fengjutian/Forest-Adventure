@@ -27,7 +27,7 @@ const WORLD_GROUP := &"chunked_world"
 @export_range(0, 8) var vegetation_radius_chunks: int = 2
 @export_range(0, 8) var sparse_vegetation_radius_chunks: int = 5
 ## 每帧给区块生成的时间预算（毫秒），避免一次性加载时掉帧。
-@export var build_budget_ms: float = 6.0
+@export var build_budget_ms: float = 3.0
 ## 启动时同步生成几圈区块，保证出生点附近立刻可站。
 @export var initial_radius_chunks: int = 3
 
@@ -37,6 +37,7 @@ var _grid: int = 16
 var _chunks: Dictionary = {}          # Vector2i -> WorldChunk
 var _queue: Array[Vector2i] = []
 var _veg_queue: Array = []
+var _collision_queue: Array[Vector2i] = []
 var _anchor_chunk: Vector2i = Vector2i(-9999, -9999)
 var _refresh_timer: float = 0.0
 var _player: Node3D
@@ -210,6 +211,7 @@ func _refresh(anchor_chunk: Vector2i) -> void:
 	_anchor_chunk = anchor_chunk
 	_queue.clear()
 	_veg_queue.clear()
+	_collision_queue.clear()
 
 	# 1. 卸载走远的区块
 	var to_unload: Array[Vector2i] = []
@@ -225,7 +227,13 @@ func _refresh(anchor_chunk: Vector2i) -> void:
 		var coord: Vector2i = key
 		var chunk: WorldChunk = _chunks[coord]
 		var distance := _chebyshev(coord, anchor_chunk)
-		chunk.ensure_collision(distance <= collision_radius_chunks)
+		if distance <= collision_radius_chunks:
+			if not chunk.has_collision() and not chunk.collision_pending:
+				chunk.collision_pending = true
+				_collision_queue.append(coord)
+		elif chunk.has_collision():
+			chunk.ensure_collision(false)
+
 		var band := _band_for(distance)
 		if chunk.vegetation_band != band:
 			_veg_queue.append({"coord": coord, "band": band})
@@ -238,10 +246,19 @@ func _refresh(anchor_chunk: Vector2i) -> void:
 
 
 func _pump() -> void:
+	# 碰撞优先：脚下这块地必须尽快能站人
+	if not _collision_queue.is_empty():
+		var collision_coord: Vector2i = _collision_queue.pop_front()
+		if _chunks.has(collision_coord):
+			var chunk: WorldChunk = _chunks[collision_coord]
+			chunk.collision_pending = false
+			if _chebyshev(collision_coord, _anchor_chunk) <= collision_radius_chunks:
+				chunk.ensure_collision(true)
+
 	if not _queue.is_empty():
 		var start := Time.get_ticks_usec()
 		var built := 0
-		while not _queue.is_empty() and built < 3:
+		while not _queue.is_empty() and built < 2:
 			var coord: Vector2i = _queue.pop_front()
 			if _chunks.has(coord) or not in_bounds(coord):
 				continue
@@ -253,7 +270,7 @@ func _pump() -> void:
 	if not _veg_queue.is_empty():
 		var veg_start := Time.get_ticks_usec()
 		var veg_built := 0
-		while not _veg_queue.is_empty() and veg_built < 2:
+		while not _veg_queue.is_empty() and veg_built < 1:
 			var job: Dictionary = _veg_queue.pop_front()
 			var coord: Vector2i = job["coord"]
 			if not _chunks.has(coord):
@@ -275,7 +292,6 @@ func _build_chunk(coord: Vector2i) -> WorldChunk:
 		chunk.apply_override(override)
 
 	_chunks[coord] = chunk
-	chunk.ensure_collision(_chebyshev(coord, _anchor_chunk) <= collision_radius_chunks)
 	chunk_loaded.emit(coord)
 	return chunk
 
@@ -297,6 +313,12 @@ func _build_initial_chunks() -> void:
 		for coord in _ring_coords(center, ring):
 			if not _chunks.has(coord):
 				_build_chunk(coord)
+
+	# 出生点周围同步建碰撞：玩家在下一帧就会被放下来，不能等分帧队列
+	for key in _chunks.keys():
+		var coord: Vector2i = key
+		if _chebyshev(coord, center) <= collision_radius_chunks:
+			_chunks[coord].ensure_collision(true)
 	# 出生点的植被先排上队（下一帧起按预算逐块生成）
 	_refresh(center)
 
@@ -347,6 +369,8 @@ func rebuild_chunk(coord: Vector2i, immediate: bool = true) -> void:
 	if immediate:
 		var fresh := _build_chunk(coord)
 		_refresh_vegetation_for(fresh)
+		if _chebyshev(coord, _anchor_chunk) <= collision_radius_chunks:
+			fresh.ensure_collision(true)
 	else:
 		_queue.append(coord)
 
@@ -387,3 +411,4 @@ func _clear_chunks() -> void:
 	_chunks.clear()
 	_queue.clear()
 	_veg_queue.clear()
+	_collision_queue.clear()

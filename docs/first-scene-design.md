@@ -205,40 +205,26 @@
 ## 7. Godot 场景结构
 
 ~~~text
-CampScene
-├── Terrain
-├── GeneratedEnvironment
-│   ├── Vegetation
-│   ├── Rocks
-│   └── DistantLandscape
-├── AuthoredLandmarks
-│   ├── MainCabin
-│   ├── SupplyShed
-│   ├── Generator
-│   ├── Campfire
-│   └── TrainingRange
-├── GameplayObjects
-│   ├── MapPickup
-│   ├── CompassPickup
-│   ├── FlashlightPickup
-│   ├── RangerJournal
-│   ├── FuseBox
-│   ├── Radio
-│   └── SupplyCrate
-├── QuestTriggers
-│   ├── IntroStarted
-│   ├── EquipmentCollected
-│   ├── GeneratorInspected
-│   ├── FuseCollected
-│   ├── TrainingCompleted
-│   └── RadioRepaired
-├── AudioZones
-├── NavigationRegion3D
-├── Lighting
-├── WeatherVolume
-├── SavePoint
-└── ExitToPineForest
+PineValley（1 km × 1 km 区域）
+├── ChunkedWorld（terrain 分组，提供 height_at）
+│   ├── CampSite
+│   │   ├── AuthoredProps（CampBuilder 生成）
+│   │   │   ├── Cabin / SupplyShed / Generator
+│   │   │   ├── Target01..03 / Fence
+│   │   │   ├── Tent / LanternPost / Woodpile / Barrels
+│   │   │   └── CreekWater
+│   │   ├── SupplyCrate / CampRadio / Campfire
+│   │   ├── SpawnPoint
+│   │   ├── Wolf01..03
+│   │   └── CampArea（LocationTrigger）
+│   └── Chunk_x_y（流式加载，最多 225 块）
+└── （Player / HUD / QuestManager / 昼夜 / 天气在 main.tscn 中）
 ~~~
+
+> 上面是已实现的灰盒结构。设计稿里的 MapPickup、CompassPickup、RangerJournal、
+> QuestTriggers、AudioZones、NavigationRegion3D 等节点尚未实现，
+> 会在开场教学与 M3 内容替换阶段补上。营地常驻世界、不参与分块；
+> 地形与植被由 ChunkedWorld 按区块提供。
 
 ## 8. 场景状态
 

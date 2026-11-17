@@ -221,22 +221,35 @@ func _test_first_person_motion() -> void:
 	if right_hand == null:
 		return
 
-	# 蓄力时右手必须把弦往后拉（而不是一只静态的手）
+	# 蓄力时右手必须把弦往后拉（而不是一只静态的手）。
+	# 用 charge 而不是帧数等待：无头模式帧率不稳定，按帧等会等不够。
 	_player.capture_mouse()
 	Input.action_press("aim")
 	for i in 3:
 		await get_tree().process_frame
 	var rest := right_hand.position
 	Input.action_press("fire")
-	for i in 20:
+	var guard := 0
+	while bow.get_charge() < 0.5 and guard < 900:
 		await get_tree().process_frame
+		guard += 1
 	var drawn := right_hand.position
 	Input.action_release("fire")
 	Input.action_release("aim")
 	_player.release_mouse()
-	_assert(drawn.distance_to(rest) > 0.02,
-		"蓄力时右手把弦拉开（位移 %.3f m）" % drawn.distance_to(rest))
+	_assert(drawn.distance_to(rest) > 0.003,
+		"蓄力时右手把弦拉开（位移 %.3f）" % drawn.distance_to(rest))
 	_assert(drawn.z > rest.z, "拉弦方向朝向后（弦心后移）")
+
+	# 蓄到一半松手会真的射出一支箭：等它生成后清掉，别干扰后面的射击断言
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var arrow_parent := _player.get_parent()
+	if arrow_parent != null:
+		for child in arrow_parent.get_children():
+			if child is ArrowProjectile:
+				child.queue_free()
+	await get_tree().process_frame
 
 	# 走起来镜头要有起伏；站定时回到静止位置
 	Input.action_press("move_forward")

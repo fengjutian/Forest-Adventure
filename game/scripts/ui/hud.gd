@@ -311,11 +311,17 @@ func _build_controls_hint() -> void:
 	_controls_toggle = toggle
 
 
-## 鼠标未被捕获时提示玩家点击画面，Esc 归还鼠标。
+## 鼠标未被捕获时提示玩家点击画面；窗口失焦时直接说明原因。
+##
+## 窗口失焦时 WASD 会被系统送到别的窗口，玩家只会看到「人不会动」，
+## 所以这里把「窗口未聚焦」说清楚，而不是只提示点击鼠标。
 func _update_focus_hint() -> void:
+	var focused := DisplayServer.window_is_focused()
 	var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
-	resume_hint.visible = not captured
-	if not captured:
+	resume_hint.visible = not focused or not captured
+	if not focused:
+		resume_hint.text = "窗口未聚焦 — 点击游戏窗口继续"
+	elif not captured:
 		resume_hint.text = "点击画面控制视角　·　Esc 释放鼠标"
 
 

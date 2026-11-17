@@ -33,6 +33,7 @@ const STARTING_GEAR := {
 
 
 func _ready() -> void:
+	_grab_window_focus()
 	_register_save_handlers()
 	_load_items()
 	_grant_starting_gear()
@@ -42,6 +43,19 @@ func _ready() -> void:
 		"scene": get_tree().current_scene.scene_file_path if get_tree().current_scene else "",
 		"player": player.global_position if player else Vector3.ZERO,
 	})
+
+
+## 启动时主动把窗口提到前台。
+##
+## 从控制台、编辑器或外部脚本启动时，窗口常常没有键盘焦点：
+## 玩家按 WASD 会全部打到别的窗口上，看起来就像「角色不能移动」。
+## 游戏窗口自己抢一次焦点，和正常双击启动的行为一致。
+func _grab_window_focus() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	if DisplayServer.window_is_focused():
+		return
+	DisplayServer.window_move_to_foreground()
 
 
 ## 离树时注销存档回调。

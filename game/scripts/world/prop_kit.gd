@@ -355,63 +355,114 @@ static func make_bow() -> ArrayMesh:
 	return merge(parts)
 
 
-## 弓身：握把 + 上下弓臂，不含弓弦和箭。
+## 第一人称弓：弓身（弓把 + 上下弓臂），不含弓弦和箭。
 ##
 ## 第一人称持弓时，弓弦和箭要随蓄力单独移动，
 ## 所以把「静态的弓」拆成一张网格，弦和箭各自成节点。
+##
+## 尺寸刻意做得比现实中的长弓小：视图模型挂在相机前方约 0.9 m，
+## 1.4 m 的真长弓在那个距离会占满整屏高度，读起来就是一根黑棍。
+## 0.58 m 的短弓加上左手真人尺寸的手，比例才对得上。
 static func make_bow_frame() -> ArrayMesh:
 	return merge(_bow_frame_parts())
 
 
-## 弓弦：一段沿 +Y 的细方柱，运行时按「弓臂尖端 → 弦心」摆位。
+## 弓弦：一段沿 +Y 的细方柱，运行时按「弓梢 → 弦心」摆位。
 ##
 ## 上下两段各自摆位，拉弦时折成 V 形，静止时接成一条直线。
 static func make_bow_string() -> ArrayMesh:
-	return make_limb_mesh(Color(0.8, 0.78, 0.72))
+	return make_limb_mesh(Color(0.92, 0.89, 0.80))
 
 
-## 搭在弦上的箭：箭杆朝 -Z，尾羽留在弦心附近。
+## 搭在弦上的箭：箭尾在原点，沿 -Z 伸出。
 ##
-## 单独成件，蓄力时整体沿 +Z 后移，箭尾始终贴在弦上。
+## 单独成件，箭尾始终贴在弦上，箭尖指向视线前方。
 static func make_bow_nocked_arrow() -> ArrayMesh:
 	return merge(_bow_arrow_parts())
 
 
+## 上半支弓臂的折线（弓把 → 弓梢）。
+##
+## 弓臂先向外弯，到最宽处再向内回勾出一个弓梢——
+## 没有回勾的话，弓在屏幕上就是一根直棍，完全看不出是弓。
+const BOW_LIMB_UPPER: Array[Vector2] = [
+	Vector2(-0.105, 0.080),
+	Vector2(-0.094, 0.120),
+	Vector2(-0.072, 0.158),
+	Vector2(-0.044, 0.192),
+	Vector2(-0.012, 0.222),
+	Vector2(0.004, 0.252),
+	Vector2(-0.010, 0.276),
+	Vector2(-0.024, 0.290),
+]
+
+
 static func _bow_frame_parts() -> Array:
-	var wood := Color(0.33, 0.23, 0.14)
-	var grip := Color(0.22, 0.16, 0.11)
+	# 配色跟着场景走：森林是明亮的薄荷绿与雪白，
+	# 深棕色的弓落在这套画面里就是一根黑棍。
+	var wood := Color(0.58, 0.40, 0.23)
+	var wood_light := Color(0.70, 0.52, 0.31)
+	var grip := Color(0.32, 0.23, 0.16)
 
 	var parts: Array = []
 
-	# 握把（偏向左侧，弦心留在 x=0）
-	parts.append(_box(Vector3(0.055, 0.26, 0.07), _xform(Vector3(-0.2, 0, 0)), grip))
+	# 弓把：竖直的一段，外面缠一圈皮条
+	parts.append(_box(Vector3(0.038, 0.15, 0.05), _xform(Vector3(-0.105, 0.0, 0.0)), wood))
+	parts.append(_box(Vector3(0.05, 0.10, 0.062), _xform(Vector3(-0.105, 0.0, 0.0)), grip))
+	# 弓把上下的「肩」：弓臂从这里长出去
+	parts.append(_box(Vector3(0.052, 0.03, 0.066), _xform(Vector3(-0.100, 0.076, 0.0)), wood_light))
+	parts.append(_box(Vector3(0.052, 0.03, 0.066), _xform(Vector3(-0.100, -0.076, 0.0)), wood_light))
 
-	# 上下弓臂：从握把弯向弦心
-	const SEGMENTS := 4
-	for i in SEGMENTS:
-		var t := (float(i) + 0.5) / float(SEGMENTS)
-		var y := 0.13 + t * 0.5
-		var x := -0.2 + sin(t * PI * 0.5) * 0.2
-		# 段轴沿曲线切线旋转。上弓臂顺时针、下弓臂逆时针，互为镜像——
-		# 两者用同一个角度会把弓臂拧反，段与段之间裂开。
-		var tilt := rad_to_deg(atan2(0.3142 * cos(t * PI * 0.5), 0.5))
-		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, y, 0), Vector3(0, 0, -tilt)), wood))
-		parts.append(_box(Vector3(0.035, 0.19, 0.05), _xform(Vector3(x, -y, 0), Vector3(0, 0, tilt)), wood))
+	# 上下弓臂：同一组折线，镜像一份
+	for i in BOW_LIMB_UPPER.size() - 1:
+		var a := BOW_LIMB_UPPER[i]
+		var b := BOW_LIMB_UPPER[i + 1]
+		parts.append(_bow_limb_piece(a, b, wood))
+		parts.append(_bow_limb_piece(Vector2(a.x, -a.y), Vector2(b.x, -b.y), wood))
+
+	# 弓梢上的弦扣
+	parts.append(_box(Vector3(0.022, 0.016, 0.032), _xform(Vector3(-0.024, 0.286, 0.0)), wood_light))
+	parts.append(_box(Vector3(0.022, 0.016, 0.032), _xform(Vector3(-0.024, -0.286, 0.0)), wood_light))
 
 	return parts
 
 
+## 弓臂的一段：从 a 连到 b 的方柱，靠绕 Z 的旋转贴合曲线。
+##
+## 方柱的 +Y 要指向 b - a，所以角度是 atan2(-dx, dy)。
+static func _bow_limb_piece(a: Vector2, b: Vector2, color: Color) -> Array:
+	var delta := b - a
+	var length := maxf(delta.length(), 0.001)
+	var angle := rad_to_deg(atan2(-delta.x, delta.y))
+	var mid := (a + b) * 0.5
+	return _box(
+		Vector3(0.030, length + 0.006, 0.038),
+		_xform(Vector3(mid.x, mid.y, 0.0), Vector3(0.0, 0.0, angle)),
+		color
+	)
+
+
 static func _bow_arrow_parts() -> Array:
-	var shaft := Color(0.45, 0.35, 0.22)
-	var head := Color(0.55, 0.56, 0.58)
-	var feather := Color(0.72, 0.68, 0.6)
+	var shaft := Color(0.76, 0.62, 0.38)
+	var head := Color(0.72, 0.75, 0.80)
+	var feather := Color(0.84, 0.36, 0.24)
+	var feather_alt := Color(0.93, 0.89, 0.76)
 
 	var parts: Array = []
-	# 搭在弦上的箭，沿视线方向（-Z）
-	parts.append(_cylinder(0.016, 0.62, _xform(Vector3(0, 0.02, -0.28), Vector3(90, 0, 0)), shaft, 6))
-	parts.append(_cone(0.026, 0.1, _xform(Vector3(0, 0.02, -0.64), Vector3(-90, 0, 0)), head, 6))
-	parts.append(_box(Vector3(0.16, 0.005, 0.055), _xform(Vector3(0, 0.02, 0.04)), feather))
-	parts.append(_box(Vector3(0.16, 0.005, 0.055), _xform(Vector3(0, 0.02, 0.04), Vector3(0, 45, 0)), feather))
+	# 箭杆：箭尾在原点，沿 -Z 伸出
+	parts.append(_cylinder(0.013, 0.52, _xform(Vector3(0.0, 0.0, -0.26), Vector3(90, 0, 0)), shaft, 6))
+	# 箭头
+	parts.append(_cone(0.024, 0.07, _xform(Vector3(0.0, 0.0, -0.555), Vector3(-90, 0, 0)), head, 6))
+	# 尾羽：三片扇形排开，颜色比箭杆亮
+	#
+	# 第一人称里箭是朝前指着的，正对镜头时几乎只剩一个点；
+	# 全靠这圈又宽又亮的尾羽才认得出「这是一支箭」。
+	for i in 3:
+		parts.append(_box(
+			Vector3(0.013, 0.078, 0.115),
+			_xform(Vector3(0.0, 0.0, -0.06), Vector3(0.0, float(i) * 60.0, 0.0)),
+			feather if i != 1 else feather_alt
+		))
 	return parts
 
 
@@ -437,21 +488,30 @@ static func make_arm_mesh(color: Color) -> ArrayMesh:
 	return merge([[mesh, _xform(Vector3(0, 0.5, 0)), color]])
 
 
-## 第一人称手部：连指手套风格的简化拳头。
+## 第一人称手部：戴手套的握拳，约 0.09 m（视图模型里的真人手尺寸）。
 ##
 ## 不做手指分节——低多边形下细长的指节会变成一叠纸片，
-## 比不画手指更怪。整只手收成一个略带棱角的拳套包住握把，
-## 只留一个拇指凸起和手腕。
+## 比不画手指更怪。四根手指做成并排的指节脊，连成一体包住握把，
+## 再留一个拇指凸起、护腕和一小截小臂。
+##
+## 手指朝 -Z，手腕与小臂朝 -Y。
 static func make_player_hand(skin: Color) -> ArrayMesh:
 	var parts: Array = []
-	# 拳套主体
-	parts.append(_box(Vector3(0.086, 0.108, 0.07), _xform(Vector3.ZERO), skin))
-	# 指节起伏：让轮廓不是死方块
-	parts.append(_box(Vector3(0.068, 0.022, 0.026), _xform(Vector3(0.0, 0.042, -0.036)), skin.lightened(0.05)))
-	# 拇指凸起
-	parts.append(_box(Vector3(0.032, 0.058, 0.042), _xform(Vector3(-0.028, 0.026, 0.016), Vector3(14, 0, -10)), skin))
-	# 手腕：朝下接前臂
-	parts.append(_box(Vector3(0.062, 0.05, 0.052), _xform(Vector3(0.0, -0.068, 0.0)), skin.darkened(0.16)))
+	# 手掌/手背主体
+	parts.append(_box(Vector3(0.072, 0.076, 0.07), _xform(Vector3.ZERO), skin))
+	# 四根手指的指节脊：并排向前下方包过去
+	for i in 4:
+		var x := -0.0255 + float(i) * 0.017
+		parts.append(_box(Vector3(0.015, 0.05, 0.05), _xform(Vector3(x, -0.004, -0.052), Vector3(-16, 0, 0)), skin.lightened(0.07)))
+	# 指关节：让手背不是一块死方块
+	parts.append(_box(Vector3(0.068, 0.016, 0.026), _xform(Vector3(0.0, 0.03, -0.026)), skin.lightened(0.1)))
+	# 拇指
+	parts.append(_box(Vector3(0.026, 0.05, 0.038), _xform(Vector3(-0.03, -0.012, -0.026), Vector3(0, 0, 22)), skin))
+	# 护腕
+	parts.append(_box(Vector3(0.076, 0.026, 0.076), _xform(Vector3(0.0, -0.048, 0.004)), skin.darkened(0.22)))
+	# 小臂：只露一小截。
+	# 没有它手就是悬在画面里的方块；露太长就变成两根大锥子糊住半个屏幕。
+	parts.append(_cylinder(0.025, 0.105, _xform(Vector3(0.0, -0.113, 0.006)), skin.darkened(0.1), 8))
 	return merge(parts)
 
 

@@ -37,6 +37,8 @@ var chunk_size: float = 64.0
 var resolution: int = 32
 var state: State = State.EMPTY
 var vegetation_band: int = -1
+## 碰撞是分帧建的：排队标记，避免玩家跨区块时一帧内建好几块碰撞。
+var collision_pending: bool = false
 
 var _world: ChunkedWorld
 var _field: TerrainField
