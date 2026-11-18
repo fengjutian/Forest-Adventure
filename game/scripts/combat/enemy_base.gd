@@ -86,6 +86,17 @@ const GRAVITY: float = 9.8
 ## 守卫型敌人设为 false：它守着一个地方，不会被追着打几下就逃。
 @export var can_flee: bool = true
 
+## 感知采样间隔（秒）。
+##
+## 视线射线不必每物理帧都打：8 只敌人 × 60 Hz = 480 次/秒，
+## 射线还要打凹地形，是这个场景里最贵的一类查询。
+## 10 Hz 的感知延迟最多 100 ms——玩家跑 5.4 m/s 也就 0.5 m，
+## 察觉不到；射线量降到 1/6。
+@export var perception_interval: float = 0.1
+
+## 调试/测试用：累计打出的视线射线次数。
+static var los_ray_casts: int = 0
+
 var state: State = State.IDLE
 
 var _health: float = 0.0
@@ -106,12 +117,16 @@ var _base_scale: Vector3 = Vector3.ONE
 var _hits_taken: int = 0
 ## 弱点是否已被观察到。
 var _weak_point_unlocked: bool = false
+## 距离下一次感知采样还有多久（秒）。
+var _perception_timer: float = 0.0
 
 
 func _ready() -> void:
 	add_to_group(&"enemy")
 	_health = max_health
 	_rng.randomize()
+	# 错开相位：所有敌人同一帧一起打射线，等于把 10 Hz 又叠回一帧的尖峰
+	_perception_timer = _rng.randf() * perception_interval
 	_base_scale = scale
 	_terrain = get_tree().get_first_node_in_group(&"terrain") as Node3D
 	_home = global_position
@@ -136,7 +151,11 @@ func _physics_process(delta: float) -> void:
 	_stagger_timer = maxf(0.0, _stagger_timer - delta)
 	_update_flash(delta)
 
-	_perceive(delta)
+	_perception_timer -= delta
+	if _perception_timer <= 0.0:
+		# 用 += 而不是 =：掉帧时不会把间隔越拖越长
+		_perception_timer += perception_interval
+		_perceive(delta)
 	_decide(delta)
 
 	if _stagger_timer > 0.0:
@@ -191,6 +210,7 @@ func _has_line_of_sight() -> bool:
 	var query := PhysicsRayQueryParameters3D.create(eye, target_point)
 	query.collision_mask = 1  # 只检查世界层，忽略目标自身
 	query.exclude = [get_rid()]
+	los_ray_casts += 1
 	var hit := space.intersect_ray(query)
 	return hit.is_empty()
 

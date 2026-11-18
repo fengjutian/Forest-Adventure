@@ -20,8 +20,21 @@ extends CanvasLayer
 
 var _player: Player
 var _quest_manager: QuestManager
+var _bow: Bow
 var _hit_marker_timer: float = 0.0
 var _threat_timer: float = 0.0
+
+## 文本类 HUD 的刷新间隔（秒）。
+##
+## 这些内容每帧重建字符串没有任何意义：位置/FPS 一秒刷 4 次、
+## 敌人血条一秒刷 10 次，玩家看不出差别，
+## 却要每帧做数组分配（get_nodes_in_group）和字符串格式化。
+const SLOW_UPDATE_INTERVAL := 0.25
+const THREAT_UPDATE_INTERVAL := 0.1
+var _slow_timer: float = 0.0
+var _threat_update_timer: float = 0.0
+## 焦点提示的当前文本，用来避免每帧重复赋值。
+var _focus_text: String = ""
 
 ## 按键提示：进游戏先自动显示几秒，之后按 H 开关。
 const CONTROLS_HINT_SECONDS := 9.0
@@ -46,6 +59,8 @@ func _ready() -> void:
 
 	_player = get_tree().get_first_node_in_group(&"player") as Player
 	_quest_manager = get_tree().get_first_node_in_group(&"quest_manager") as QuestManager
+	if _player != null:
+		_bow = _player.get_node_or_null("Bow") as Bow
 
 	# 箭矢无限供应（docs/archery-and-realism.md §2）：
 	# 不再广播弹药数量，这里直接显示无限。
@@ -76,24 +91,29 @@ func _sync_from_player() -> void:
 	status_label.text = "状态：%s" % _player.state_machine.state_name(_player.state_machine.current_state)
 
 
-func _process(_delta: float) -> void:
-	_update_quest_line()
-	_update_debug_overlay()
-	_update_focus_hint()
-	_update_hit_marker(_delta)
+func _process(delta: float) -> void:
+	_update_hit_marker(delta)   # 命中标记的淡出要逐帧
+	_update_focus_hint()        # 内部只在文本变化时才赋值
 	_update_bow_state()
-	_update_threat()
-	_update_controls_hint(_delta)
+	_update_controls_hint(delta)
+
+	_slow_timer -= delta
+	if _slow_timer <= 0.0:
+		_slow_timer += SLOW_UPDATE_INTERVAL
+		_update_quest_line()
+		_update_debug_overlay()
+
+	_threat_update_timer -= delta
+	if _threat_update_timer <= 0.0:
+		_threat_update_timer += THREAT_UPDATE_INTERVAL
+		_update_threat(THREAT_UPDATE_INTERVAL)
 
 
 func _update_bow_state() -> void:
-	if _player == null:
+	if _bow == null:
 		return
-	var bow := _player.get_node_or_null("Bow") as Bow
-	if bow == null:
-		return
-	crosshair.set_aiming(bow.is_aiming())
-	crosshair.set_charge(bow.get_charge())
+	crosshair.set_aiming(_bow.is_aiming())
+	crosshair.set_charge(_bow.get_charge())
 
 
 ## 命中标记短暂显示。
@@ -106,7 +126,7 @@ func _update_hit_marker(delta: float) -> void:
 
 
 ## 敌人威胁提示：只显示正在威胁玩家的那一只。
-func _update_threat() -> void:
+func _update_threat(delta: float) -> void:
 	if _player == null:
 		return
 	var worst: EnemyBase = null
@@ -120,7 +140,7 @@ func _update_threat() -> void:
 
 	if worst == null:
 		if _threat_timer > 0.0:
-			_threat_timer = maxf(0.0, _threat_timer - get_process_delta_time())
+			_threat_timer = maxf(0.0, _threat_timer - delta)
 		if _threat_timer <= 0.0:
 			enemy_name.visible = false
 			enemy_bar.visible = false
@@ -321,16 +341,23 @@ func _build_controls_hint() -> void:
 func _update_focus_hint() -> void:
 	var focused := DisplayServer.window_is_focused()
 	var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
-	resume_hint.visible = not focused or not captured
+	var text := ""
 	if not focused:
-		resume_hint.text = "窗口未聚焦 — 点击游戏窗口继续"
+		text = "窗口未聚焦 — 点击游戏窗口继续"
 	elif not captured:
-		resume_hint.text = "点击画面控制视角　·　Esc 释放鼠标"
+		text = "点击画面控制视角　·　Esc 释放鼠标"
+	# 每帧都给 Label 赋同一个字符串会触发重排，这里只在真正变的时候写
+	if text == _focus_text:
+		return
+	_focus_text = text
+	resume_hint.visible = not text.is_empty()
+	resume_hint.text = text
 
 
 func release_mouse_hint() -> void:
+	_focus_text = "点击画面控制视角　·　Esc 释放鼠标"
 	resume_hint.visible = true
-	resume_hint.text = "点击画面控制视角　·　Esc 释放鼠标"
+	resume_hint.text = _focus_text
 
 
 func _on_target_changed(target: Node) -> void:
@@ -384,19 +411,15 @@ func _on_enemy_health_changed(_enemy_name: String, _current: float, _maximum: fl
 
 
 func _update_quest_line() -> void:
-	if _quest_manager == null:
-		quest_label.text = ""
+	var text := ""
+	if _quest_manager != null:
+		var active := _quest_manager.get_active_quests()
+		if not active.is_empty():
+			var quest_id: StringName = active[0]
+			text = "当前目标：%s" % _quest_manager.get_current_objective_text(quest_id)
+	if text == quest_label.text:
 		return
-
-	var active := _quest_manager.get_active_quests()
-	if active.is_empty():
-		quest_label.text = ""
-		return
-
-	var quest_id: StringName = active[0]
-	var definition := _quest_manager.get_definition(quest_id)
-	var title := definition.title if definition != null else String(quest_id)
-	quest_label.text = "当前目标：%s" % _quest_manager.get_current_objective_text(quest_id)
+	quest_label.text = text
 
 
 func _update_debug_overlay() -> void:
