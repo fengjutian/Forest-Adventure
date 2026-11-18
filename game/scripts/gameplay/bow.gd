@@ -32,7 +32,11 @@ signal fire_failed(reason: String)
 ## 蓄力时每秒消耗的体力。
 @export var stamina_per_second: float = 14.0
 ## 低于这个蓄力比例视为误触，不发射。
-@export var min_charge_to_fire: float = 0.18
+##
+## 0.05 ≈ 60 FPS 下按住约 55 ms：正常的一次点击（80~150 ms）能射出一支
+## 最小威力的箭，只有「点击画面捕获鼠标」那一下（1 帧）会被吞掉。
+## 之前是 0.18（≈200 ms）——普通点击完全没反应，看起来就是「弓射不出来」。
+@export var min_charge_to_fire: float = 0.05
 ## 瞄准时的视野角度。
 @export var aim_fov: float = 55.0
 ## 瞄准时的鼠标灵敏度倍率。

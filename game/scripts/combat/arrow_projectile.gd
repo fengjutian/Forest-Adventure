@@ -49,6 +49,11 @@ var _serial: int = 0
 var _stuck_basis: Basis = Basis.IDENTITY
 var _wobble_angle: float = 0.0
 var _wobble_speed: float = 0.0
+## 箭插在谁身上（命中环境时为 null）。
+##
+## 命中敌人后箭挂到敌人节点下，狼跑箭跟着跑；
+## 狼倒下时再脱开，留在它倒下的地方。
+var _host: EnemyBase = null
 
 
 func _ready() -> void:
@@ -146,6 +151,7 @@ func _apply_hit(result: Dictionary) -> void:
 		enemy.apply_damage(damage, kind, hit_point)
 		hit.emit(enemy, damage, is_weak)
 		_stick(hit_point, -velocity.normalized())
+		_follow(enemy)
 		return
 
 	# 命中环境：钉在表面
@@ -178,6 +184,31 @@ func _after_stick() -> void:
 	_wobble_angle = 0.0
 	add_to_group(STUCK_GROUP)
 	_enforce_stuck_limit()
+
+
+## 把箭挂到命中的敌人身上，让它随敌人移动。
+##
+## 只钉在世界坐标的话，狼一跑开，箭就悬在它刚才站的地方：
+## 命中那一瞬间看着对，半秒后就是一支浮在半空的箭。
+## 挂到敌人节点下，敌人走、转头、倒下，箭都跟着；
+## 敌人倒下时再脱开（见 _on_host_died），留在尸体旁边。
+func _follow(host: EnemyBase) -> void:
+	if host == null or not is_inside_tree() or host == get_parent():
+		return
+	_host = host
+	if not host.died.is_connected(_on_host_died):
+		host.died.connect(_on_host_died)
+	reparent(host, true)
+
+
+## 背上的敌人倒下了：脱开、留在原地。
+func _on_host_died(host: EnemyBase) -> void:
+	if host == null or host != _host:
+		return
+	_host = null
+	var world := host.get_parent()
+	if world != null and is_inside_tree():
+		reparent(world, true)
 
 
 ## 场上箭矢数量上限。超出时最早插下的那支消失。

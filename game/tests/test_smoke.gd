@@ -49,6 +49,7 @@ func _ready() -> void:
 	_test_quest_chain()
 	_test_inventory()
 	await _test_enemy_perception()
+	await _test_arrow_follows_enemy()
 	await _test_combat()
 	await _test_arrows()
 	_test_seed_consistency()
@@ -127,6 +128,57 @@ func _test_player_grounding() -> void:
 		_player.velocity = Vector3.ZERO
 		for i in 5:
 			await get_tree().physics_frame
+
+
+## 箭命中敌人后挂在敌人身上跟着走，敌人倒下后脱开留在原地。
+##
+## 这条兜的是「浮空的箭」：只钉世界坐标的话，狼一跑开，
+## 箭就悬在它刚才站的地方，命中那一瞬间看不出来，半秒后非常明显。
+func _test_arrow_follows_enemy() -> void:
+	var scene := load("res://scenes/enemies/wolf.tscn") as PackedScene
+	if scene == null:
+		_assert(false, "林狼场景可加载")
+		return
+
+	# 用一只临时生成的狼，不动场上那只（后面的战斗测试还要用它）
+	var wolf := scene.instantiate() as EnemyBase
+	wolf.stable_id = &"wolf_arrow_probe"
+	wolf.drops = []
+	add_child(wolf)
+	var terrain := get_tree().get_first_node_in_group(&"terrain") as Node3D
+	var spawn := _player.global_position + Vector3(4.0, 0.0, 0.0)
+	if terrain != null and terrain.has_method("height_at"):
+		spawn.y = float(terrain.call("height_at", spawn.x, spawn.z)) + 0.05
+	wolf.global_position = spawn
+	wolf.set_physics_process(false)
+	await get_tree().physics_frame
+
+	var arrow := ArrowProjectile.new()
+	add_child(arrow)
+	var point := wolf.global_position + Vector3(0.0, 0.6, 0.0)
+	arrow.global_position = point
+	arrow.call("_stick", point, Vector3.UP)
+	arrow.call("_follow", wolf)
+	_assert(arrow.get_parent() == wolf, "命中敌人后箭挂在敌人节点下")
+
+	var before := arrow.global_position
+	wolf.global_position += Vector3(3.0, 0.0, 0.0)
+	await get_tree().physics_frame
+	_assert(arrow.global_position.distance_to(before) > 2.0,
+		"敌人移动时箭跟着走（位移 %.2f m）" % arrow.global_position.distance_to(before))
+
+	wolf.apply_damage(99999.0)
+	await get_tree().process_frame
+	_assert(arrow.get_parent() != wolf, "敌人倒下后箭脱开")
+	_assert(is_instance_valid(arrow) and arrow.is_inside_tree(), "脱开的箭留在世界里")
+
+	var dropped_at := arrow.global_position
+	await get_tree().physics_frame
+	_assert(arrow.global_position.distance_to(dropped_at) < 0.5, "脱开后箭停在敌人倒下的地方")
+
+	arrow.queue_free()
+	wolf.queue_free()
+	await get_tree().process_frame
 
 
 ## 分块世界：1 km 范围、跨块无缝、流式加载、可重复生成（docs/open-world-design.md §1）。

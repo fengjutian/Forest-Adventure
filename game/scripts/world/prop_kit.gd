@@ -520,30 +520,54 @@ static func make_arm_mesh(color: Color) -> ArrayMesh:
 	return merge([[mesh, _xform(Vector3(0, 0.5, 0)), color]])
 
 
-## 第一人称手部：戴手套的握拳，约 0.09 m（视图模型里的真人手尺寸）。
+## 第一人称手部：握拳，约 0.09 m 宽（视图模型里的真人手尺寸）。
+##
+## 原点是「被握住的那根杆的轴心」——杆沿网格的 X 轴穿过原点。
+## 四根手指沿 X 并排，在 YZ 平面里绕着原点卷过去；
+## 手背与手腕在 +Z，小臂接着往 +Z 伸出去。
+##
+## 这样「手和杆的关系」是几何上确定的：
+## 把手按「X 对齐杆的轴向、Z 对齐小臂方向」摆好，
+## 手指自然就包住了杆，不需要再单独调「手往哪儿放」。
 ##
 ## 不做手指分节——低多边形下细长的指节会变成一叠纸片，
-## 比不画手指更怪。四根手指做成并排的指节脊，连成一体包住握把，
-## 再留一个拇指凸起。
-##
-## 手指朝 -Z，手腕朝 -Y。
-## 小臂不在这里，见 make_player_forearm：手臂要单独控制朝向。
+## 比不画手指更怪。每根手指只留三段粗块，读起来是拳头就够了。
 ##
 ## 配色一律用「乘系数」而不是 Color.lightened()：
 ## lightened() 是往白色混，混完之后饱和度被冲掉，
 ## 深棕手套立刻变成一块灰砖——这正是第一版弓手看起来像贴图的原因。
 static func make_player_hand(skin: Color) -> ArrayMesh:
 	var parts: Array = []
-	# 手掌/手背主体
-	parts.append(_box(Vector3(0.072, 0.076, 0.07), _xform(Vector3.ZERO), skin))
-	# 四根手指的指节脊：并排向前下方包过去
-	for i in 4:
-		var x := -0.0255 + float(i) * 0.017
-		parts.append(_box(Vector3(0.015, 0.05, 0.05), _xform(Vector3(x, -0.004, -0.052), Vector3(-16, 0, 0)), skin * 1.22))
+	# 手背与掌根：贴在杆的 +Z 一侧
+	parts.append(_box(Vector3(0.062, 0.058, 0.030), _xform(Vector3(0.0, 0.002, 0.036)), skin))
 	# 指关节：让手背不是一块死方块
-	parts.append(_box(Vector3(0.068, 0.016, 0.026), _xform(Vector3(0.0, 0.03, -0.026)), skin * 1.38))
-	# 拇指
-	parts.append(_box(Vector3(0.026, 0.05, 0.038), _xform(Vector3(-0.03, -0.012, -0.026), Vector3(0, 0, 22)), skin * 0.88))
+	parts.append(_box(Vector3(0.058, 0.014, 0.030), _xform(Vector3(0.0, 0.026, 0.020)), skin * 1.26))
+	# 四根手指：从掌根的边缘绕到杆的另一侧
+	#
+	# 弧线半径 0.033 m：手指的内表面刚好贴住半径 0.022 m 的握把。
+	for i in 4:
+		var x := -0.0235 + float(i) * 0.0157
+		for s in 3:
+			var a := deg_to_rad(28.0 - float(s) * 58.0)
+			parts.append(_box(
+				Vector3(0.0145, 0.034, 0.017),
+				_xform(
+					Vector3(x, 0.033 * cos(a), 0.033 * sin(a)),
+					Vector3(rad_to_deg(a) + 90.0, 0.0, 0.0)
+				),
+				skin * 1.12
+			))
+	# 拇指：横在手指外侧
+	parts.append(_box(
+		Vector3(0.024, 0.030, 0.026),
+		_xform(Vector3(-0.029, 0.012, 0.026), Vector3(0.0, 0.0, 22.0)),
+		skin * 0.90
+	))
+	parts.append(_box(
+		Vector3(0.021, 0.026, 0.022),
+		_xform(Vector3(-0.036, -0.010, 0.004), Vector3(0.0, 0.0, -34.0)),
+		skin * 0.86
+	))
 	return merge(parts)
 
 
