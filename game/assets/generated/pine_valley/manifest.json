@@ -1,0 +1,75 @@
+{
+  "manifest_version": "1.0",
+  "schema_version": "1.1",
+  "generator_version": "0.2.0",
+  "seed": 41721,
+  "region_id": "pine_valley",
+  "material_mode": "vertex_color",
+  "generated_at": "2026-11-18T13:25:39Z",
+  "environment": {
+    "python": "3.12",
+    "blender": "5.3.0"
+  },
+  "assets": [
+    {
+      "key": "pine_0",
+      "variant": "pine",
+      "files": [
+        {
+          "lod": 0,
+          "path": "meshes/env_tree_pine_a_lod0.glb",
+          "sha256": "7431da9bc6c91bb408edb1558281efc3c1dc80fe5c75a0b193b636552dfa1a35",
+          "bytes": 5472
+        },
+        {
+          "lod": 1,
+          "path": "meshes/env_tree_pine_a_lod1.glb",
+          "sha256": "473fd49b1ac5d6cac935e21c0606ab709db4bf342c0cd74941508ca485cf0feb",
+          "bytes": 3784
+        },
+        {
+          "lod": 2,
+          "path": "meshes/env_tree_pine_a_lod2.glb",
+          "sha256": "434da99064f90f5d457d69a81d53991ff595ff59c080481f6f415618215726b2",
+          "bytes": 2664
+        }
+      ],
+      "tris": {
+        "lod0": 62,
+        "lod1": 38,
+        "lod2": 22
+      },
+      "bounds": {
+        "min": [
+          -2.54,
+          -2.54,
+          0.0
+        ],
+        "max": [
+          2.54,
+          2.54,
+          11.2754
+        ]
+      },
+      "collision": {
+        "type": "capsule",
+        "radius": 0.2424,
+        "height": 11.2754
+      },
+      "tags": [
+        "sway"
+      ],
+      "materials": 0,
+      "textures": 0
+    }
+  ],
+  "totals": {
+    "assets": 1,
+    "files": 3,
+    "bytes": 11920,
+    "tris_lod0": 62,
+    "materials": 0,
+    "textures": 0
+  },
+  "warnings": []
+}

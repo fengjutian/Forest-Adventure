@@ -73,12 +73,12 @@ func _ground(x: float, z: float) -> float:
 
 func _place_cabin() -> void:
 	var position := Vector2(-8.0, -7.0)
-	var cabin := _add_prop("Cabin", PropKit.make_cabin(), position, 12.0, Vector3(6.0, 3.4, 5.0))
+	var cabin := _add_prop("Cabin", PropKit.make_prop(&"cabin"), position, 12.0, Vector3(6.0, 3.4, 5.0))
 
 	# 窗玻璃单独一层，用自发光材质
 	var windows := MeshInstance3D.new()
 	windows.name = "Windows"
-	windows.mesh = PropKit.make_cabin_windows()
+	windows.mesh = PropKit.make_prop(&"cabin_windows")
 	windows.material_override = PropKit.glow_material(Color(1.0, 0.72, 0.38), 2.4)
 	cabin.add_child(windows)
 
@@ -103,12 +103,12 @@ func _place_cabin() -> void:
 
 
 func _place_supply_shed() -> void:
-	_add_prop("SupplyShed", PropKit.make_supply_shed(), Vector2(-13.5, -1.5), -22.0, Vector3(3.0, 2.5, 2.4))
+	_add_prop("SupplyShed", PropKit.make_prop(&"supply_shed"), Vector2(-13.5, -1.5), -22.0, Vector3(3.0, 2.5, 2.4))
 
 
 func _place_generator() -> void:
 	var position := Vector2(-4.2, -2.6)
-	var generator := _add_prop("Generator", PropKit.make_generator(), position, 24.0, Vector3(1.7, 1.1, 1.2))
+	var generator := _add_prop("Generator", PropKit.make_prop(&"generator"), position, 24.0, Vector3(1.7, 1.1, 1.2))
 
 	# 指示灯
 	var indicator := MeshInstance3D.new()
@@ -136,7 +136,7 @@ func _place_training_range() -> void:
 	# 三个靶子排成一线
 	for i in 3:
 		var offset := Vector2(8.5 + float(i) * 1.6, -9.5)
-		_add_prop("Target%02d" % (i + 1), PropKit.make_target(), offset, 165.0, Vector3(0.2, 1.6, 0.2))
+		_add_prop("Target%02d" % (i + 1), PropKit.make_prop(&"target"), offset, 165.0, Vector3(0.2, 1.6, 0.2))
 
 	# 一道矮木栅栏，界定靶场
 	for i in 6:
@@ -150,7 +150,7 @@ func _place_fallen_log() -> void:
 
 
 func _place_signpost() -> void:
-	_add_prop("Signpost", PropKit.make_signpost(), Vector2(4.2, 3.4), -35.0, Vector3(0.22, 1.9, 0.22))
+	_add_prop("Signpost", PropKit.make_prop(&"signpost"), Vector2(4.2, 3.4), -35.0, Vector3(0.22, 1.9, 0.22))
 
 
 ## 营地生活痕迹：帐篷、灯柱、柴堆、木桶。
@@ -163,17 +163,17 @@ func _place_camp_details() -> void:
 
 ## 帐篷：有人驻扎过的痕迹。放在木屋一侧，不挡出生点视线。
 func _place_tent() -> void:
-	_add_prop("Tent", PropKit.make_tent(), Vector2(-10.5, 4.5), 24.0, Vector3(2.4, 1.6, 2.2))
+	_add_prop("Tent", PropKit.make_prop(&"tent"), Vector2(-10.5, 4.5), 24.0, Vector3(2.4, 1.6, 2.2))
 
 
 ## 灯柱：天黑后给营地补一点暖光。
 func _place_lantern_post() -> void:
-	var post := _add_prop("LanternPost", PropKit.make_lantern_post(),
+	var post := _add_prop("LanternPost", PropKit.make_prop(&"lantern_post"),
 		Vector2(3.4, 4.6), -24.0, Vector3(0.3, 2.4, 0.3))
 
 	var glass := MeshInstance3D.new()
 	glass.name = "LanternGlass"
-	glass.mesh = PropKit.make_lantern_glass()
+	glass.mesh = PropKit.make_prop(&"lantern_glass")
 	glass.material_override = PropKit.glow_material(Color(1.0, 0.78, 0.45), 3.0)
 	post.add_child(glass)
 
@@ -189,13 +189,13 @@ func _place_lantern_post() -> void:
 
 ## 柴堆：木屋旁的备用燃料。
 func _place_woodpile() -> void:
-	_add_prop("Woodpile", PropKit.make_woodpile(), Vector2(-10.8, -4.6), 24.0, Vector3(1.6, 0.9, 0.7))
+	_add_prop("Woodpile", PropKit.make_prop(&"woodpile"), Vector2(-10.8, -4.6), 24.0, Vector3(1.6, 0.9, 0.7))
 
 
 ## 木桶：分布在木屋旁与溪边。
 func _place_barrels() -> void:
-	_add_prop("Barrel01", PropKit.make_barrel(), Vector2(-6.2, -9.8), 12.0, Vector3(0.7, 0.9, 0.7))
-	_add_prop("Barrel02", PropKit.make_barrel(), Vector2(10.6, 1.8), -30.0, Vector3(0.7, 0.9, 0.7))
+	_add_prop("Barrel01", PropKit.make_prop(&"barrel"), Vector2(-6.2, -9.8), 12.0, Vector3(0.7, 0.9, 0.7))
+	_add_prop("Barrel02", PropKit.make_prop(&"barrel"), Vector2(10.6, 1.8), -30.0, Vector3(0.7, 0.9, 0.7))
 
 
 ## 溪流水面：地形已挖出固定河床，这里铺一层半透明水面。

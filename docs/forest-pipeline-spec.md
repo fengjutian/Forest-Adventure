@@ -1,6 +1,6 @@
 # 森林生成管线规格（M3）
 
-- 文档版本：V1.0
+- 文档版本：V1.1（M3-1 实现期间修订：§4.1 键数 24→29、§5.2 一致性机制、§7 totals）
 - 适用阶段：M3 程序化森林管线 → M4 内容替换
 - 权威范围：SceneSpec 结构、资产契约、确定性契约、manifest 格式、Godot 导入检查规则
 - 非权威范围：命名与 PBR 细节以 [`content-pipeline.md`](./content-pipeline.md) §4 为准；性能预算以 [`technical-design.md`](./technical-design.md) §5.4 为准；本文与两者冲突时以本文为准
@@ -86,7 +86,7 @@ D1 是本管线最大的架构决策。**在 M3-1 动工前需要项目负责人
 ```text
 SceneSpec
 ├── schema_version   规格版本
-├── seed             世界种子（决定资产形态）
+├── seed             资产种子（决定资产形态；不是运行时的世界种子）
 ├── region           区域身份与规模
 ├── world            世界外观参数  ← v1 不参与生成，v2 预留
 ├── assets           资产生产清单    ← v1 的主体
@@ -185,7 +185,7 @@ SceneSpec
 | 字段 | 类型 | 约束 | 说明 |
 |---|---|---|---|
 | `schema_version` | string | `"1.1"` | 不兼容变更必须升主版本 |
-| `seed` | int | 0 ≤ s < 2³¹ | 决定所有资产形态 |
+| `seed` | int | 0 ≤ s < 2³¹ | 决定所有资产形态。**这是资产种子**，与运行时的世界种子（`TerrainField.DEFAULT_SEED`，决定地形与撒点）是两个不同的量，不要混用 |
 | `region.id` | string | `^[a-z][a-z0-9_]*$` | 同时用作产物目录名 |
 | `region.size_m` | [number, number] | 均为正 | 区域边长（米） |
 | `assets.*[].key` | string | 见 §4.1 | **必须与运行时 `mesh_for()` 的键完全一致** |
@@ -215,40 +215,65 @@ v1 的管线**不读取**这一段去生成任何东西。
 
 ### 4.1 资产键（接缝）
 
-运行时通过 `ChunkedWorld.mesh_for(key)`（`chunked_world.gd`）按字符串键取网格。
-**这个键就是管线与运行时的接缝**，键名不一致 = 运行时拿不到资产。
+运行时通过字符串键取网格。**这个键就是管线与运行时的接缝**，键名不一致 = 运行时拿不到资产。
+
+但运行时**有两处不同的取网格方式**，不是一处：
+
+| 接缝 | 调用点 | 键数 | 说明 |
+|---|---|---|---|
+| `mesh_for` | `ChunkedWorld.mesh_for(key)`（`chunked_world.gd`） | 13 | 植被，`WorldChunk` 按字符串键批量取网格 |
+| `make_prop` | `PropKit.make_prop(key)`（`prop_kit.gd`） | 16 | 道具，按 `StringName` match 分支取 |
+
+M3-1 时道具键里有 5 个（`cabin` / `cabin_windows` / `supply_shed` / `target` / `lantern_glass`）
+曾是**第三种接缝** `direct`：营地装配处硬编码调用 `PropKit.make_cabin()` 这类函数，
+运行时没有字符串键可查，管线产的 GLB 接不上。
+**M3-2 已补齐**：`PropKit.make_prop()` 扩成完整的 16 键注册表，
+营地装配处的调用点也全部改成 `PropKit.make_prop(&"cabin")` 形式。`direct` 这一类因此消失。
 
 管线必须生产的键，以及它们在运行时的用途：
 
-| 键 | 类型 | 变体 | 运行时用途 | 撒点占比 |
-|---|---|---|---|---|
-| `pine_0` … `pine_4` | 树 | 5 | 松树乔木 | 与桦树合计 100% |
-| `birch_0` … `birch_1` | 树 | 2 | 桦树乔木 | 22% |
-| `snag` | 树 | 1 | 枯立木 | 7% |
-| `log` | 木 | 1 | 倒木 | 1.2% |
-| `stump` | 木 | 1 | 树桩 | 1.2% |
-| `rock` | 岩石 | 1 | 岩石 | 16% |
-| `shrub` | 灌木 | 1 | 灌木 | 30% |
-| `grass` | 地被 | 1 | 草丛 | 50% |
-| `cabin` | 建筑 | 1 | 营地木屋 | 营地装配 |
-| `cabin_windows` | 特效 | 1 | 窗内暖光（自发光） | 营地装配 |
-| `supply_shed` | 建筑 | 1 | 物资棚 | 营地装配 |
-| `generator` | 道具 | 1 | 发电机 | 营地装配 |
-| `target` | 道具 | 1 | 训练靶 | 靶场 |
-| `signpost` | 道具 | 1 | 路牌 | 营地装配 |
-| `tent` | 道具 | 1 | 帐篷 | 营地装配 |
-| `lantern_post` | 道具 | 1 | 灯柱 | 营地装配 |
-| `lantern_glass` | 特效 | 1 | 灯柱玻璃（自发光） | 营地装配 |
-| `woodpile` | 道具 | 1 | 柴堆 | 营地装配 |
-| `barrel` | 道具 | 1 | 木桶 | 营地装配 |
-| `crate` | 道具 | 1 | 物资箱 | 可交互物 |
-| `radio` | 道具 | 1 | 无线电 | 可交互物 |
-| `campfire_stones` | 道具 | 1 | 营火石圈 | 可交互物 |
-| `campfire_logs` | 道具 | 1 | 营火柴 | 可交互物 |
-| `grass_tuft` | 植被 | 1 | 拾取物视觉 | 掉落物 |
+| 键 | 类型 | 接缝 | 变体 | 运行时用途 | 撒点占比 |
+|---|---|---|---|---|---|
+| `pine_0` … `pine_4` | 树 | `mesh_for` | 5 | 松树乔木 | 与桦树合计 100% |
+| `birch_0` … `birch_1` | 树 | `mesh_for` | 2 | 桦树乔木 | 22% |
+| `snag` | 树 | `mesh_for` | 1 | 枯立木 | 7% |
+| `log` | 木 | `mesh_for` | 1 | 倒木 | 1.2% |
+| `stump` | 木 | `mesh_for` | 1 | 树桩 | 1.2% |
+| `rock` | 岩石 | `mesh_for` | 1 | 岩石 | 16% |
+| `shrub` | 灌木 | `mesh_for` | 1 | 灌木 | 30% |
+| `grass` | 地被 | `mesh_for` | 1 | 草丛 | 50% |
+| `cabin` | 建筑 | `make_prop` | 1 | 营地木屋 | 营地装配 |
+| `cabin_windows` | 特效 | `make_prop` | 1 | 窗内暖光（自发光） | 营地装配 |
+| `supply_shed` | 建筑 | `make_prop` | 1 | 物资棚 | 营地装配 |
+| `generator` | 道具 | `make_prop` | 1 | 发电机 | 营地装配 |
+| `target` | 道具 | `make_prop` | 1 | 训练靶 | 靶场 |
+| `signpost` | 道具 | `make_prop` | 1 | 路牌 | 营地装配 |
+| `tent` | 道具 | `make_prop` | 1 | 帐篷 | 营地装配 |
+| `lantern_post` | 道具 | `make_prop` | 1 | 灯柱 | 营地装配 |
+| `lantern_glass` | 特效 | `make_prop` | 1 | 灯柱玻璃（自发光） | 营地装配 |
+| `woodpile` | 道具 | `make_prop` | 1 | 柴堆 | 营地装配 |
+| `barrel` | 道具 | `make_prop` | 1 | 木桶 | 营地装配 |
+| `crate` | 道具 | `make_prop` | 1 | 物资箱 | 可交互物 |
+| `radio` | 道具 | `make_prop` | 1 | 无线电 | 可交互物 |
+| `campfire_stones` | 道具 | `make_prop` | 1 | 营火石圈 | 可交互物 |
+| `campfire_logs` | 道具 | `make_prop` | 1 | 营火柴 | 可交互物 |
+| `grass_tuft` | 植被 | `make_prop` | 1 | 拾取物视觉 | 掉落物 |
+
+> **这张表有 24 行，但展开后是 29 个键。**
+> `pine_0 … pine_4` 与 `birch_0 … birch_1` 是区间，各占 5 个和 2 个键；
+> 13 个植被键 + 16 个道具键 = **29 个键**。
+> 早先版本把「24 个键」写进 §7 的 manifest 示例与 §10 的 M3-3 退出条件，
+> 是把**表格行数**当成了**键数**。以本节为准。
 
 **清单外的键一律不生产。** 运行时 `mesh_for()` 对未知键只打一条 `GameLog.warn`，
 不会崩——这类问题必须在导入检查阶段就被拦住（§8 检查项 2）。
+反过来，**清单内的键一个都不能少**：管线的 SceneSpec 必须恰好声明这 29 个键，
+少一个意味着该资产永远不会被生产（§8 检查项 2 的完整性校验）。
+
+键表的唯一真相源是 `tools/forest_generator/lib/asset_keys.py`，
+并由 `tools/forest_generator/tests/test_asset_keys.py` 反向解析
+`world_chunk.gd` / `prop_kit.gd` / `chunked_world.gd` 核对——
+改了运行时的变体数量而忘了同步管线，测试会直接失败。
 
 角色与第一人称视图模型（`wolf_body`、`wolf_leg`、`arrow`、`bow_frame`、`bow_string`、
 `player_hand`、`player_forearm`、`nocked_arrow`、`player_body`）**不属于本管线**，
@@ -318,8 +343,16 @@ seed = (seed MOD 2147483647) + 1
   GDScript 的 `&` 对负数按二进制补码处理，因此**必须先 `& 0xFFFFFFFF` 再算**，
   或在最后统一 `& 0x7FFFFFFF`（两种写法等价，实现时选一种并写进单元测试）。
 
-参考实现：`tools/forest_generator/lib/seed.py` 与 `game/scripts/core/seed_util.gd`，
-两侧各有一条断言相同结果的单元测试。
+参考实现：`tools/forest_generator/lib/seed.py` 与 `game/scripts/core/seed_util.gd`。
+两侧**不是互相比对**，而是对同一份**黄金向量**各自复现——
+`game/tests/fixtures/seed_golden.json` 由第三份独立实现算出，
+含 29 个资产键 × 6 个 base_seed 共 174 组结果，外加 6 组边界用例
+（空串、非 ASCII、超长键、结尾换行）。
+Python 侧由 `tools/forest_generator/tests/test_seed.py` 校验，
+GDScript 侧由 `game/tests/test_smoke.gd` 的 `_test_seed_consistency()` 校验。
+
+这样做的理由：两侧互相比对只能证明"它们一样"，不能证明"它们对"。
+三方一致才能排除两侧犯了同一个错。
 
 ### 5.3 浮点与顺序
 
@@ -407,16 +440,27 @@ game/assets/generated/
     }
   ],
   "totals": {
-    "assets": 24,
-    "files": 51,
+    "assets": 29,
+    "files": 81,
     "bytes": 4821004,
-    "tris_lod0": 11340,
+    "tris_lod0": 8012,
     "materials": 9,
     "textures": 0
   },
   "warnings": []
 }
 ```
+
+> **示例里哪些数字是实数、哪些是示意值：**
+>
+> - `assets: 29` —— 由 §4.1 的键表展开而来，**可推导**。
+> - `files: 81` —— 各资产声明的 LOD 数之和，**可推导**
+>   （松树 5×3 + 桦树 2×3 + 枯立木 1×3 + 倒木/树桩/岩石/灌木/草丛 5×2 = 34，
+>   道具 47，合计 81）。
+> - `bytes` / `tris_lod0` / `materials` / `textures` —— **示意值**。
+>   真实值必须由 `lib/manifest.py` 从实际产物统计得出，不允许手写
+>   （下面「约束」第 2 条）。
+> - `textures: 0` —— v1 只做顶点色，不产出贴图，这个数是**确定**的。
 
 约束：
 
@@ -446,7 +490,7 @@ game/assets/generated/
 | # | 检查 | 失败级别 |
 |---|---|---|
 | 1 | manifest 存在且符合 §7 结构 | P0 |
-| 2 | 每个 `key` 在 §4.1 的已知键表内 | P0 |
+| 2 | 每个 `key` 在 §4.1 的已知键表内，且 29 个键**一个不少**（缺键 = 该资产永远不会被生产） | P0 |
 | 3 | 每个文件存在，sha256 与 manifest 一致 | P0 |
 | 4 | 单资产 LOD0 三角面 ≤ 预算 | P0 |
 | 5 | LOD 数量与声明一致，且三角面随 LOD 递减 | P0 |
@@ -502,12 +546,85 @@ P2 记录到日志不阻断。
 |---|---|---|
 | **M3-1** 规格与骨架 | 本文档冻结；SceneSpec JSON Schema；`lib/seed.py` + `seed_util.gd` 与一致性单测；`main.py --validate` 能校验 SceneSpec | SceneSpec 非法输入必须失败；两侧种子派生结果逐位一致 |
 | **M3-2** 单资产端到端 | 1 个松树资产（`pine_0`）走完：SceneSpec → Blender → GLB → manifest → Godot 侧 `mesh_for("pine_0")` 能取到该网格 | 运行时加载的是管线产出的 GLB 而不是 `PropKit` 的程序化网格；同 seed 重跑 sha256 不变 |
-| **M3-3** 全量资产 | §4.1 全部 24 个键 | 导入检查器全部通过；帧时间不劣于现状（当前 1080p 平均帧 7.8 ms） |
+| **M3-3** 全量资产 | §4.1 全部 29 个键 | 导入检查器全部通过；帧时间不劣于现状（当前 1080p 平均帧 7.8 ms） |
 | **M3-4** 工程化 | 导入检查器 + 失败夹具；局部重生成；预览图渲染；CI 接入 | 局部重生成不波及其他资产；失败夹具能触发 P0 |
 
 **M3-1 不碰 Blender。** 先把 Schema、种子、预算、manifest 这些纯逻辑跑通并测住，
 再接 Blender。这样出问题时能立刻分清是"规格错了"还是"Blender 脚本错了"——
 这正是 `development-plan.md` §1「AI 接入晚于确定性的 Blender 生成器」要防的那类混淆。
+
+### 10.1 M3-1 实现现状
+
+M3-1 已完成。交付物与实测结果：
+
+| 交付 | 位置 | 实测 |
+|---|---|---|
+| SceneSpec JSON Schema（draft 2020-12） | `tools/forest_generator/schemas/scene_spec.schema.json` | 零依赖子集校验器 `lib/jsonschema_mini.py` 校验通过 |
+| 两层校验 | `lib/spec.py` | 25 个改坏场景**全部**非零退出并打印具体 error；合法 preset 退出 0 |
+| 种子派生（Python） | `lib/seed.py` | 174 组向量 + 6 组边界用例逐位复现黄金向量 |
+| 种子派生（GDScript） | `game/scripts/core/seed_util.gd` | 同上，`test_smoke.gd` 的 `_test_seed_consistency()` 校验 |
+| 资产键表 | `lib/asset_keys.py` | 29 键 / 13 植被 / 16 道具；接缝 13 / 11 / 5 |
+| 预算检查、manifest 读写 | `lib/budget.py`、`lib/manifest.py` | `totals` 由实际数据统计；原子替换；失败不破坏旧文件 |
+| 命令行 | `main.py` | `--validate` / `--keys` / `--derive-seeds` / `--emit-golden` / `--check-golden` |
+
+测试：Python 侧 327 项；Godot 侧并入冒烟测试（234 项）。
+
+**本文档在 M3-1 期间修订为 V1.1**，改了三处实质错误：
+
+1. §4.1 资产键数由「24」改为 **29**（原数是表格行数，不是键数）。
+2. §7 manifest 示例的 `totals` 由手写改为可推导值，并标明哪些是示意值。
+3. §5.2 的一致性机制由「两侧互相比对」改为**对同一份黄金向量各自复现**——
+   互相比对只能证明"它们一样"，不能证明"它们对"。
+
+**M3-2 的前置条件**：§4.1 的 `direct` 接缝那 5 个键必须先补齐字符串键接缝
+（把 `PropKit.make_prop()` 扩成完整的 16 键注册表），
+否则 M3-2 的退出条件「运行时加载的是管线产出的 GLB」在道具类资产上无法成立。
+
+### 10.2 M3-2 实现现状（单资产端到端）
+
+M3-2 已完成，范围是 `pine_0` 一个资产走完全程。
+
+**新增的东西**
+
+| 位置 | 职责 |
+|---|---|
+| `tools/forest_generator/lib/params.py` | 从派生种子生成形态参数；LOD 精简规则也在这里（确定性契约在 Python 侧） |
+| `tools/forest_generator/lib/build.py` | 构建编排：参数 → Blender → GLB → manifest + seed_report |
+| `tools/forest_generator/blender/vegetation.py` | 按参数建松树网格（**纯函数**） |
+| `tools/forest_generator/blender/exporter.py` | 导出 GLB（顶点色即反照率，不带材质） |
+| `tools/forest_generator/blender/build_asset.py` | Blender 侧命令行入口 |
+| `game/scripts/world/asset_library.gd` | 运行时读 manifest、按字符串键加载 GLB 网格 |
+
+**运行时怎么用管线产物**
+
+`ChunkedWorld.mesh_for(key)` 改成两级：
+
+```text
+AssetLibrary.mesh_for(key)   ← 管线产的 GLB（manifest 里登记的）
+  ↓ 取不到时
+_procedural_mesh_for(key)    ← PropKit 的程序化网格（回退）
+```
+
+管线没跑过时全部走回退，现有玩法不受影响。
+
+**接缝补齐**：`PropKit.make_prop()` 扩成完整的 16 键注册表，
+营地装配处的硬编码调用（`PropKit.make_cabin()` 等）全部改成
+`PropKit.make_prop(&"cabin")` 形式。§4.1 的 `direct` 接缝因此消失，只剩两种。
+
+**实测结果**
+
+| 检查 | 结果 |
+|---|---|
+| `--build --build-keys pine_0` | 1 个资产 / 3 个文件（LOD0-2）/ 11920 字节 / LOD0 62 三角面 |
+| 同 seed 重跑 | 3 个 LOD 的 sha256 **逐字节不变** |
+| GLB 结构 | 有 `COLOR_0`、无 material、POSITION 的 Y 跨度 = `height_m`（11.28 m）且 min.y = 0 |
+| LOD 递减 | LOD0 62 → LOD1 39 → LOD2 22 三角面 |
+| 运行时 | `mesh_for("pine_0")` 取到的是管线产的 GLB，**不是** PropKit 的程序化网格 |
+| 目视 | 与 PropKit 松树同一套低多边形锥形语汇，色系一致，树根处露出树干 |
+
+**M3-3 的下一步**：把 §4.1 的其余 28 个键也做出来。
+`lib/params.py` 里的 `_VARIANT_TEMPLATES` 目前只有 `pine` 一个模板，
+其余变体（桦树、枯立木、岩石、灌木、草、道具）要按同样方式补模板与建模函数。
 
 ---
 

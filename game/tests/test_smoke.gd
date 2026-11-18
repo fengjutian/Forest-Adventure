@@ -52,6 +52,7 @@ func _ready() -> void:
 	await _test_combat()
 	await _test_arrows()
 	_test_seed_consistency()
+	_test_generated_assets()
 	_test_save_keys()
 	_test_save_load_round_trip()
 	_test_migration()
@@ -1054,6 +1055,57 @@ func _test_seed_consistency() -> void:
 	_assert(SeedUtil.derive_seed(41721, "pine_0") == SeedUtil.derive_seed(41721, "pine_0"),
 		"同输入同输出的确定性")
 	_assert(SeedUtil.derive_seed(41721, "pine_0") >= 1, "派生种子落在正整数区间")
+
+
+## 生成资产接入（docs/forest-pipeline-spec.md §2、§4.2、§4.3，M3-2）。
+##
+## 断言三件事：
+## 1. §4.1 的 16 个道具键现在**都能按字符串键取到网格**——`direct` 接缝补齐了；
+## 2. 运行时 `mesh_for("pine_0")` 返回的**就是**管线产的 GLB 网格，
+##    不是 PropKit 的程序化网格（M3-2 的退出条件）；
+## 3. 生成资产满足 §4.2 的原点约定（贴地）与 §4.3 的顶点色契约（非全白）。
+func _test_generated_assets() -> void:
+	for key in ["crate", "radio", "campfire_stones", "campfire_logs", "generator",
+			"signpost", "woodpile", "tent", "lantern_post", "barrel", "grass_tuft",
+			"cabin", "cabin_windows", "supply_shed", "target", "lantern_glass"]:
+		_assert(PropKit.make_prop(StringName(key)) != null,
+			"道具键 '%s' 能按字符串键取到网格" % key)
+
+	var world := _find_world()
+	if world == null:
+		_fail("分块世界未加载，无法验证生成资产接入")
+		return
+
+	var manifest_path := "res://assets/generated/pine_valley/manifest.json"
+	if not FileAccess.file_exists(manifest_path):
+		_fail("生成资产 manifest 缺失（跑一次 tools/forest_generator/main.py --build）")
+		return
+	_assert(true, "生成资产 manifest 存在")
+
+	var generated := AssetLibrary.mesh_for("pine_0")
+	_assert(generated != null, "AssetLibrary 取到 pine_0 的生成网格")
+	if generated == null:
+		return
+
+	var via_world := world.mesh_for("pine_0")
+	_assert(via_world == generated,
+		"运行时 mesh_for 取到的是管线产的 GLB，不是 PropKit 的程序化网格")
+
+	var aabb := generated.get_aabb()
+	_assert(absf(aabb.position.y) < 0.01,
+		"生成资产的原点贴在地面（min.y = %.4f）" % aabb.position.y)
+	_assert(aabb.size.y > 1.0, "生成资产有实际高度（%.2f m）" % aabb.size.y)
+
+	var arrays := generated.surface_get_arrays(0)
+	var colors: PackedColorArray = arrays[Mesh.ARRAY_COLOR] if arrays[Mesh.ARRAY_COLOR] != null else PackedColorArray()
+	_assert(colors.size() > 0, "生成资产带 COLOR_0 顶点色")
+	if colors.size() > 0:
+		var all_white := true
+		for c in colors:
+			if c.r < 0.98 or c.g < 0.98 or c.b < 0.98:
+				all_white = false
+				break
+		_assert(not all_white, "生成资产的顶点色不是全白")
 
 
 # ------------------------------------------------------------------ 查找辅助

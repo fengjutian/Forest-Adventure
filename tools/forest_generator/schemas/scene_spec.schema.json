@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forest-adventure.local/schemas/scene_spec.schema.json",
+  "title": "SceneSpec 1.1",
+  "description": "森林生成管线的场景规格，对应 docs/forest-pipeline-spec.md §3.2 / §3.3。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "seed",
+    "region",
+    "world",
+    "assets",
+    "budget",
+    "export"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.1" },
+    "seed": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "region": { "$ref": "#/$defs/region" },
+    "world": { "$ref": "#/$defs/world" },
+    "assets": { "$ref": "#/$defs/assets" },
+    "budget": { "$ref": "#/$defs/budget" },
+    "export": { "$ref": "#/$defs/export" }
+  },
+  "$defs": {
+    "region": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "size_m", "style", "season"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "size_m": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "number", "exclusiveMinimum": 0 }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "style": { "type": "string", "minLength": 1 },
+        "season": { "type": "string", "minLength": 1 }
+      }
+    },
+    "world": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["terrain", "creek", "camp", "vegetation"],
+      "properties": {
+        "terrain": { "$ref": "#/$defs/terrain" },
+        "creek": { "$ref": "#/$defs/creek" },
+        "camp": { "$ref": "#/$defs/camp" },
+        "vegetation": { "$ref": "#/$defs/vegetation_params" }
+      }
+    },
+    "terrain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "amplitude",
+        "macro_amplitude",
+        "detail_amplitude",
+        "ridge_center_z",
+        "ridge_width",
+        "ridge_height"
+      ],
+      "properties": {
+        "amplitude": { "type": "number" },
+        "macro_amplitude": { "type": "number" },
+        "detail_amplitude": { "type": "number" },
+        "ridge_center_z": { "type": "number" },
+        "ridge_width": { "type": "number" },
+        "ridge_height": { "type": "number" }
+      }
+    },
+    "creek": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["center_x", "half_width", "depth"],
+      "properties": {
+        "center_x": { "type": "number" },
+        "half_width": { "type": "number" },
+        "depth": { "type": "number" }
+      }
+    },
+    "camp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flat_radius", "blend_radius", "height"],
+      "properties": {
+        "flat_radius": { "type": "number" },
+        "blend_radius": { "type": "number" },
+        "height": { "type": "number" }
+      }
+    },
+    "vegetation_params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_density",
+        "birch_ratio",
+        "snag_ratio",
+        "deadwood_ratio",
+        "rock_density",
+        "shrub_density",
+        "ground_cover_density"
+      ],
+      "properties": {
+        "max_density": { "type": "number", "minimum": 0, "maximum": 1 },
+        "birch_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "snag_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "deadwood_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rock_density": { "type": "number", "minimum": 0, "maximum": 1 },
+        "shrub_density": { "type": "number", "minimum": 0, "maximum": 1 },
+        "ground_cover_density": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vegetation", "props"],
+      "properties": {
+        "vegetation": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/asset_entry" }
+        },
+        "props": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/asset_entry" }
+        }
+      }
+    },
+    "asset_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "variant", "lods", "collision", "height_m", "tags"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "variant": { "type": "string", "minLength": 1 },
+        "lods": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "collision": {
+          "type": "string",
+          "enum": ["capsule", "box", "none"]
+        },
+        "height_m": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "number", "exclusiveMinimum": 0 }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "tags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_tris_lod0_per_asset",
+        "max_tris_lod1_per_asset",
+        "max_materials",
+        "max_textures",
+        "max_total_bytes"
+      ],
+      "properties": {
+        "max_tris_lod0_per_asset": { "type": "integer", "exclusiveMinimum": 0 },
+        "max_tris_lod1_per_asset": { "type": "integer", "exclusiveMinimum": 0 },
+        "max_materials": { "type": "integer", "exclusiveMinimum": 0 },
+        "max_textures": { "type": "integer", "minimum": 0 },
+        "max_total_bytes": { "type": "integer", "exclusiveMinimum": 0 }
+      }
+    },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "apply_transform", "material_mode"],
+      "properties": {
+        "format": { "type": "string", "enum": ["glb"] },
+        "apply_transform": { "type": "boolean" },
+        "material_mode": { "type": "string", "const": "vertex_color" }
+      }
+    }
+  }
+}

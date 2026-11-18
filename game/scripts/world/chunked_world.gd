@@ -172,10 +172,24 @@ func swaying_material() -> ShaderMaterial:
 
 
 ## 树木网格全局缓存：1024 m 世界里同一种树被撒几万次，不能每块都重新拼网格。
+##
+## 取网格的顺序（docs/forest-pipeline-spec.md §2）：
+## 1. 管线产出的 GLB（`AssetLibrary`）——M4 的内容替换就靠这一层；
+## 2. 回退到 `PropKit` 的程序化网格——管线没跑过时现有玩法照旧。
 func mesh_for(key: String) -> Mesh:
 	if _meshes.has(key):
 		return _meshes[key]
 
+	var mesh: Mesh = AssetLibrary.mesh_for(key)
+	if mesh == null:
+		mesh = _procedural_mesh_for(key)
+
+	_meshes[key] = mesh
+	return mesh
+
+
+## PropKit 的程序化网格：管线没有产出该键时的回退。
+func _procedural_mesh_for(key: String) -> Mesh:
 	var mesh: Mesh = null
 	if key.begins_with("pine_"):
 		var index := int(key.substr(5))
@@ -203,8 +217,6 @@ func mesh_for(key: String) -> Mesh:
 				mesh = PropKit.make_grass_tuft(Color(0.19, 0.28, 0.12))
 			_:
 				GameLog.warn("未知的植被网格", {"key": key})
-
-	_meshes[key] = mesh
 	return mesh
 
 

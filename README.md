@@ -22,14 +22,24 @@
 - **隐藏地点**：松木林深处的猎人营地遗址（世界坐标 142, -168），进去即发现，发猎人笔记与护身符
 - **两个世界事件**：夜间发光植物带（引导到涌泉方向）、雨后涨水（踩石过河点被淹，东岸捷径断掉）
 - 第一人称有**完整的身体**：双手 + 两条小臂（挂在弓的视图模型上）+ 躯干与双腿（玩家本体网格），低头看得到自己的胸口和腿
-- 无头冒烟测试 207 项
+- 无头冒烟测试 257 项
 
-> **M2 代码已收尾，M3 管线尚未开工。**
+> **M2 代码已收尾，M3 管线的 M3-1（规格与骨架）与 M3-2（单资产端到端）都已完成。**
 > - [`docs/vertical-slice-completion.md`](./docs/vertical-slice-completion.md)
 >   —— 异常守护者、两个世界事件、一个隐藏地点的可实现规格与实现记录。
 > - [`docs/forest-pipeline-spec.md`](./docs/forest-pipeline-spec.md)
 >   —— M3 管线规格。**含一个已签字的架构决策 D1：Blender 生产资产、运行时生产世界**，
 >   避免与已跑通的分块世界系统产生两套高度真相。
+> - [`tools/forest_generator/README.md`](./tools/forest_generator/README.md)
+>   —— 管线工具链：SceneSpec 校验、种子派生、预算检查、manifest 读写、Blender 构建。
+>
+> **M3-1 查出一处规格错误并已修正**：[`docs/forest-pipeline-spec.md`](./docs/forest-pipeline-spec.md) §4.1 的资产键表有 24 **行**，
+> 但 `pine_0…pine_4` / `birch_0…birch_1` 是区间，展开后是 **29 个键**。
+> 原文把表格行数当成了键数，写进了 manifest 示例与 M3-3 退出条件。已按运行时代码逐键核对修正。
+>
+> **M3-2**：`pine_0` 一个松树资产走完 SceneSpec → Blender → GLB → manifest →
+> 运行时 `mesh_for("pine_0")` 取到的已经是**管线产的 GLB**，
+> 不再是 `PropKit` 的程序化网格。同 seed 重跑，3 档 LOD 的 sha256 逐字节不变。
 
 ### 分块世界
 
@@ -176,7 +186,7 @@ Forest-Adventure/
 ├── tools/
 │   ├── run.ps1              一键启动
 │   ├── build_windows.ps1    导入 → 测试 → 导出
-│   └── forest_generator/    AI → Blender 管线（M3 启动，当前为空壳）
+│   └── forest_generator/    AI → Blender 管线（M3-1 骨架 + M3-2 单资产端到端已就位）
 ├── build/                   构建产物（不入库）
 └── README.md
 ```
@@ -207,7 +217,7 @@ Forest-Adventure/
 # 导入资源（新克隆后必须先跑一次，生成全局类缓存）
 & $env:GODOT_EXE --headless --path game --import
 
-# 无头冒烟测试（207 项检查）
+# 无头冒烟测试（257 项检查）
 & $env:GODOT_EXE --headless --path game res://tests/test_smoke.tscn
 
 # 分块世界压力测试（无头，瞬移穿越全图，打印最差帧时间）
@@ -234,6 +244,22 @@ Forest-Adventure/
 # 完整构建（导入 → 测试 → 导出）；无导出模板时用 -SkipExport
 .\tools\build_windows.ps1
 .\tools\build_windows.ps1 -SkipExport
+
+# 森林管线：校验 SceneSpec（非法输入必须非零退出）
+python tools\forest_generator\main.py --validate tools\forest_generator\presets\pine_valley.json
+
+# 森林管线：打印 29 个资产键及其运行时接缝 / 派生种子
+python tools\forest_generator\main.py --keys
+python tools\forest_generator\main.py --derive-seeds 41721
+
+# 森林管线：构建资产（SceneSpec → Blender → GLB → manifest）
+python tools\forest_generator\main.py --build --build-keys pine_0
+
+# 森林管线：Python 侧测试
+python -m pytest tools\forest_generator\tests -q
+
+# 森林管线：目视对比管线产的 pine_0 与 PropKit 程序化的 pine_1
+& $env:GODOT_EXE --path game res://tests/capture_asset.tscn
 ```
 
 > **首次运行必须先导入。** Godot 依赖 `.godot/global_script_class_cache.cfg` 解析
@@ -268,7 +294,15 @@ Forest-Adventure/
 
 M0 工程基础 → M1 灰盒可玩链路 → M2 探索与战斗垂直切片 → M3 程序化森林管线 → M4 内容替换与打磨 → M5 开放世界扩展
 
-当前进度：**M0 / M1 已完成，M2 收尾（设计已就绪，代码未动），M3 未开始**。
+当前进度：**M0 / M1 / M2 已完成，M3-1 与 M3-2 已完成，M3-3 全量资产未开始**。
+
+M3-1 交付的是纯逻辑骨架：SceneSpec 的 JSON Schema 与两层校验（schema 层 + 语义层）、
+FNV-1a 种子派生（Python 与 GDScript 两侧各自复现同一份黄金向量）、预算检查、manifest 读写。
+**没有碰 Blender**，出问题能立刻分清是"规格错了"还是"Blender 脚本错了"。
+
+M3-2 把 `pine_0` 一个资产走通全链路，并把 [`docs/forest-pipeline-spec.md`](./docs/forest-pipeline-spec.md) §4.1 里缺的那一类接缝补齐：
+`PropKit.make_prop()` 扩成完整的 16 键注册表，营地装配处也改成走字符串键，
+运行时取网格变成「先查管线产物，再回退程序化网格」。
 
 详见 [`docs/development-plan.md`](./docs/development-plan.md)。
 

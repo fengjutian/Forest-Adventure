@@ -1,0 +1,289 @@
+{
+  "schema_version": "1.1",
+  "seed": 41721,
+  "region": {
+    "id": "pine_valley",
+    "size_m": [1024, 1024],
+    "style": "realistic",
+    "season": "late_summer"
+  },
+  "world": {
+    "terrain": {
+      "amplitude": 7.0,
+      "macro_amplitude": 26.0,
+      "detail_amplitude": 1.4,
+      "ridge_center_z": -340.0,
+      "ridge_width": 140.0,
+      "ridge_height": 50.0
+    },
+    "creek": {
+      "center_x": 11.0,
+      "half_width": 2.4,
+      "depth": -1.15
+    },
+    "camp": {
+      "flat_radius": 15.0,
+      "blend_radius": 24.0,
+      "height": 0.0
+    },
+    "vegetation": {
+      "max_density": 0.72,
+      "birch_ratio": 0.22,
+      "snag_ratio": 0.07,
+      "deadwood_ratio": 0.012,
+      "rock_density": 0.16,
+      "shrub_density": 0.30,
+      "ground_cover_density": 0.50
+    }
+  },
+  "assets": {
+    "vegetation": [
+      {
+        "key": "pine_0",
+        "variant": "pine",
+        "lods": [0, 1, 2],
+        "collision": "capsule",
+        "height_m": [7.5, 12.0],
+        "tags": ["sway"]
+      },
+      {
+        "key": "pine_1",
+        "variant": "pine",
+        "lods": [0, 1, 2],
+        "collision": "capsule",
+        "height_m": [7.5, 12.0],
+        "tags": ["sway"]
+      },
+      {
+        "key": "pine_2",
+        "variant": "pine",
+        "lods": [0, 1, 2],
+        "collision": "capsule",
+        "height_m": [7.5, 12.0],
+        "tags": ["sway"]
+      },
+      {
+        "key": "pine_3",
+        "variant": "pine",
+        "lods": [0, 1, 2],
+        "collision": "capsule",
+        "height_m": [7.5, 12.0],
+        "tags": ["sway"]
+      },
+      {
+        "key": "pine_4",
+        "variant": "pine",
+        "lods": [0, 1, 2],
+        "collision": "capsule",
+        "height_m": [7.5, 12.0],
+        "tags": ["sway"]
+      },
+      {
+        "key": "birch_0",
+        "variant": "birch",
+        "lods": [0, 1, 2],
+        "collision": "capsule",
+        "height_m": [8.0, 13.0],
+        "tags": ["sway"]
+      },
+      {
+        "key": "birch_1",
+        "variant": "birch",
+        "lods": [0, 1, 2],
+        "collision": "capsule",
+        "height_m": [8.0, 13.0],
+        "tags": ["sway"]
+      },
+      {
+        "key": "snag",
+        "variant": "snag",
+        "lods": [0, 1, 2],
+        "collision": "capsule",
+        "height_m": [5.0, 9.0],
+        "tags": ["sway"]
+      },
+      {
+        "key": "log",
+        "variant": "log",
+        "lods": [0, 1],
+        "collision": "capsule",
+        "height_m": [0.4, 0.9],
+        "tags": []
+      },
+      {
+        "key": "stump",
+        "variant": "stump",
+        "lods": [0, 1],
+        "collision": "capsule",
+        "height_m": [0.5, 1.2],
+        "tags": []
+      },
+      {
+        "key": "rock",
+        "variant": "rock",
+        "lods": [0, 1],
+        "collision": "box",
+        "height_m": [0.6, 1.8],
+        "tags": []
+      },
+      {
+        "key": "shrub",
+        "variant": "shrub",
+        "lods": [0, 1],
+        "collision": "none",
+        "height_m": [0.5, 1.2],
+        "tags": ["sway"]
+      },
+      {
+        "key": "grass",
+        "variant": "grass",
+        "lods": [0, 1],
+        "collision": "none",
+        "height_m": [0.15, 0.45],
+        "tags": ["sway"]
+      }
+    ],
+    "props": [
+      {
+        "key": "cabin",
+        "variant": "building",
+        "lods": [0, 1, 2, 3],
+        "collision": "box",
+        "height_m": [3.0, 3.6],
+        "tags": ["authored"]
+      },
+      {
+        "key": "cabin_windows",
+        "variant": "effect",
+        "lods": [0, 1],
+        "collision": "none",
+        "height_m": [1.0, 2.4],
+        "tags": ["authored", "emissive"]
+      },
+      {
+        "key": "supply_shed",
+        "variant": "building",
+        "lods": [0, 1, 2, 3],
+        "collision": "box",
+        "height_m": [2.2, 2.8],
+        "tags": ["authored"]
+      },
+      {
+        "key": "generator",
+        "variant": "generator",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [0.8, 1.4],
+        "tags": ["authored"]
+      },
+      {
+        "key": "target",
+        "variant": "target",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [1.4, 1.8],
+        "tags": ["authored"]
+      },
+      {
+        "key": "signpost",
+        "variant": "signpost",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [1.6, 2.0],
+        "tags": ["authored"]
+      },
+      {
+        "key": "tent",
+        "variant": "tent",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [1.6, 2.2],
+        "tags": ["authored"]
+      },
+      {
+        "key": "lantern_post",
+        "variant": "lantern_post",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [2.2, 2.6],
+        "tags": ["authored"]
+      },
+      {
+        "key": "lantern_glass",
+        "variant": "effect",
+        "lods": [0, 1],
+        "collision": "none",
+        "height_m": [2.0, 2.4],
+        "tags": ["authored", "emissive"]
+      },
+      {
+        "key": "woodpile",
+        "variant": "woodpile",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [0.6, 1.1],
+        "tags": ["authored"]
+      },
+      {
+        "key": "barrel",
+        "variant": "barrel",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [0.8, 1.0],
+        "tags": ["authored"]
+      },
+      {
+        "key": "crate",
+        "variant": "crate",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [0.5, 0.9],
+        "tags": ["authored"]
+      },
+      {
+        "key": "radio",
+        "variant": "radio",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [0.3, 0.6],
+        "tags": ["authored"]
+      },
+      {
+        "key": "campfire_stones",
+        "variant": "campfire_stones",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [0.2, 0.4],
+        "tags": ["authored"]
+      },
+      {
+        "key": "campfire_logs",
+        "variant": "campfire_logs",
+        "lods": [0, 1, 2],
+        "collision": "box",
+        "height_m": [0.2, 0.5],
+        "tags": ["authored"]
+      },
+      {
+        "key": "grass_tuft",
+        "variant": "grass_tuft",
+        "lods": [0, 1],
+        "collision": "none",
+        "height_m": [0.15, 0.4],
+        "tags": ["sway"]
+      }
+    ]
+  },
+  "budget": {
+    "max_tris_lod0_per_asset": 900,
+    "max_tris_lod1_per_asset": 300,
+    "max_materials": 24,
+    "max_textures": 48,
+    "max_total_bytes": 33554432
+  },
+  "export": {
+    "format": "glb",
+    "apply_transform": true,
+    "material_mode": "vertex_color"
+  }
+}

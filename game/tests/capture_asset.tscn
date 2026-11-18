@@ -1,0 +1,35 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://tests/capture_asset.gd" id="1_capture"]
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 1
+background_color = Color(0.55, 0.68, 0.82, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.6, 0.68, 0.78, 1)
+ambient_light_energy = 0.55
+tonemap_mode = 2
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_1"]
+sky_top_color = Color(0.36, 0.52, 0.74, 1)
+sky_horizon_color = Color(0.72, 0.79, 0.84, 1)
+ground_bottom_color = Color(0.16, 0.22, 0.14, 1)
+ground_horizon_color = Color(0.55, 0.62, 0.52, 1)
+
+[sub_resource type="Sky" id="Sky_2"]
+sky_material = SubResource("Sky_1")
+
+[node name="CaptureAsset" type="Node3D"]
+script = ExtResource("1_capture")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.309017, 0.383022, 0, 0.777146, 0.62932, -0.5, -0.544134, 0.663414, 0, 12, 6)
+light_energy = 1.35
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.994522, 0.104528, 0, -0.104528, 0.994522, 0, 5.5, 14)
+fov = 62.0

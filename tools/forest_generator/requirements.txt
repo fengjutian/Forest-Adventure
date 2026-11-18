@@ -1,0 +1,13 @@
+# 开发期依赖。
+#
+# 运行期工具链（tools/forest_generator/lib/ 与 main.py）只依赖 Python 3.12 标准库，
+# 不引入任何第三方包——这是规格 §6 目录布局里"管线可以被 Godot 侧脚本直接复算"的
+# 前提，也是 --emit-golden 能逐字节复现黄金向量的基础。
+#
+# 下面两个包只用于开发期：
+# - pytest：跑 tools/forest_generator/tests
+# - jsonschema：只在 tests/test_jsonschema_mini.py 里用于与 lib/jsonschema_mini.py
+#   交叉验证；没装它时该交叉验证自动跳过，其余用例照常运行。
+
+pytest==9.0.3
+jsonschema==4.26.0

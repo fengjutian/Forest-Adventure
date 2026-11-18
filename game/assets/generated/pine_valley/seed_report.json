@@ -1,0 +1,16 @@
+{
+  "algorithm": "fnv1a32",
+  "formula": "seed=(seed^b)*16777619 & 0xFFFFFFFF; return (seed%2147483647)+1",
+  "base_seed": 41721,
+  "assets": [
+    {
+      "key": "pine_0",
+      "seed": 1615208297,
+      "lods": [
+        0,
+        1,
+        2
+      ]
+    }
+  ]
+}

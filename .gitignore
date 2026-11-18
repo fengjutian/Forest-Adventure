@@ -25,7 +25,9 @@ venv/
 .pytest_cache/
 
 # ---------------------------------------------------------------- 生成器产物
-# 生成物不入库，SceneSpec / manifest 等源数据入库
+# 管线构建的**暂存目录**不入库；
+# 装进 game/assets/generated/ 的资产、manifest、seed_report 要入库——
+# 运行时要能从 res:// 直接加载它们，导入检查器也要核对 sha256 与实际文件。
 tools/forest_generator/output/*
 !tools/forest_generator/output/.gitkeep
 

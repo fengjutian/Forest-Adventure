@@ -991,6 +991,10 @@ static func make_radio() -> ArrayMesh:
 
 
 ## 按名称取道具网格，供可交互物脚本使用。
+##
+## 这是 §4.1 里 `make_prop` 接缝的**唯一真相源**：16 个道具键都在这里注册。
+## 营地装配处原本直接调 `make_cabin()` 这类函数（`direct` 接缝），
+## 那样运行时没有字符串键可查，管线产的 GLB 接不上——补齐注册表就是为了消掉这个缺口。
 static func make_prop(prop_name: StringName) -> Mesh:
 	match prop_name:
 		&"crate":
@@ -1015,6 +1019,16 @@ static func make_prop(prop_name: StringName) -> Mesh:
 			return make_barrel()
 		&"grass_tuft":
 			return make_grass_tuft(Color(0.26, 0.36, 0.16))
+		&"cabin":
+			return make_cabin()
+		&"cabin_windows":
+			return make_cabin_windows()
+		&"supply_shed":
+			return make_supply_shed()
+		&"target":
+			return make_target()
+		&"lantern_glass":
+			return make_lantern_glass()
 	return null
 
 
