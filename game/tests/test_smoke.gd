@@ -50,6 +50,7 @@ func _ready() -> void:
 	_test_inventory()
 	await _test_enemy_perception()
 	await _test_combat()
+	await _test_arrows()
 	_test_save_keys()
 	_test_save_load_round_trip()
 	_test_migration()
@@ -362,12 +363,14 @@ func _test_quest_chain() -> void:
 func _test_inventory() -> void:
 	_assert(_inventory.count_item(&"fuse") == 0, "修复后背包已无保险丝")
 
-	var before := _inventory.count_item(&"arrow")
-	_inventory.add_item(&"arrow", 5)
-	_assert(_inventory.count_item(&"arrow") == before + 5, "物品数量已增加")
-	_assert(_inventory.remove_item(&"arrow", 2), "物品已移除")
-	_assert(_inventory.count_item(&"arrow") == before + 3, "移除物品数量正确")
-	_assert(not _inventory.remove_item(&"arrow", 999), "数量不足时移除被正确拒绝")
+	# 用 anomaly_core 做纯背包操作测试：
+	# 箭矢已经无限供应，不再作为背包里的常规物品出现。
+	var before := _inventory.count_item(&"anomaly_core")
+	_inventory.add_item(&"anomaly_core", 3)
+	_assert(_inventory.count_item(&"anomaly_core") == before + 3, "物品数量已增加")
+	_assert(_inventory.remove_item(&"anomaly_core", 2), "物品已移除")
+	_assert(_inventory.count_item(&"anomaly_core") == before + 1, "移除物品数量正确")
+	_assert(not _inventory.remove_item(&"anomaly_core", 999), "数量不足时移除被正确拒绝")
 
 
 func _test_save_keys() -> void:
@@ -468,7 +471,7 @@ func _test_backup() -> void:
 ## 战斗闭环：装备 → 射箭 → 命中 → 敌人受伤死亡 → 掉落 → 拾取。
 func _test_combat() -> void:
 	_assert(_inventory.has_item(&"bow"), "出发时带着弓")
-	_assert(_inventory.count_item(&"arrow") >= 10, "出发时带着箭矢（实际 %d）" % _inventory.count_item(&"arrow"))
+	_assert(_inventory.count_item(&"arrow") == 0, "出发时不携带箭矢（无限供应）")
 
 	# 真实发射路径：箭必须按世界坐标落在射手手边。
 	# 这里把主场景整体横移 5m：如果箭是按父节点的局部坐标定位的，
@@ -563,13 +566,65 @@ func _test_combat() -> void:
 	_assert(not wolf.is_alive(), "林狼被击杀")
 	await get_tree().process_frame
 
-	var drop := _find_drop(&"arrow")
-	_assert(drop != null, "林狼死亡掉落箭矢")
+	var drop := _find_drop(&"ration")
+	_assert(drop != null, "林狼死亡掉落口粮")
 	if drop != null:
-		var arrows_before := _inventory.count_item(&"arrow")
+		var food_before := _inventory.count_item(&"ration")
 		drop.interact(_player)
-		_assert(_inventory.count_item(&"arrow") > arrows_before, "掉落物可以被拾取")
+		_assert(_inventory.count_item(&"ration") > food_before, "掉落物可以被拾取")
 		_assert(not drop.can_interact(_player), "拾取后掉落物不再可交互")
+
+
+## 箭矢无限供应与永久留痕（docs/archery-and-realism.md §2、§3）。
+func _test_arrows() -> void:
+	var player := _main.get("player") as Player
+	if player == null:
+		return
+	var bow := player.get_node_or_null("Bow") as Bow
+	var world := get_tree().get_first_node_in_group(&"terrain") as ChunkedWorld
+	if bow == null or world == null or world.field == null:
+		return
+
+	# 1) 射箭不消耗任何东西
+	var arrows_before := _inventory.count_item(&"arrow")
+	var fired := bow.spawn_arrow(1.0)
+	await get_tree().physics_frame
+	_assert(_inventory.count_item(&"arrow") == arrows_before,
+		"射箭不消耗箭矢（无限供应）")
+	if fired != null:
+		fired.queue_free()
+
+	# 2) 命中地面后箭留在世界里，不自动消失
+	var ground := world.field.height_at(6.0, 6.0)
+	var arrow := ArrowProjectile.new()
+	add_child(arrow)
+	arrow.global_position = Vector3(6.0, ground + 3.0, 6.0)
+	arrow.launch(Vector3.DOWN, 0.2)
+	for i in 60:
+		await get_tree().physics_frame
+		if arrow.is_stuck():
+			break
+	_assert(arrow.is_stuck(), "箭命中地面后钉住")
+	_assert(is_instance_valid(arrow) and not arrow.is_queued_for_deletion(),
+		"插在地上的箭留在世界里，不会自动消失")
+
+	# 3) 场上箭矢数量上限：超出时最早的那支消失
+	var spawned: Array[ArrowProjectile] = []
+	for i in ArrowProjectile.MAX_STUCK_ARROWS + 5:
+		var extra := ArrowProjectile.new()
+		add_child(extra)
+		extra.global_position = Vector3(24.0 + float(i) * 0.25, ground + 2.0, 12.0)
+		extra._stick(extra.global_position, Vector3.UP)
+		spawned.append(extra)
+		await get_tree().process_frame
+	var stuck_count := ArrowProjectile.count_stuck(get_tree())
+	_assert(stuck_count <= ArrowProjectile.MAX_STUCK_ARROWS,
+		"场上插着的箭不超过上限 %d（实际 %d）" % [ArrowProjectile.MAX_STUCK_ARROWS, stuck_count])
+
+	for extra in spawned:
+		if is_instance_valid(extra):
+			extra.queue_free()
+	await get_tree().process_frame
 
 
 ## 敌人感知：玩家靠近后，林狼应从巡逻转入警戒或追逐。

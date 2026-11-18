@@ -40,13 +40,16 @@ func _ready() -> void:
 	EventBus.player_state_changed.connect(_on_player_state_changed)
 	EventBus.quest_stage_changed.connect(_on_quest_stage_changed)
 	EventBus.quest_completed.connect(_on_quest_completed)
-	EventBus.ammo_changed.connect(_on_ammo_changed)
 	EventBus.bow_charge_changed.connect(_on_bow_charge_changed)
 	EventBus.hit_confirmed.connect(_on_hit_confirmed)
 	EventBus.enemy_health_changed.connect(_on_enemy_health_changed)
 
 	_player = get_tree().get_first_node_in_group(&"player") as Player
 	_quest_manager = get_tree().get_first_node_in_group(&"quest_manager") as QuestManager
+
+	# 箭矢无限供应（docs/archery-and-realism.md §2）：
+	# 不再广播弹药数量，这里直接显示无限。
+	ammo_label.text = "箭矢 ∞"
 
 	interaction_prompt.text = ""
 	resume_hint.visible = false
@@ -363,10 +366,6 @@ func _on_quest_stage_changed(_quest_id: StringName, stage_index: int, _stage_id:
 
 func _on_quest_completed(quest_id: StringName) -> void:
 	quest_label.text = "任务完成：%s" % quest_id
-
-
-func _on_ammo_changed(_item_id: StringName, count: int) -> void:
-	ammo_label.text = "箭矢 %d" % count
 
 
 func _on_bow_charge_changed(charge: float) -> void:

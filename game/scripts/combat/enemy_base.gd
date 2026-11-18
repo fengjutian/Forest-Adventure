@@ -342,11 +342,20 @@ func _apply_gravity(delta: float) -> void:
 
 
 ## 贴地：优先用地形高度查询，落在地面上。
+##
+## 陷进地里时要**把向下的速度清零**。不清零的话重力会每帧继续累积，
+## 而贴地只回收一半的落差，敌人会越陷越深：
+## 区块碰撞只做玩家附近 2 圈，圈外的敌人脚下根本没有碰撞面，
+## 一直处在这种「自由落体 + 追不回来」的状态。
 func _clamp_to_home() -> void:
-	if _terrain != null and _terrain.has_method("height_at"):
-		var ground := float(_terrain.call("height_at", global_position.x, global_position.z))
-		if global_position.y < ground:
-			global_position.y = lerpf(global_position.y, ground, 0.5)
+	if _terrain == null or not _terrain.has_method("height_at"):
+		return
+	var ground := float(_terrain.call("height_at", global_position.x, global_position.z))
+	if global_position.y >= ground:
+		return
+	global_position.y = lerpf(global_position.y, ground, 0.5)
+	if velocity.y < 0.0:
+		velocity.y = 0.0
 
 
 # ------------------------------------------------------------------ 伤害

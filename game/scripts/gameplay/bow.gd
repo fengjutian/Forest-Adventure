@@ -25,7 +25,6 @@ signal fired(power: float)
 signal fire_failed(reason: String)
 
 @export var bow_item_id: StringName = &"bow"
-@export var ammo_item_id: StringName = &"arrow"
 ## 箭矢伤害。
 @export var damage: float = 32.0
 ## 蓄满所需时间（秒）。
@@ -105,6 +104,8 @@ const STRING_HAND_FINGER := Vector3(0.1, 0.92, 0.38)
 const STRING_HAND_ARM := Vector3(0.32, -0.92, 0.18)
 
 var _player: Player = null
+## 背包只用来确认玩家身上有弓。箭矢无限供应，不再读背包的弹药
+## （docs/archery-and-realism.md §2）。
 var _inventory: Inventory = null
 var _camera: Camera3D = null
 ## 弓是玩家子节点，_ready 早于 Player，不能用 _player.head（那时还没就绪）。
@@ -156,14 +157,8 @@ func _ready() -> void:
 	_prev_pitch = _head.rotation.x if _head != null else 0.0
 
 	_build_view_model()
-
-	# 箭矢数量会因为初始装备、拾取掉落物、其它消耗而变化，
-	# 背包一有变动就重新广播，否则 HUD 会一直显示 0。
-	if _inventory != null:
-		_inventory.item_added.connect(_on_inventory_changed)
-		_inventory.item_removed.connect(_on_inventory_changed)
-
-	EventBus.ammo_changed.emit(ammo_item_id, _ammo_count())
+	# 箭矢无限供应（docs/archery-and-realism.md §2），
+	# 这里不需要监听背包变动，也不需要广播弹药数量。
 
 
 ## 第一人称持弓：弓、弦、箭、双手，全部挂在弓上。
@@ -255,13 +250,6 @@ func _add_mesh(parent: Node3D, node_name: String, mesh: Mesh) -> MeshInstance3D:
 	return node
 
 
-## 背包里箭矢数量变了。
-func _on_inventory_changed(item_id: StringName, _amount: int) -> void:
-	if item_id != ammo_item_id:
-		return
-	EventBus.ammo_changed.emit(ammo_item_id, _ammo_count())
-
-
 func _process(delta: float) -> void:
 	if _player == null or _camera == null:
 		return
@@ -313,12 +301,9 @@ func _release_and_fire() -> void:
 	if power < min_charge_to_fire:
 		return
 
-	if _inventory == null or not _inventory.has_item(ammo_item_id, 1):
-		fire_failed.emit("没有箭矢了")
-		return
-
-	_inventory.remove_item(ammo_item_id, 1)
-	EventBus.ammo_changed.emit(ammo_item_id, _ammo_count())
+	# 箭矢无限供应：不扣背包，也不检查数量
+	# （docs/archery-and-realism.md §2）。
+	# 体力才是唯一的消耗型资源——蓄力已经扣过了。
 
 	spawn_arrow(power)
 	_kick = maxf(_kick, 0.022)
@@ -580,12 +565,6 @@ static func _segment_transform(from: Vector3, to: Vector3, thickness: float) -> 
 	var x := reference.cross(y).normalized()
 	var z := x.cross(y)
 	return Transform3D(Basis(x * thickness, y * length, z * thickness), from)
-
-
-func _ammo_count() -> int:
-	if _inventory == null:
-		return 0
-	return _inventory.count_item(ammo_item_id)
 
 
 ## 当前蓄力比例，供 HUD 显示。

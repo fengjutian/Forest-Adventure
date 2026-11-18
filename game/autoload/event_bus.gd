@@ -39,7 +39,6 @@ signal flashlight_toggled(is_on: bool)
 signal player_died()
 
 # ---------------------------------------------------------------- 战斗
-signal ammo_changed(item_id: StringName, count: int)
 ## 蓄力进度 0~1，0 表示未在蓄力。
 signal bow_charge_changed(charge: float)
 ## 命中反馈，weakpoint 为真表示打在弱点。

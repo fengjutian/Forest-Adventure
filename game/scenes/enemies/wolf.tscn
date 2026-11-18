@@ -25,7 +25,7 @@ attack_windup = 0.4
 weak_point_height = 0.72
 leash_radius = 34.0
 patrol_radius = 10.0
-drops = Array[Dictionary]([{"id": &"arrow", "amount": 2}])
+drops = Array[Dictionary]([{"id": &"ration", "amount": 1}])
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.58, 0)

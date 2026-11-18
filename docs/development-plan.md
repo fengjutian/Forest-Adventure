@@ -80,7 +80,7 @@ AI 接入晚于确定性的 Blender 生成器，避免调试时无法区分模�
 
 > **职责边界见 [`forest-pipeline-spec.md`](./forest-pipeline-spec.md) §2。**
 > 管线生产资产，运行时生产地形与撒点——两者不重复。
-> 里程碑拆分为 M3-1 ~ M3-4，见该文档 §10。
+> 里程碑拆分为 M3-1 ~ M3-4，见 [`forest-pipeline-spec.md`](./forest-pipeline-spec.md) §10。
 
 ### M4：内容替换与打磨
 

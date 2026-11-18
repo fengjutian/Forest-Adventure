@@ -13,6 +13,7 @@
 - [内容生产管线](./content-pipeline.md)：AI、Blender、Godot 的资产分层、导出规范和自动检查。
 - [森林生成管线规格](./forest-pipeline-spec.md)：M3 管线的职责边界、SceneSpec、资产契约、manifest 格式与导入检查规则。
 - [垂直切片收尾设计](./vertical-slice-completion.md)：异常守护者、两个世界事件与一个隐藏地点的可实现规格。
+- [弓箭手感与真实感规格](./archery-and-realism.md)：箭矢无限供应的决策、箭矢留痕机制与真实感提升清单。
 - [开发计划](./development-plan.md)：里程碑、优先级、完成定义、风险与近期执行顺序。
 - [第一个场景设计](./first-scene-design.md)：林间营地的空间布局、教学流程、任务状态、Godot 结构与验收标准。
 

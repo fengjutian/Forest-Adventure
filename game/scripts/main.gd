@@ -21,11 +21,13 @@ const ITEM_DEFINITIONS := [
 	"res://resources/items/charm_ward.tres",
 ]
 
-## 出发时携带的装备：一张弓和若干箭矢。
+## 出发时携带的装备：一张弓、若干补给。
+##
+## 不带箭矢：箭无限供应（docs/archery-and-realism.md §2）。
 const STARTING_GEAR := {
 	&"bow": 1,
-	&"arrow": 12,
 	&"flashlight": 1,
+	&"ration": 2,
 }
 
 @onready var player: Player = $Player as Player
