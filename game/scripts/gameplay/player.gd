@@ -48,6 +48,16 @@ var look_sensitivity_scale: float = 1.0
 ## 噪声计时：受击、射箭等会短暂暴露位置。
 var _noise_timer: float = 0.0
 
+## 掉出世界的兜底检测。
+##
+## 传送 / 重生到还没建好碰撞的区块时，玩家会一路下落（实测能到 -53 m/s），
+## 而且永远落不到底——地形是单面凹网格，从下面穿过去就再也碰不到。
+## 每 0.5 s 采样一次脚下高度场，掉到地面以下就把人拉回来。
+## 采样频率低到几乎不要钱，但能兜住所有「瞬移到空区块」的路径。
+const VOID_CHECK_INTERVAL := 0.5
+const VOID_MARGIN := 3.0
+var _void_check_timer: float = 0.0
+
 ## 第一人称走路的镜头运动。相机初始位置（通常是 0，但不要假设）。
 var _camera_rest_position: Vector3 = Vector3.ZERO
 var _bob_phase: float = 0.0
@@ -112,6 +122,7 @@ func _notification(what: int) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_check_void_fall(delta)
 	_prev_velocity_y = velocity.y
 	if not _control_enabled:
 		velocity.x = move_toward(velocity.x, 0.0, tuning.acceleration * delta)
@@ -135,6 +146,27 @@ func _physics_process(delta: float) -> void:
 ## 第一人称镜头的呼吸感：只在视角层动，物理与碰撞体不受影响。
 func _process(delta: float) -> void:
 	_update_camera_motion(delta)
+
+
+## 掉出世界的兜底。见 VOID_CHECK_INTERVAL 的说明。
+func _check_void_fall(delta: float) -> void:
+	_void_check_timer -= delta
+	if _void_check_timer > 0.0:
+		return
+	_void_check_timer = VOID_CHECK_INTERVAL
+
+	var terrain := get_tree().get_first_node_in_group(&"terrain") as Node3D
+	if terrain == null or not terrain.has_method("height_at"):
+		return
+	var ground := float(terrain.call("height_at", global_position.x, global_position.z))
+	if global_position.y >= ground - VOID_MARGIN:
+		return
+
+	global_position.y = ground + 0.3
+	velocity = Vector3.ZERO
+	GameLog.warn("玩家掉出世界，已拉回地面", {
+		"y": global_position.y, "ground": ground,
+	})
 
 
 # ------------------------------------------------------------------ 第一人称运动

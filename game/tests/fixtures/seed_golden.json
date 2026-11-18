@@ -1,0 +1,986 @@
+{
+  "algorithm": "fnv1a32",
+  "formula": "seed=(seed^b)*16777619 & 0xFFFFFFFF; return (seed%2147483647)+1",
+  "asset_keys": [
+    "pine_0",
+    "pine_1",
+    "pine_2",
+    "pine_3",
+    "pine_4",
+    "birch_0",
+    "birch_1",
+    "snag",
+    "log",
+    "stump",
+    "rock",
+    "shrub",
+    "grass",
+    "cabin",
+    "cabin_windows",
+    "supply_shed",
+    "generator",
+    "target",
+    "signpost",
+    "tent",
+    "lantern_post",
+    "lantern_glass",
+    "woodpile",
+    "barrel",
+    "crate",
+    "radio",
+    "campfire_stones",
+    "campfire_logs",
+    "grass_tuft"
+  ],
+  "vegetation_keys": [
+    "pine_0",
+    "pine_1",
+    "pine_2",
+    "pine_3",
+    "pine_4",
+    "birch_0",
+    "birch_1",
+    "snag",
+    "log",
+    "stump",
+    "rock",
+    "shrub",
+    "grass"
+  ],
+  "prop_keys": [
+    "cabin",
+    "cabin_windows",
+    "supply_shed",
+    "generator",
+    "target",
+    "signpost",
+    "tent",
+    "lantern_post",
+    "lantern_glass",
+    "woodpile",
+    "barrel",
+    "crate",
+    "radio",
+    "campfire_stones",
+    "campfire_logs",
+    "grass_tuft"
+  ],
+  "base_seeds": [
+    41721,
+    20261117,
+    0,
+    1,
+    2147483647,
+    4294967295
+  ],
+  "vectors": [
+    {
+      "base_seed": 41721,
+      "key": "pine_0",
+      "seed": 1615208297
+    },
+    {
+      "base_seed": 41721,
+      "key": "pine_1",
+      "seed": 1631985916
+    },
+    {
+      "base_seed": 41721,
+      "key": "pine_2",
+      "seed": 1648763535
+    },
+    {
+      "base_seed": 41721,
+      "key": "pine_3",
+      "seed": 1665541154
+    },
+    {
+      "base_seed": 41721,
+      "key": "pine_4",
+      "seed": 1682318773
+    },
+    {
+      "base_seed": 41721,
+      "key": "birch_0",
+      "seed": 323384483
+    },
+    {
+      "base_seed": 41721,
+      "key": "birch_1",
+      "seed": 340162102
+    },
+    {
+      "base_seed": 41721,
+      "key": "snag",
+      "seed": 1779416749
+    },
+    {
+      "base_seed": 41721,
+      "key": "log",
+      "seed": 1199884615
+    },
+    {
+      "base_seed": 41721,
+      "key": "stump",
+      "seed": 1674691662
+    },
+    {
+      "base_seed": 41721,
+      "key": "rock",
+      "seed": 213546546
+    },
+    {
+      "base_seed": 41721,
+      "key": "shrub",
+      "seed": 1275801417
+    },
+    {
+      "base_seed": 41721,
+      "key": "grass",
+      "seed": 2084789683
+    },
+    {
+      "base_seed": 41721,
+      "key": "cabin",
+      "seed": 1860916616
+    },
+    {
+      "base_seed": 41721,
+      "key": "cabin_windows",
+      "seed": 1192956082
+    },
+    {
+      "base_seed": 41721,
+      "key": "supply_shed",
+      "seed": 516479855
+    },
+    {
+      "base_seed": 41721,
+      "key": "generator",
+      "seed": 42715295
+    },
+    {
+      "base_seed": 41721,
+      "key": "target",
+      "seed": 1021588558
+    },
+    {
+      "base_seed": 41721,
+      "key": "signpost",
+      "seed": 244204196
+    },
+    {
+      "base_seed": 41721,
+      "key": "tent",
+      "seed": 385399637
+    },
+    {
+      "base_seed": 41721,
+      "key": "lantern_post",
+      "seed": 296535775
+    },
+    {
+      "base_seed": 41721,
+      "key": "lantern_glass",
+      "seed": 475665641
+    },
+    {
+      "base_seed": 41721,
+      "key": "woodpile",
+      "seed": 1541207854
+    },
+    {
+      "base_seed": 41721,
+      "key": "barrel",
+      "seed": 587603655
+    },
+    {
+      "base_seed": 41721,
+      "key": "crate",
+      "seed": 1857366446
+    },
+    {
+      "base_seed": 41721,
+      "key": "radio",
+      "seed": 1015279170
+    },
+    {
+      "base_seed": 41721,
+      "key": "campfire_stones",
+      "seed": 737186121
+    },
+    {
+      "base_seed": 41721,
+      "key": "campfire_logs",
+      "seed": 252701419
+    },
+    {
+      "base_seed": 41721,
+      "key": "grass_tuft",
+      "seed": 1478013392
+    },
+    {
+      "base_seed": 20261117,
+      "key": "pine_0",
+      "seed": 881075958
+    },
+    {
+      "base_seed": 20261117,
+      "key": "pine_1",
+      "seed": 897853577
+    },
+    {
+      "base_seed": 20261117,
+      "key": "pine_2",
+      "seed": 914631196
+    },
+    {
+      "base_seed": 20261117,
+      "key": "pine_3",
+      "seed": 931408815
+    },
+    {
+      "base_seed": 20261117,
+      "key": "pine_4",
+      "seed": 813965482
+    },
+    {
+      "base_seed": 20261117,
+      "key": "birch_0",
+      "seed": 505143256
+    },
+    {
+      "base_seed": 20261117,
+      "key": "birch_1",
+      "seed": 521920875
+    },
+    {
+      "base_seed": 20261117,
+      "key": "snag",
+      "seed": 488217777
+    },
+    {
+      "base_seed": 20261117,
+      "key": "log",
+      "seed": 184357403
+    },
+    {
+      "base_seed": 20261117,
+      "key": "stump",
+      "seed": 379434690
+    },
+    {
+      "base_seed": 20261117,
+      "key": "rock",
+      "seed": 583044718
+    },
+    {
+      "base_seed": 20261117,
+      "key": "shrub",
+      "seed": 1625197005
+    },
+    {
+      "base_seed": 20261117,
+      "key": "grass",
+      "seed": 1793301735
+    },
+    {
+      "base_seed": 20261117,
+      "key": "cabin",
+      "seed": 743857691
+    },
+    {
+      "base_seed": 20261117,
+      "key": "cabin_windows",
+      "seed": 1757805286
+    },
+    {
+      "base_seed": 20261117,
+      "key": "supply_shed",
+      "seed": 660134899
+    },
+    {
+      "base_seed": 20261117,
+      "key": "generator",
+      "seed": 776149867
+    },
+    {
+      "base_seed": 20261117,
+      "key": "target",
+      "seed": 1271378530
+    },
+    {
+      "base_seed": 20261117,
+      "key": "signpost",
+      "seed": 1320377623
+    },
+    {
+      "base_seed": 20261117,
+      "key": "tent",
+      "seed": 305792265
+    },
+    {
+      "base_seed": 20261117,
+      "key": "lantern_post",
+      "seed": 824364643
+    },
+    {
+      "base_seed": 20261117,
+      "key": "lantern_glass",
+      "seed": 652022774
+    },
+    {
+      "base_seed": 20261117,
+      "key": "woodpile",
+      "seed": 1349653202
+    },
+    {
+      "base_seed": 20261117,
+      "key": "barrel",
+      "seed": 311603131
+    },
+    {
+      "base_seed": 20261117,
+      "key": "crate",
+      "seed": 1954600234
+    },
+    {
+      "base_seed": 20261117,
+      "key": "radio",
+      "seed": 1221966430
+    },
+    {
+      "base_seed": 20261117,
+      "key": "campfire_stones",
+      "seed": 1487118116
+    },
+    {
+      "base_seed": 20261117,
+      "key": "campfire_logs",
+      "seed": 956345184
+    },
+    {
+      "base_seed": 20261117,
+      "key": "grass_tuft",
+      "seed": 1169906916
+    },
+    {
+      "base_seed": 0,
+      "key": "pine_0",
+      "seed": 1544707546
+    },
+    {
+      "base_seed": 0,
+      "key": "pine_1",
+      "seed": 1527929927
+    },
+    {
+      "base_seed": 0,
+      "key": "pine_2",
+      "seed": 1511152308
+    },
+    {
+      "base_seed": 0,
+      "key": "pine_3",
+      "seed": 1494374689
+    },
+    {
+      "base_seed": 0,
+      "key": "pine_4",
+      "seed": 1611818022
+    },
+    {
+      "base_seed": 0,
+      "key": "birch_0",
+      "seed": 1347029794
+    },
+    {
+      "base_seed": 0,
+      "key": "birch_1",
+      "seed": 1330252175
+    },
+    {
+      "base_seed": 0,
+      "key": "snag",
+      "seed": 367235698
+    },
+    {
+      "base_seed": 0,
+      "key": "log",
+      "seed": 2035438755
+    },
+    {
+      "base_seed": 0,
+      "key": "stump",
+      "seed": 1453372196
+    },
+    {
+      "base_seed": 0,
+      "key": "rock",
+      "seed": 1116627323
+    },
+    {
+      "base_seed": 0,
+      "key": "shrub",
+      "seed": 1820917394
+    },
+    {
+      "base_seed": 0,
+      "key": "grass",
+      "seed": 1652204075
+    },
+    {
+      "base_seed": 0,
+      "key": "cabin",
+      "seed": 849439426
+    },
+    {
+      "base_seed": 0,
+      "key": "cabin_windows",
+      "seed": 1966193088
+    },
+    {
+      "base_seed": 0,
+      "key": "supply_shed",
+      "seed": 1999081688
+    },
+    {
+      "base_seed": 0,
+      "key": "generator",
+      "seed": 944174399
+    },
+    {
+      "base_seed": 0,
+      "key": "target",
+      "seed": 358754122
+    },
+    {
+      "base_seed": 0,
+      "key": "signpost",
+      "seed": 416821989
+    },
+    {
+      "base_seed": 0,
+      "key": "tent",
+      "seed": 1960811042
+    },
+    {
+      "base_seed": 0,
+      "key": "lantern_post",
+      "seed": 732221736
+    },
+    {
+      "base_seed": 0,
+      "key": "lantern_glass",
+      "seed": 1798894476
+    },
+    {
+      "base_seed": 0,
+      "key": "woodpile",
+      "seed": 872466718
+    },
+    {
+      "base_seed": 0,
+      "key": "barrel",
+      "seed": 923298661
+    },
+    {
+      "base_seed": 0,
+      "key": "crate",
+      "seed": 1554073100
+    },
+    {
+      "base_seed": 0,
+      "key": "radio",
+      "seed": 894247717
+    },
+    {
+      "base_seed": 0,
+      "key": "campfire_stones",
+      "seed": 189723390
+    },
+    {
+      "base_seed": 0,
+      "key": "campfire_logs",
+      "seed": 919083771
+    },
+    {
+      "base_seed": 0,
+      "key": "grass_tuft",
+      "seed": 1952091343
+    },
+    {
+      "base_seed": 1,
+      "key": "pine_0",
+      "seed": 260439746
+    },
+    {
+      "base_seed": 1,
+      "key": "pine_1",
+      "seed": 277217365
+    },
+    {
+      "base_seed": 1,
+      "key": "pine_2",
+      "seed": 293994984
+    },
+    {
+      "base_seed": 1,
+      "key": "pine_3",
+      "seed": 310772603
+    },
+    {
+      "base_seed": 1,
+      "key": "pine_4",
+      "seed": 327550222
+    },
+    {
+      "base_seed": 1,
+      "key": "birch_0",
+      "seed": 1913005292
+    },
+    {
+      "base_seed": 1,
+      "key": "birch_1",
+      "seed": 1929782911
+    },
+    {
+      "base_seed": 1,
+      "key": "snag",
+      "seed": 1639056901
+    },
+    {
+      "base_seed": 1,
+      "key": "log",
+      "seed": 1445604511
+    },
+    {
+      "base_seed": 1,
+      "key": "stump",
+      "seed": 591560374
+    },
+    {
+      "base_seed": 1,
+      "key": "rock",
+      "seed": 496653466
+    },
+    {
+      "base_seed": 1,
+      "key": "shrub",
+      "seed": 1400590321
+    },
+    {
+      "base_seed": 1,
+      "key": "grass",
+      "seed": 1348472683
+    },
+    {
+      "base_seed": 1,
+      "key": "cabin",
+      "seed": 1861738720
+    },
+    {
+      "base_seed": 1,
+      "key": "cabin_windows",
+      "seed": 1109345578
+    },
+    {
+      "base_seed": 1,
+      "key": "supply_shed",
+      "seed": 1197253991
+    },
+    {
+      "base_seed": 1,
+      "key": "generator",
+      "seed": 545673687
+    },
+    {
+      "base_seed": 1,
+      "key": "target",
+      "seed": 154765142
+    },
+    {
+      "base_seed": 1,
+      "key": "signpost",
+      "seed": 967596027
+    },
+    {
+      "base_seed": 1,
+      "key": "tent",
+      "seed": 92094989
+    },
+    {
+      "base_seed": 1,
+      "key": "lantern_post",
+      "seed": 1133687063
+    },
+    {
+      "base_seed": 1,
+      "key": "lantern_glass",
+      "seed": 1632174481
+    },
+    {
+      "base_seed": 1,
+      "key": "woodpile",
+      "seed": 677720117
+    },
+    {
+      "base_seed": 1,
+      "key": "barrel",
+      "seed": 1768994526
+    },
+    {
+      "base_seed": 1,
+      "key": "crate",
+      "seed": 923374469
+    },
+    {
+      "base_seed": 1,
+      "key": "radio",
+      "seed": 1288270777
+    },
+    {
+      "base_seed": 1,
+      "key": "campfire_stones",
+      "seed": 647352592
+    },
+    {
+      "base_seed": 1,
+      "key": "campfire_logs",
+      "seed": 1541397299
+    },
+    {
+      "base_seed": 1,
+      "key": "grass_tuft",
+      "seed": 380246216
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "pine_0",
+      "seed": 1510912183
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "pine_1",
+      "seed": 1527689802
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "pine_2",
+      "seed": 1477356945
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "pine_3",
+      "seed": 1494134564
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "pine_4",
+      "seed": 1578022659
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "birch_0",
+      "seed": 1161857301
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "birch_1",
+      "seed": 1178634920
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "snag",
+      "seed": 1378532831
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "log",
+      "seed": 667926545
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "stump",
+      "seed": 963149555
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "rock",
+      "seed": 2134607152
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "shrub",
+      "seed": 1127608502
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "grass",
+      "seed": 1067272957
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "cabin",
+      "seed": 181724541
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "cabin_windows",
+      "seed": 1710905743
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "supply_shed",
+      "seed": 975706028
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "generator",
+      "seed": 212915405
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "target",
+      "seed": 219385443
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "signpost",
+      "seed": 757595181
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "tent",
+      "seed": 188537704
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "lantern_post",
+      "seed": 369867310
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "lantern_glass",
+      "seed": 741395936
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "woodpile",
+      "seed": 1305845983
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "barrel",
+      "seed": 1427667489
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "crate",
+      "seed": 2120046599
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "radio",
+      "seed": 1038979435
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "campfire_stones",
+      "seed": 1235345507
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "campfire_logs",
+      "seed": 294072602
+    },
+    {
+      "base_seed": 2147483647,
+      "key": "grass_tuft",
+      "seed": 338381191
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "pine_0",
+      "seed": 1510912184
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "pine_1",
+      "seed": 1527689803
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "pine_2",
+      "seed": 1477356946
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "pine_3",
+      "seed": 1494134565
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "pine_4",
+      "seed": 1578022660
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "birch_0",
+      "seed": 1161857302
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "birch_1",
+      "seed": 1178634921
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "snag",
+      "seed": 1378532832
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "log",
+      "seed": 667926544
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "stump",
+      "seed": 963149556
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "rock",
+      "seed": 2134607151
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "shrub",
+      "seed": 1127608503
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "grass",
+      "seed": 1067272956
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "cabin",
+      "seed": 181724542
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "cabin_windows",
+      "seed": 1710905744
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "supply_shed",
+      "seed": 975706029
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "generator",
+      "seed": 212915406
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "target",
+      "seed": 219385444
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "signpost",
+      "seed": 757595182
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "tent",
+      "seed": 188537703
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "lantern_post",
+      "seed": 369867309
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "lantern_glass",
+      "seed": 741395935
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "woodpile",
+      "seed": 1305845984
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "barrel",
+      "seed": 1427667488
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "crate",
+      "seed": 2120046600
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "radio",
+      "seed": 1038979436
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "campfire_stones",
+      "seed": 1235345506
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "campfire_logs",
+      "seed": 294072601
+    },
+    {
+      "base_seed": 4294967295,
+      "key": "grass_tuft",
+      "seed": 338381190
+    }
+  ],
+  "edge_cases": [
+    {
+      "base_seed": 41721,
+      "key": "",
+      "note": "empty key",
+      "seed": 41722
+    },
+    {
+      "base_seed": 41721,
+      "key": "岩",
+      "note": "non-ascii",
+      "seed": 891022370
+    },
+    {
+      "base_seed": 41721,
+      "key": "pine_0",
+      "note": "normal",
+      "seed": 1615208297
+    },
+    {
+      "base_seed": 41721,
+      "key": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "note": "long key",
+      "seed": 880950563
+    },
+    {
+      "base_seed": 41721,
+      "key": "pine/0",
+      "note": "slash",
+      "seed": 1628162330
+    },
+    {
+      "base_seed": 41721,
+      "key": "pine_0\n",
+      "note": "trailing newline",
+      "seed": 1885562696
+    }
+  ]
+}

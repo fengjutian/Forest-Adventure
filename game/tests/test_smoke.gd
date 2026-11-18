@@ -51,6 +51,7 @@ func _ready() -> void:
 	await _test_enemy_perception()
 	await _test_combat()
 	await _test_arrows()
+	_test_seed_consistency()
 	_test_save_keys()
 	_test_save_load_round_trip()
 	_test_migration()
@@ -109,6 +110,22 @@ func _test_player_grounding() -> void:
 		var ground := float(terrain.call("height_at", _player.global_position.x, _player.global_position.z))
 		_assert(absf(_player.global_position.y - ground) < 1.0,
 			"玩家高度贴近地面（y=%.2f 地面=%.2f）" % [_player.global_position.y, ground])
+
+	# 掉出世界的兜底：把玩家塞到地底 50 m，0.5 s 内的兜底采样必须把人拉回来。
+	# 这条兜的就是「传送/重生到还没建好碰撞的区块」——不兜住就一路掉到负无穷。
+	if terrain != null:
+		var spot := _player.global_position
+		var ground_here := float(terrain.call("height_at", spot.x, spot.z))
+		_player.global_position = Vector3(spot.x, ground_here - 50.0, spot.z)
+		_player.velocity = Vector3.ZERO
+		for i in 70:
+			await get_tree().physics_frame
+		_assert(_player.global_position.y > ground_here - 2.0,
+			"掉出世界会被拉回地面（y=%.2f 地面=%.2f）" % [_player.global_position.y, ground_here])
+		_player.global_position = Vector3(spot.x, ground_here + 0.05, spot.z)
+		_player.velocity = Vector3.ZERO
+		for i in 5:
+			await get_tree().physics_frame
 
 
 ## 分块世界：1 km 范围、跨块无缝、流式加载、可重复生成（docs/open-world-design.md §1）。
@@ -639,11 +656,18 @@ func _test_enemy_perception() -> void:
 	# 把玩家挪到林狼正视方向的前方
 	var facing := -wolf.global_transform.basis.z
 	_player.global_position = wolf.global_position + facing * 3.0
+	EnemyBase.los_ray_casts = 0
 	for i in 30:
 		await get_tree().physics_frame
 
 	_assert(wolf.state != start_state or wolf.is_threatening(),
 		"林狼发现靠近的玩家（状态 %s）" % wolf.state_name_text())
+	# 感知节流的回归护栏：30 帧 = 0.5 s，10 Hz 下每只敌人最多 5 次；
+	# 没节流时是 30 次/只。留一倍余量，仍能一眼看出退化成逐帧。
+	var enemy_count := get_tree().get_nodes_in_group(&"enemy").size()
+	_assert(EnemyBase.los_ray_casts <= enemy_count * 8,
+		"敌人感知被节流（30 帧内 %d 次视线射线，%d 只敌人）" % [
+			EnemyBase.los_ray_casts, enemy_count])
 	_player.global_position = Vector3(0.0, 0.05, 7.5)
 	_player.heal(_player.tuning.max_health)
 
@@ -942,6 +966,94 @@ func _test_m2_save_fields() -> void:
 	GameState.from_dict({"world_flags": {}, "changed_objects": {}})
 	_assert(GameState.discovered_locations.is_empty(), "旧存档缺少已发现地点段时按空处理")
 	_assert(GameState.world_events.is_empty(), "旧存档缺少世界事件段时按空处理")
+
+
+## 跨语言种子一致性（docs/forest-pipeline-spec.md §5.2、§5.4）。
+##
+## 黄金向量 game/tests/fixtures/seed_golden.json 由独立的第三份实现算出，
+## Python 侧（tools/forest_generator/lib/seed.py）与本文件各自复现它。
+## 这条断言防的是"两侧算术不一致"——那种 bug 不会让程序崩，
+## 只会在资产形态上悄悄分叉，肉眼根本看不出来。
+func _test_seed_consistency() -> void:
+	const GOLDEN_PATH := "res://tests/fixtures/seed_golden.json"
+
+	if not FileAccess.file_exists(GOLDEN_PATH):
+		_fail("黄金种子向量夹具缺失")
+		return
+
+	var text := FileAccess.get_file_as_string(GOLDEN_PATH)
+	var parsed: Variant = JSON.parse_string(text)
+	_assert(parsed is Dictionary, "黄金种子向量是合法 JSON")
+	if not (parsed is Dictionary):
+		return
+	var golden := parsed as Dictionary
+
+	var keys: Array = golden.get("asset_keys", [])
+	_assert(keys.size() == 29, "黄金向量覆盖 29 个资产键（§4.1 是 24 行表格，展开后 29 键）")
+
+	# 键表必须跟运行时的变体数量一致：改了 PINE_VARIANTS 忘了同步管线，这里会炸
+	var source := FileAccess.get_file_as_string("res://scripts/world/world_chunk.gd")
+	var pine_re := RegEx.new()
+	pine_re.compile("const PINE_VARIANTS := (\\d+)")
+	var birch_re := RegEx.new()
+	birch_re.compile("const BIRCH_VARIANTS := (\\d+)")
+	var pine_match := pine_re.search(source)
+	var birch_match := birch_re.search(source)
+	_assert(pine_match != null and birch_match != null, "能读到运行时的树木变体数量")
+	if pine_match == null or birch_match == null:
+		return
+
+	var pine_count := int(pine_match.get_string(1))
+	var birch_count := int(birch_match.get_string(1))
+	var pine_keys := 0
+	var birch_keys := 0
+	for k in keys:
+		if str(k).begins_with("pine_"):
+			pine_keys += 1
+		elif str(k).begins_with("birch_"):
+			birch_keys += 1
+	_assert(pine_keys == pine_count, "黄金向量的松树键数与运行时 PINE_VARIANTS 一致")
+	_assert(birch_keys == birch_count, "黄金向量的桦树键数与运行时 BIRCH_VARIANTS 一致")
+
+	var vectors: Array = golden.get("vectors", [])
+	_assert(vectors.size() == 174, "黄金向量含 174 组派生结果")
+
+	# 按 base_seed 分组比对：全对时每个种子只占一行断言，出错时逐键列出差异
+	var base_totals := {}
+	var mismatches := {}
+	for v in vectors:
+		var entry := v as Dictionary
+		var base := int(entry.get("base_seed", 0))
+		var key := str(entry.get("key", ""))
+		var expected := int(entry.get("seed", 0))
+		var actual := SeedUtil.derive_seed(base, key)
+		base_totals[base] = int(base_totals.get(base, 0)) + 1
+		if actual != expected:
+			if not mismatches.has(base):
+				mismatches[base] = []
+			(mismatches[base] as Array).append("%s 期望 %d 实得 %d" % [key, expected, actual])
+
+	for base in base_totals.keys():
+		var bad: Array = mismatches.get(base, [])
+		if bad.is_empty():
+			_assert(true, "base_seed=%d 的 %d 个资产键派生种子逐位一致" % [base, base_totals[base]])
+		else:
+			_fail("base_seed=%d 有 %d 个键派生不一致：%s" % [base, bad.size(), ", ".join(bad)])
+
+	var edges: Array = golden.get("edge_cases", [])
+	_assert(edges.size() == 6, "黄金向量含 6 组边界用例")
+	for e in edges:
+		var entry := e as Dictionary
+		var base := int(entry.get("base_seed", 0))
+		var key := str(entry.get("key", ""))
+		var expected := int(entry.get("seed", 0))
+		var note := str(entry.get("note", ""))
+		var actual := SeedUtil.derive_seed(base, key)
+		_assert(actual == expected, "边界用例一致（%s）" % note)
+
+	_assert(SeedUtil.derive_seed(41721, "pine_0") == SeedUtil.derive_seed(41721, "pine_0"),
+		"同输入同输出的确定性")
+	_assert(SeedUtil.derive_seed(41721, "pine_0") >= 1, "派生种子落在正整数区间")
 
 
 # ------------------------------------------------------------------ 查找辅助
